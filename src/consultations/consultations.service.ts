@@ -1,0 +1,32 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class ConsultationsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  create(dto: any) {
+    return this.prisma.consultation.create({ data: dto });
+  }
+
+  findAll() {
+    return this.prisma.consultation.findMany();
+  }
+
+  async findOne(id: number) {
+    const item = await this.prisma.consultation.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`Consultation #${id} not found`);
+    return item;
+  }
+
+  async update(id: number, dto: any) {
+    await this.findOne(id);
+    return this.prisma.consultation.update({ where: { id }, data: dto });
+  }
+
+  async remove(id: number) {
+    await this.findOne(id);
+    await this.prisma.consultation.delete({ where: { id } });
+    return { message: `Consultation #${id} successfully deleted` };
+  }
+}

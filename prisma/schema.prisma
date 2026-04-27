@@ -1,0 +1,422 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  admin
+  pic
+  customer
+}
+
+enum ProductStatus {
+  active
+  inactive
+}
+
+enum OrderStatus {
+  pending
+  completed
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+}
+
+enum DpStatus {
+  pending
+  completed
+  failed
+}
+
+enum ConsultationStatus {
+  pending
+  completed
+  cancelled
+}
+
+// ─────────────────────────────────────────────
+// USERS & SESSIONS
+// ─────────────────────────────────────────────
+
+model User {
+  id                Int       @id @default(autoincrement())
+  name              String
+  phone             String?
+  address           String
+  email             String    @unique
+  role              Role      @default(customer)
+  email_verified_at DateTime?
+  password          String
+  last_login        DateTime?
+  remember_token    String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relations
+  carts           Cart[]
+  cart_items      CartItem[]
+  orders          Order[]
+  consultations   Consultation[]
+  production_logs ProductionLog[]
+  staff           Staff?
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  email      String    @id
+  token      String
+  created_at DateTime?
+
+  @@map("password_reset_tokens")
+}
+
+model Session {
+  id            String  @id
+  user_id       Int?
+  ip_address    String? @db.VarChar(45)
+  user_agent    String?
+  payload       String
+  last_activity Int
+
+  @@map("sessions")
+}
+
+// ─────────────────────────────────────────────
+// CATEGORIES & PRODUCTS
+// ─────────────────────────────────────────────
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String
+  price       Int
+  image       String
+  status      ProductStatus
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  // Relations
+  variants    ProductVariant[]
+  cart_items  CartItem[]
+  order_items OrderItem[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id               Int      @id @default(autoincrement())
+  size             String
+  color            String
+  product_id       Int
+  stock            Int
+  price_adjustment Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  product     Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  cart_items  CartItem[]
+  order_items OrderItem[]
+
+  @@map("product_variants")
+}
+
+// ─────────────────────────────────────────────
+// CART
+// ─────────────────────────────────────────────
+
+model Cart {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  session_id String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  product_id   Int
+  variant_id   Int
+  quantity     Int
+  price_at_add Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  user    User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+
+  @@map("cart_items")
+}
+
+// ─────────────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────────────
+
+model Order {
+  id               Int         @id @default(autoincrement())
+  user_id          Int
+  order_number     String      @unique
+  status           OrderStatus @default(pending)
+  grand_total      Int
+  shipping_address String
+  shipping_cost    Int
+  payment_method   String
+  tracking_code    String?
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  // Relations
+  user              User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  order_items       OrderItem[]
+  payments          Payment[]
+  trackings         Tracking[]
+  production_logs   ProductionLog[]
+  production_stages ProductionStage[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  order_id   Int
+  product_id Int
+  variant_id Int
+  quantity   Int
+  price      Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  order   Order          @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+
+model Payment {
+  id             Int           @id @default(autoincrement())
+  order_id       Int
+  payment_method String
+  amount         Int
+  transaction_id String        @unique
+  paid_at        DateTime?
+  payment_proof  String
+  payment_status PaymentStatus @default(pending)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+
+  // Relations
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// TRACKING
+// ─────────────────────────────────────────────
+
+model Tracking {
+  id                   Int      @id @default(autoincrement())
+  order_id             Int
+  current_stage        String
+  progress_percentage  Int
+  estimated_completion DateTime
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  // Relations
+  order              Order             @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  tracking_histories TrackingHistory[]
+
+  @@map("trackings")
+}
+
+model TrackingHistory {
+  id          Int      @id @default(autoincrement())
+  status      String
+  tracking_id Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  tracking Tracking @relation(fields: [tracking_id], references: [id], onDelete: Cascade)
+
+  @@map("tracking_histories")
+}
+
+// ─────────────────────────────────────────────
+// CONSULTATIONS
+// ─────────────────────────────────────────────
+
+model Consultation {
+  id                Int                @id @default(autoincrement())
+  user_id           Int
+  message           String?
+  quantity_estimate String?
+  status            ConsultationStatus @default(pending)
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+
+  // Relations
+  user                   User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  consultation_files     ConsultationFile[]
+  consultation_materials ConsultationMaterial[]
+  custom_orders          CustomOrder[]
+
+  @@map("consultations")
+}
+
+model ConsultationFile {
+  id              Int      @id @default(autoincrement())
+  consultation_id Int
+  file_name       String
+  file_path       String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
+
+  @@map("consultation_files")
+}
+
+model ConsultationMaterial {
+  id              Int      @id @default(autoincrement())
+  consultation_id Int
+  material_name   String
+  material_type   String
+  color_require   String
+  sample_required Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
+
+  @@map("consultation_materials")
+}
+
+model CustomOrder {
+  id               Int      @id @default(autoincrement())
+  consultation_id  Int
+  dp_amount        Int
+  remaining_amount Int
+  dp_status        DpStatus @default(pending)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
+
+  @@map("custom_orders")
+}
+
+// ─────────────────────────────────────────────
+// PRODUCTION
+// ─────────────────────────────────────────────
+
+model ProductionStage {
+  id         Int       @id @default(autoincrement())
+  stage_name String
+  order_id   Int
+  start_date DateTime?
+  end_date   DateTime?
+  progress   Int?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  // Relations
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("production_stages")
+}
+
+model ProductionLog {
+  id          Int      @id @default(autoincrement())
+  order_id    Int
+  action_type String
+  old_value   String?
+  new_value   String?
+  user_id     Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("production_logs")
+}
+
+// ─────────────────────────────────────────────
+// STAFF & SALARY
+// ─────────────────────────────────────────────
+
+model Staff {
+  id         Int      @id @default(autoincrement())
+  user_id    Int      @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  salary_logs SalaryLog[]
+
+  @@map("staff")
+}
+
+model SalaryLog {
+  id           Int      @id @default(autoincrement())
+  staff_id     Int
+  amount       Int
+  bonus        Int      @default(0)
+  deduction    Int      @default(0)
+  total_salary Int
+  period_start DateTime @db.Date
+  period_end   DateTime @db.Date
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  staff Staff @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+
+  @@map("salary_logs")
+}
