@@ -1,0 +1,277 @@
+{
+	"info": {
+		"_postman_id": "7a13f8a1-f71e-4712-b40b-7dfe02606ef2",
+		"name": "JETA Backend API - FULL CRUD",
+		"description": "Koleksi lengkap seluruh endpoint untuk JETA Backend (CRUD)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"address\": \"Jl. Contoh No. 123\",\n    \"phone\": \"08123456789\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/users/1", "host": ["{{baseUrl}}"], "path": ["users", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"name\": \"New User\",\n    \"email\": \"new@example.com\",\n    \"password\": \"password123\",\n    \"address\": \"Jl. Merdeka\",\n    \"role\": \"customer\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"name\": \"Updated Name\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/users/1", "host": ["{{baseUrl}}"], "path": ["users", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/users/1", "host": ["{{baseUrl}}"], "path": ["users", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/products/1", "host": ["{{baseUrl}}"], "path": ["products", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"name\": \"Product A\",\n    \"description\": \"Description\",\n    \"price\": 100000,\n    \"image\": \"img.jpg\",\n    \"status\": \"active\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"price\": 120000\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/products/1", "host": ["{{baseUrl}}"], "path": ["products", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/products/1", "host": ["{{baseUrl}}"], "path": ["products", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Product Variants",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/product-variants", "host": ["{{baseUrl}}"], "path": ["product-variants"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/product-variants/1", "host": ["{{baseUrl}}"], "path": ["product-variants", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"size\": \"L\",\n    \"color\": \"Red\",\n    \"product_id\": 1,\n    \"stock\": 10,\n    \"price_adjustment\": 0\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/product-variants", "host": ["{{baseUrl}}"], "path": ["product-variants"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"stock\": 15\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/product-variants/1", "host": ["{{baseUrl}}"], "path": ["product-variants", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/product-variants/1", "host": ["{{baseUrl}}"], "path": ["product-variants", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/categorys", "host": ["{{baseUrl}}"], "path": ["categorys"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/categorys/1", "host": ["{{baseUrl}}"], "path": ["categorys", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"name\": \"New Cat\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/categorys", "host": ["{{baseUrl}}"], "path": ["categorys"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"name\": \"Updated Cat\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/categorys/1", "host": ["{{baseUrl}}"], "path": ["categorys", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/categorys/1", "host": ["{{baseUrl}}"], "path": ["categorys", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Carts",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/carts", "host": ["{{baseUrl}}"], "path": ["carts"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/carts/1", "host": ["{{baseUrl}}"], "path": ["carts", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/carts", "host": ["{{baseUrl}}"], "path": ["carts"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/carts/1", "host": ["{{baseUrl}}"], "path": ["carts", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/carts/1", "host": ["{{baseUrl}}"], "path": ["carts", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Cart Items",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cart-items", "host": ["{{baseUrl}}"], "path": ["cart-items"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cart-items/1", "host": ["{{baseUrl}}"], "path": ["cart-items", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1,\n    \"product_id\": 1,\n    \"variant_id\": 1,\n    \"quantity\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/cart-items", "host": ["{{baseUrl}}"], "path": ["cart-items"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"quantity\": 2\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/cart-items/1", "host": ["{{baseUrl}}"], "path": ["cart-items", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/cart-items/1", "host": ["{{baseUrl}}"], "path": ["cart-items", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/orders/1", "host": ["{{baseUrl}}"], "path": ["orders", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1,\n    \"order_number\": \"ORD-001\",\n    \"grand_total\": 100000,\n    \"shipping_address\": \"Address\",\n    \"shipping_cost\": 10000,\n    \"payment_method\": \"Bank Transfer\",\n    \"status\": \"pending\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"status\": \"completed\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/orders/1", "host": ["{{baseUrl}}"], "path": ["orders", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/orders/1", "host": ["{{baseUrl}}"], "path": ["orders", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Order Items",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/order-items", "host": ["{{baseUrl}}"], "path": ["order-items"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/order-items/1", "host": ["{{baseUrl}}"], "path": ["order-items", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"order_id\": 1,\n    \"product_id\": 1,\n    \"variant_id\": 1,\n    \"quantity\": 1,\n    \"price\": 100000\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/order-items", "host": ["{{baseUrl}}"], "path": ["order-items"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"quantity\": 2\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/order-items/1", "host": ["{{baseUrl}}"], "path": ["order-items", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/order-items/1", "host": ["{{baseUrl}}"], "path": ["order-items", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/payments", "host": ["{{baseUrl}}"], "path": ["payments"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/payments/1", "host": ["{{baseUrl}}"], "path": ["payments", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"order_id\": 1,\n    \"payment_method\": \"Transfer\",\n    \"amount\": 100000,\n    \"transaction_id\": \"TRX-001\",\n    \"payment_proof\": \"proof.jpg\",\n    \"payment_status\": \"pending\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/payments", "host": ["{{baseUrl}}"], "path": ["payments"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"payment_status\": \"completed\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/payments/1", "host": ["{{baseUrl}}"], "path": ["payments", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/payments/1", "host": ["{{baseUrl}}"], "path": ["payments", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Trackings",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/trackings", "host": ["{{baseUrl}}"], "path": ["trackings"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/trackings/1", "host": ["{{baseUrl}}"], "path": ["trackings", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"order_id\": 1,\n    \"current_stage\": \"Packing\",\n    \"progress_percentage\": 20,\n    \"estimated_completion\": \"2026-05-01T00:00:00Z\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/trackings", "host": ["{{baseUrl}}"], "path": ["trackings"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"progress_percentage\": 50\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/trackings/1", "host": ["{{baseUrl}}"], "path": ["trackings", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/trackings/1", "host": ["{{baseUrl}}"], "path": ["trackings", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Tracking Histories",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/tracking-historys", "host": ["{{baseUrl}}"], "path": ["tracking-historys"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/tracking-historys/1", "host": ["{{baseUrl}}"], "path": ["tracking-historys", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"status\": \"At Hub\",\n    \"tracking_id\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/tracking-historys", "host": ["{{baseUrl}}"], "path": ["tracking-historys"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"status\": \"Departed\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/tracking-historys/1", "host": ["{{baseUrl}}"], "path": ["tracking-historys", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/tracking-historys/1", "host": ["{{baseUrl}}"], "path": ["tracking-historys", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Consultations",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/consultations", "host": ["{{baseUrl}}"], "path": ["consultations"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/consultations/1", "host": ["{{baseUrl}}"], "path": ["consultations", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1,\n    \"message\": \"Question\",\n    \"quantity_estimate\": \"50\",\n    \"status\": \"pending\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/consultations", "host": ["{{baseUrl}}"], "path": ["consultations"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"status\": \"completed\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/consultations/1", "host": ["{{baseUrl}}"], "path": ["consultations", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/consultations/1", "host": ["{{baseUrl}}"], "path": ["consultations", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Consultation Files",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/consultation-files", "host": ["{{baseUrl}}"], "path": ["consultation-files"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/consultation-files/1", "host": ["{{baseUrl}}"], "path": ["consultation-files", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"consultation_id\": 1,\n    \"file_name\": \"img.png\",\n    \"file_path\": \"/path\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/consultation-files", "host": ["{{baseUrl}}"], "path": ["consultation-files"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"file_name\": \"new.png\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/consultation-files/1", "host": ["{{baseUrl}}"], "path": ["consultation-files", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/consultation-files/1", "host": ["{{baseUrl}}"], "path": ["consultation-files", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Consultation Materials",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/consultation-materials", "host": ["{{baseUrl}}"], "path": ["consultation-materials"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/consultation-materials/1", "host": ["{{baseUrl}}"], "path": ["consultation-materials", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"consultation_id\": 1,\n    \"material_name\": \"Cotton\",\n    \"material_type\": \"Fabric\",\n    \"color_require\": \"Red\",\n    \"sample_required\": false\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/consultation-materials", "host": ["{{baseUrl}}"], "path": ["consultation-materials"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"material_name\": \"Silk\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/consultation-materials/1", "host": ["{{baseUrl}}"], "path": ["consultation-materials", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/consultation-materials/1", "host": ["{{baseUrl}}"], "path": ["consultation-materials", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Custom Orders",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/custom-orders", "host": ["{{baseUrl}}"], "path": ["custom-orders"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/custom-orders/1", "host": ["{{baseUrl}}"], "path": ["custom-orders", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"consultation_id\": 1,\n    \"dp_amount\": 50000,\n    \"remaining_amount\": 50000,\n    \"dp_status\": \"pending\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/custom-orders", "host": ["{{baseUrl}}"], "path": ["custom-orders"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"dp_status\": \"completed\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/custom-orders/1", "host": ["{{baseUrl}}"], "path": ["custom-orders", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/custom-orders/1", "host": ["{{baseUrl}}"], "path": ["custom-orders", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Production Stages",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/production-stages", "host": ["{{baseUrl}}"], "path": ["production-stages"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/production-stages/1", "host": ["{{baseUrl}}"], "path": ["production-stages", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"stage_name\": \"Cutting\",\n    \"order_id\": 1,\n    \"progress\": 0\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/production-stages", "host": ["{{baseUrl}}"], "path": ["production-stages"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"progress\": 100\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/production-stages/1", "host": ["{{baseUrl}}"], "path": ["production-stages", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/production-stages/1", "host": ["{{baseUrl}}"], "path": ["production-stages", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Production Logs",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/production-logs", "host": ["{{baseUrl}}"], "path": ["production-logs"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/production-logs/1", "host": ["{{baseUrl}}"], "path": ["production-logs", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"order_id\": 1,\n    \"action_type\": \"Status Change\",\n    \"old_value\": \"pending\",\n    \"new_value\": \"active\",\n    \"user_id\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/production-logs", "host": ["{{baseUrl}}"], "path": ["production-logs"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"action_type\": \"Update Log\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/production-logs/1", "host": ["{{baseUrl}}"], "path": ["production-logs", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/production-logs/1", "host": ["{{baseUrl}}"], "path": ["production-logs", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Staffs",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/staffs", "host": ["{{baseUrl}}"], "path": ["staffs"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/staffs/1", "host": ["{{baseUrl}}"], "path": ["staffs", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/staffs", "host": ["{{baseUrl}}"], "path": ["staffs"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"user_id\": 1\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/staffs/1", "host": ["{{baseUrl}}"], "path": ["staffs", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/staffs/1", "host": ["{{baseUrl}}"], "path": ["staffs", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Salary Logs",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/salary-logs", "host": ["{{baseUrl}}"], "path": ["salary-logs"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/salary-logs/1", "host": ["{{baseUrl}}"], "path": ["salary-logs", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"staff_id\": 1,\n    \"amount\": 3000000,\n    \"bonus\": 0,\n    \"deduction\": 0,\n    \"total_salary\": 3000000,\n    \"period_start\": \"2026-04-01T00:00:00Z\",\n    \"period_end\": \"2026-04-30T00:00:00Z\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/salary-logs", "host": ["{{baseUrl}}"], "path": ["salary-logs"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"amount\": 3500000\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/salary-logs/1", "host": ["{{baseUrl}}"], "path": ["salary-logs", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/salary-logs/1", "host": ["{{baseUrl}}"], "path": ["salary-logs", "1"] } }, "response": [] }
+			]
+		},
+		{
+			"name": "Guest",
+			"item": [
+				{ "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/guest", "host": ["{{baseUrl}}"], "path": ["guest"] } }, "response": [] },
+				{ "name": "Get One", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/guest/1", "host": ["{{baseUrl}}"], "path": ["guest", "1"] } }, "response": [] },
+				{ "name": "Create", "request": { "method": "POST", "body": { "mode": "raw", "raw": "{\n    \"name\": \"Guest\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/guest", "host": ["{{baseUrl}}"], "path": ["guest"] } }, "response": [] },
+				{ "name": "Update", "request": { "method": "PATCH", "body": { "mode": "raw", "raw": "{\n    \"name\": \"New Guest\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/guest/1", "host": ["{{baseUrl}}"], "path": ["guest", "1"] } }, "response": [] },
+				{ "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/guest/1", "host": ["{{baseUrl}}"], "path": ["guest", "1"] } }, "response": [] }
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ]
+	},
+	"event": [
+		{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": [""] } },
+		{ "listen": "test", "script": { "type": "text/javascript", "exec": [""] } }
+	],
+	"variable": [
+		{ "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+		{ "key": "token", "value": "", "type": "string" }
+	]
+}

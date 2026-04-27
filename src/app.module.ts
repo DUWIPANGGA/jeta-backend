@@ -23,6 +23,7 @@ import { ProductionStagesModule } from './production-stages/production-stages.mo
 import { ProductionLogsModule } from './production-logs/production-logs.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { SalaryLogsModule } from './salary-logs/salary-logs.module';
+import { GuestModule } from './guest/guest.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { SalaryLogsModule } from './salary-logs/salary-logs.module';
     ProductionLogsModule,
     StaffsModule,
     SalaryLogsModule,
+    GuestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

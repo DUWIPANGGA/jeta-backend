@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { CartItemsService } from './cart-items.service';
+import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('cart-items')
 export class CartItemsController {
   constructor(private readonly cartItemsService: CartItemsService) {}
@@ -9,7 +11,7 @@ export class CartItemsController {
   create(@Body() createDto: any) {
     return this.cartItemsService.create(createDto);
   }
-
+  
   @Get()
   findAll() {
     return this.cartItemsService.findAll();
