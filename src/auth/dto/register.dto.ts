@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, ValidateIf } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -14,6 +14,11 @@ export class RegisterDto {
   @IsString()
   address: string;
 
+  @nullable
   @IsString()
-  phone: string;
+  phone?: string;
+}
+
+function nullable(target: Object, propertyKey: string | symbol): void {
+  ValidateIf((obj, value) => value !== null && value !== undefined)(target, propertyKey);
 }

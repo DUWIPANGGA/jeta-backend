@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   BeforeInsert,
-  BeforeUpdate, 
+  BeforeUpdate
 } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';

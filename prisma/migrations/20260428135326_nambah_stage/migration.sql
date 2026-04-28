@@ -242,9 +242,19 @@ CREATE TABLE "custom_orders" (
 );
 
 -- CreateTable
-CREATE TABLE "production_stages" (
+CREATE TABLE "stages" (
     "id" SERIAL NOT NULL,
     "stage_name" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "production_stages" (
+    "id" SERIAL NOT NULL,
+    "stage_id" INTEGER NOT NULL,
     "order_id" INTEGER NOT NULL,
     "start_date" TIMESTAMP(3),
     "end_date" TIMESTAMP(3),
@@ -273,6 +283,7 @@ CREATE TABLE "production_logs" (
 CREATE TABLE "staff" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
+    "stage_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -359,6 +370,9 @@ ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_consultation_id_fkey" 
 ALTER TABLE "production_stages" ADD CONSTRAINT "production_stages_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "production_stages" ADD CONSTRAINT "production_stages_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -366,6 +380,9 @@ ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_user_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "staff" ADD CONSTRAINT "staff_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "staff" ADD CONSTRAINT "staff_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "salary_logs" ADD CONSTRAINT "salary_logs_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staff"("id") ON DELETE CASCADE ON UPDATE CASCADE;

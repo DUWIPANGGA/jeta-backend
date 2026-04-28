@@ -24,6 +24,7 @@ import { ProductionLogsModule } from './production-logs/production-logs.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { SalaryLogsModule } from './salary-logs/salary-logs.module';
 import { GuestModule } from './guest/guest.module';
+import { StagesModule } from './stages/stages.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { GuestModule } from './guest/guest.module';
     StaffsModule,
     SalaryLogsModule,
     GuestModule,
+    StagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
