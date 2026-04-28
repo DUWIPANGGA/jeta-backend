@@ -24,6 +24,18 @@ export class StaffsService {
     return this.prisma.staff.update({ where: { id }, data: dto });
   }
 
+  async findByUserId(userId: number) {
+    const item = await this.prisma.staff.findUnique({ where: { user_id: userId }, include: { user: true } });
+    if (!item) throw new NotFoundException(`Staff for user #${userId} not found`);
+    return item;
+  }
+
+  async updateByUserId(userId: number, dto: any) {
+    const staff = await this.findByUserId(userId);
+    return this.prisma.staff.update({ where: { id: staff.id }, data: dto });
+  }
+
+
   async remove(id: number) {
     await this.findOne(id);
     await this.prisma.staff.delete({ where: { id } });

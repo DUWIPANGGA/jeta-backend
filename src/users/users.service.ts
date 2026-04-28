@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -23,14 +23,71 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async update(id: number, dto: any) {
-    await this.findOne(id);
-    return this.prisma.user.update({ where: { id }, data: dto });
+  async findByVerificationToken(token: string) {
+    return this.prisma.user.findUnique({ where: { verification_token: token } });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
-    await this.prisma.user.delete({ where: { id } });
-    return { message: `User #${id} successfully deleted` };
+  async markEmailAsVerified(id: number) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        email_verified_at: new Date(),
+        verification_token: null,
+      },
+    });
   }
+
+
+  async update(id: number, dto: any, requester: any) {
+    const targetUser = await this.findOne(id);
+
+    // Superadmin can do anything
+    if (requester.role === 'superadmin') {
+      return this.prisma.user.update({ where: { id }, data: dto });
+    }
+
+    // Admin can change non-admins (pic, customer)
+    if (requester.role === 'admin') {
+      if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
+        throw new ForbiddenException('Admin cannot modify other admins or superadmins');
+      }
+      return this.prisma.user.update({ where: { id }, data: dto });
+    }
+
+    // Regular users can only change themselves
+    if (requester.sub === id) {
+      return this.prisma.user.update({ where: { id }, data: dto });
+    }
+
+    throw new ForbiddenException('You do not have permission to modify this user');
+  }
+
+
+  async remove(id: number, requester: any) {
+    const targetUser = await this.findOne(id);
+
+    // Superadmin can do anything
+    if (requester.role === 'superadmin') {
+      await this.prisma.user.delete({ where: { id } });
+      return { message: `User #${id} successfully deleted` };
+    }
+
+    // Admin can delete non-admins
+    if (requester.role === 'admin') {
+      if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
+        throw new ForbiddenException('Admin cannot delete other admins or superadmins');
+      }
+      await this.prisma.user.delete({ where: { id } });
+      return { message: `User #${id} successfully deleted` };
+    }
+
+    // Users can delete themselves (if allowed)
+    if (requester.sub === id) {
+      await this.prisma.user.delete({ where: { id } });
+      return { message: `User #${id} successfully deleted` };
+    }
+
+    throw new ForbiddenException('You do not have permission to delete this user');
+  }
+
 }

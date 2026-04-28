@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { CustomOrdersService } from './custom-orders.service';
+import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('custom-orders')
 export class CustomOrdersController {
-  constructor(private readonly customOrdersService: CustomOrdersService) {}
+  constructor(private readonly customOrdersService: CustomOrdersService) { }
 
   @Post()
   create(@Body() createDto: any) {

@@ -1,9 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request } from '@nestjs/common';
 import { StaffsService } from './staffs.service';
+import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { UseGuards } from '@nestjs/common';
+import { Roles } from 'src/common/decorator/roles/roles.decorator';
+import { Role } from '@prisma/client';
 
+@UseGuards(JwtAuthGuard)
+@Roles(Role.admin, Role.superadmin)
 @Controller('staffs')
 export class StaffsController {
-  constructor(private readonly staffsService: StaffsService) {}
+  constructor(private readonly staffsService: StaffsService) { }
+
+  @Get('profile')
+  getProfile(@Request() req) {
+    return this.staffsService.findByUserId(req.user.sub);
+  }
+
+  @Patch('profile')
+  updateProfile(@Request() req, @Body() updateDto: any) {
+    return this.staffsService.updateByUserId(req.user.sub, updateDto);
+  }
+
 
   @Post()
   create(@Body() createDto: any) {

@@ -1,14 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ConsultationFilesService } from './consultation-files.service';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { storage, fileFilter } from 'src/common/utils/file-upload.utils';
 
+import { ConsultationFilesService } from './consultation-files.service';
+import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+
+@UseGuards(JwtAuthGuard)
 @Controller('consultation-files')
 export class ConsultationFilesController {
   constructor(private readonly consultationFilesService: ConsultationFilesService) {}
 
   @Post()
-  create(@Body() createDto: any) {
+  @UseInterceptors(FileInterceptor('file', { storage: storage('consultations'), fileFilter }))
+  create(@Body() createDto: any, @UploadedFile() file: Express.Multer.File) {
+    if (file) {
+      createDto.file_path = `/uploads/consultations/${file.filename}`;
+      createDto.file_name = file.originalname;
+    }
     return this.consultationFilesService.create(createDto);
   }
+
 
   @Get()
   findAll() {
