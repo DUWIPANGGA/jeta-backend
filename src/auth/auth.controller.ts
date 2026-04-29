@@ -28,10 +28,10 @@ export class AuthController {
 
     res.cookie('token', result.access_token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: false,        // 👈 DI SINI
+      sameSite: 'lax',      // 👈 DI SINI
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
-      domain: 'localhost'
     });
 
     return { message: 'Login success' };
