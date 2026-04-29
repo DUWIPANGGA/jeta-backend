@@ -9,7 +9,6 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -27,28 +26,23 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const verificationToken = randomUUID();
 
     const user = await this.usersService.create({
       ...dto,
       password: hashedPassword,
-      verification_token: verificationToken,
+      email_verified_at: new Date(), // AUTO VERIFIED
     });
 
-    await this.emailService.sendVerificationEmail(user.email, verificationToken);
+    // SKIP EMAIL VERIFICATION
+    // await this.emailService.sendVerificationEmail(user.email, verificationToken);
 
     const { password, ...result } = user;
     return result;
   }
 
   async verifyEmail(token: string) {
-    const user = await this.usersService.findByVerificationToken(token);
-    if (!user) {
-      throw new UnauthorizedException('Invalid or expired verification token');
-    }
-
-    await this.usersService.markEmailAsVerified(user.id);
-    return { message: 'Email successfully verified' };
+    // Optional: bisa dihapus atau dibiarkan saja
+    return { message: 'Email verification is disabled' };
   }
 
 
@@ -63,9 +57,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (!user.email_verified_at) {
-      throw new UnauthorizedException('Please verify your email first');
-    }
+    // HAPUS pengecekan email_verified_at
+    // if (!user.email_verified_at) {
+    //   throw new UnauthorizedException('Please verify your email first');
+    // }
 
     const payload = { sub: user.id, email: user.email, role: user.role };
     return {

@@ -12,18 +12,26 @@ export class JwtAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-
-    const token = request.cookies?.token;
-
+    
+    // Debug: lihat cookie apa saja yang masuk
+    console.log('Cookies:', request.cookies);
+    
+    let token = request.cookies?.token;
+    
     if (!token) {
-      throw new UnauthorizedException('Token not found in cookie');
+      const authHeader = request.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+    
+    if (!token) {
+      throw new UnauthorizedException('Token not found');
     }
 
     try {
       const payload = this.jwtService.verify(token);
-
       request.user = payload;
-
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid or expired token');
