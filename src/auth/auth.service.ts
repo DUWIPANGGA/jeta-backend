@@ -73,4 +73,29 @@ export class AuthService {
       },
     };
   }
+
+  
+  // ✅ TAMBAHKAN METHOD INI (opsional, untuk blacklist token)
+  async logout(token: string): Promise<void> {
+    try {
+      // Decode token untuk dapatkan exp (expiration)
+      const decoded = this.jwtService.decode(token) as any;
+      
+      if (decoded && decoded.exp) {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const expiresIn = decoded.exp - currentTime;
+        
+        // Simpan token ke blacklist (contoh pakai Redis atau DB)
+        // await this.redisService.setex(`blacklist:${token}`, expiresIn, 'true');
+        
+        // Atau simpan ke database sementara
+        // await this.prisma.invalidatedToken.create({
+        //   data: { token, expiresAt: new Date(decoded.exp * 1000) }
+        // });
+      }
+    } catch (error) {
+      // Token invalid, tetap lanjutkan logout
+      console.error('Error logging out:', error);
+    }
+  }
 }

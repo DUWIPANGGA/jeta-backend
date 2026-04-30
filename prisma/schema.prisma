@@ -108,11 +108,14 @@ model Category {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  products  Product[]
+
   @@map("categories")
 }
 
 model Product {
   id          Int           @id @default(autoincrement())
+  category_id Int
   name        String
   description String
   price       Int
@@ -125,15 +128,19 @@ model Product {
   variants    ProductVariant[]
   cart_items  CartItem[]
   order_items OrderItem[]
+  category    Category     @relation(fields: [category_id], references: [id], onDelete: Cascade)
 
   @@map("products")
 }
 
 model ProductVariant {
   id               Int      @id @default(autoincrement())
-  size             String
-  color            String
+  size             String?
+  color            String?
+  atribute         String?
   product_id       Int
+  image            String
+  description      String?
   stock            Int
   price_adjustment Int
   created_at       DateTime @default(now())
@@ -434,4 +441,21 @@ model SalaryLog {
   staff Staff @relation(fields: [staff_id], references: [id], onDelete: Cascade)
 
   @@map("salary_logs")
+}
+
+// ─────────────────────────────────────────────
+// Portofolio
+// ─────────────────────────────────────────────
+
+model Portofolio {
+  id            Int     @id @default(autoincrement())
+  title         String
+  description   String?
+  image         String
+  client        String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+
+  @@map("portofolios")
 }

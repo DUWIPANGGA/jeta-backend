@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('admin', 'pic', 'customer');
+CREATE TYPE "Role" AS ENUM ('superadmin', 'admin', 'pic', 'customer');
 
 -- CreateEnum
 CREATE TYPE "ProductStatus" AS ENUM ('active', 'inactive');
@@ -26,6 +26,8 @@ CREATE TABLE "users" (
     "role" "Role" NOT NULL DEFAULT 'customer',
     "email_verified_at" TIMESTAMP(3),
     "password" TEXT NOT NULL,
+    "image" TEXT,
+    "verification_token" TEXT,
     "last_login" TIMESTAMP(3),
     "remember_token" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -68,6 +70,7 @@ CREATE TABLE "categories" (
 -- CreateTable
 CREATE TABLE "products" (
     "id" SERIAL NOT NULL,
+    "category_id" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "price" INTEGER NOT NULL,
@@ -82,9 +85,12 @@ CREATE TABLE "products" (
 -- CreateTable
 CREATE TABLE "product_variants" (
     "id" SERIAL NOT NULL,
-    "size" TEXT NOT NULL,
-    "color" TEXT NOT NULL,
+    "size" TEXT,
+    "color" TEXT,
+    "atribute" TEXT,
     "product_id" INTEGER NOT NULL,
+    "image" TEXT NOT NULL,
+    "description" TEXT,
     "stock" INTEGER NOT NULL,
     "price_adjustment" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -306,8 +312,24 @@ CREATE TABLE "salary_logs" (
     CONSTRAINT "salary_logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "portofolios" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "image" TEXT NOT NULL,
+    "client" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "portofolios_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_verification_token_key" ON "users"("verification_token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
@@ -317,6 +339,9 @@ CREATE UNIQUE INDEX "payments_transaction_id_key" ON "payments"("transaction_id"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "staff_user_id_key" ON "staff"("user_id");
+
+-- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
