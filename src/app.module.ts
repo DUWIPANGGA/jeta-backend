@@ -29,6 +29,7 @@ import { GuestModule } from './guest/guest.module';
 import { StagesModule } from './stages/stages.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from './email/email.module';
+import { PortofolioModule } from './portofolio/portofolio.module';
 
 @Module({
   imports: [
@@ -72,8 +73,9 @@ import { EmailModule } from './email/email.module';
     GuestModule,
     StagesModule,
     EmailModule,
+    PortofolioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

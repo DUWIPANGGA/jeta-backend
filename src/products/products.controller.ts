@@ -1,44 +1,62 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { storage, fileFilter } from 'src/common/utils/file-upload.utils';
-
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Roles } from 'src/common/decorator/roles/roles.decorator';
-import { Role } from '@prisma/client';
+import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { Roles } from '../common/decorator/roles/roles.decorator';
+import { Role, ProductStatus } from '@prisma/client';
+
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) { }
-  @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
-  @Post()
-  @UseInterceptors(FileInterceptor('image', { storage: storage('products'), fileFilter }))
-  create(@Body() createDto: any, @UploadedFile() file: Express.Multer.File) {
-    if (file) {
-      createDto.image = `/uploads/products/${file.filename}`;
-    }
-    return this.productsService.create(createDto);
-  }
+  constructor(private readonly productsService: ProductsService) {}
 
-
+  // Public endpoints (tanpa auth)
   @Get()
   findAll() {
     return this.productsService.findAll();
+  }
+
+  @Get('category/:categoryId')
+  findByCategory(@Param('categoryId') categoryId: string) {
+    return this.productsService.findByCategory(+categoryId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);
   }
+
+  // Admin only endpoints
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.admin, Role.superadmin)
+  @Post()
+  create(@Body() createProductDto: any) {
+    return this.productsService.create(createProductDto);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Roles(Role.admin, Role.superadmin)
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('image', { storage: storage('products'), fileFilter }))
-  update(@Param('id') id: string, @Body() updateDto: any, @UploadedFile() file: Express.Multer.File) {
-    if (file) {
-      updateDto.image = `/uploads/products/${file.filename}`;
-    }
-    return this.productsService.update(+id, updateDto);
+  update(@Param('id') id: string, @Body() updateProductDto: any) {
+    return this.productsService.update(+id, updateProductDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.admin, Role.superadmin)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: ProductStatus,
+  ) {
+    return this.productsService.updateStatus(+id, status);
   }
 
   @UseGuards(JwtAuthGuard)
