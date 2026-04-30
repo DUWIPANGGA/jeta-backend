@@ -1,39 +1,39 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { CategorysService } from './categorys.service';
+import { CategoriesService } from '../categories/categories.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { Roles } from 'src/common/decorator/roles/roles.decorator';
 import { Role } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard)
-@Controller('categorys')
-export class CategorysController {
-  constructor(private readonly categorysService: CategorysService) { }
+@Controller('categories')
+export class CategoriesController {
+  constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
   @Roles(Role.admin, Role.superadmin)
   create(@Body() createDto: any) {
-    return this.categorysService.create(createDto);
+    return this.categoriesService.create(createDto);
   }
 
   @Get()
   findAll() {
-    return this.categorysService.findAll();
+    return this.categoriesService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.categorysService.findOne(+id);
+    return this.categoriesService.findOne(+id);
   }
 
   @Patch(':id')
   @Roles(Role.admin, Role.superadmin)
   update(@Param('id') id: string, @Body() updateDto: any) {
-    return this.categorysService.update(+id, updateDto);
+    return this.categoriesService.update(+id, updateDto);
   }
 
   @Delete(':id')
   @Roles(Role.admin, Role.superadmin)
   remove(@Param('id') id: string) {
-    return this.categorysService.remove(+id);
+    return this.categoriesService.remove(+id);
   }
 }

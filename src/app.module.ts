@@ -7,7 +7,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { CategorysModule } from './categorys/categorys.module';
+import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { ProductVariantsModule } from './product-variants/product-variants.module';
 import { CartsModule } from './carts/carts.module';
@@ -52,7 +52,7 @@ import { PortofolioModule } from './portofolio/portofolio.module';
     PrismaModule,
     UsersModule,
     AuthModule,
-    CategorysModule,
+    CategoriesModule,
     ProductsModule,
     ProductVariantsModule,
     CartsModule,
