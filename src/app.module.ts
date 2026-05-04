@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -16,7 +17,7 @@ import { OrdersModule } from './orders/orders.module';
 import { OrderItemsModule } from './order-items/order-items.module';
 import { PaymentsModule } from './payments/payments.module';
 import { TrackingsModule } from './trackings/trackings.module';
-import { TrackingHistorysModule } from './tracking-historys/tracking-historys.module';
+import { TrackingHistoriesModule } from './tracking-histories/tracking-histories.module';
 import { ConsultationsModule } from './consultations/consultations.module';
 import { ConsultationFilesModule } from './consultation-files/consultation-files.module';
 import { ConsultationMaterialsModule } from './consultation-materials/consultation-materials.module';
@@ -30,7 +31,9 @@ import { StagesModule } from './stages/stages.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from './email/email.module';
 import { PortofolioModule } from './portofolio/portofolio.module';
-import { RoleModule } from './role/role.module';
+import { RolesModule } from './roles/roles.module';
+import { PagesModule } from './pages/pages.module';
+import { AccessGuard } from './common/guard/access/access.guard';
 
 @Module({
   imports: [
@@ -62,7 +65,7 @@ import { RoleModule } from './role/role.module';
     OrderItemsModule,
     PaymentsModule,
     TrackingsModule,
-    TrackingHistorysModule,
+    TrackingHistoriesModule,
     ConsultationsModule,
     ConsultationFilesModule,
     ConsultationMaterialsModule,
@@ -75,9 +78,16 @@ import { RoleModule } from './role/role.module';
     StagesModule,
     EmailModule,
     PortofolioModule,
-    RoleModule,
+    RolesModule,
+    PagesModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AccessGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }

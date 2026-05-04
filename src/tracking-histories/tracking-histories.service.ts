@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 
 @Injectable()
-export class TrackingHistorysService {
+export class TrackingHistoriesService {
   constructor(private readonly prisma: PrismaService) { }
   @UseGuards(JwtAuthGuard)
   create(dto: any) {

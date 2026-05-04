@@ -9,6 +9,9 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../prisma/prisma.service';
+import { RolesService } from '../roles/roles.service';
+
 
 @Injectable()
 export class AuthService {
@@ -16,7 +19,10 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
-  ) {}
+    private readonly prisma: PrismaService,
+    private readonly rolesService: RolesService
+
+  ) { }
 
 
   async register(dto: RegisterDto) {
@@ -27,14 +33,26 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.usersService.create({
-      ...dto,
-      password: hashedPassword,
-      email_verified_at: new Date(), // AUTO VERIFIED
+    // Ambil default role (level paling besar / role terendah)
+    const defaultRole = await this.prisma.role.findFirst({
+      orderBy: {
+        level: 'desc',  // ambil level terbesar
+      },
     });
 
-    // SKIP EMAIL VERIFICATION
-    // await this.emailService.sendVerificationEmail(user.email, verificationToken);
+    if (!defaultRole) {
+      throw new ConflictException('No role found in database');
+    }
+
+    const user = await this.usersService.create({
+      name: dto.name,
+      email: dto.email,
+      phone: dto.phone,
+      address: dto.address,
+      password: hashedPassword,
+      role_id: defaultRole.id,
+      email_verified_at: new Date(),
+    });
 
     const { password, ...result } = user;
     return result;
@@ -61,7 +79,9 @@ export class AuthService {
     // if (!user.email_verified_at) {
     //   throw new UnauthorizedException('Please verify your email first');
     // }
-
+    const role = await this.prisma.role.findUnique({
+      where: { id: user.role_id },
+    });
     const payload = { sub: user.id, email: user.email, role_id: user.role_id };
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -69,25 +89,25 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role_id: user.role_id,
+        role: role,
       },
     };
   }
 
-  
+
   // ✅ TAMBAHKAN METHOD INI (opsional, untuk blacklist token)
   async logout(token: string): Promise<void> {
     try {
       // Decode token untuk dapatkan exp (expiration)
       const decoded = this.jwtService.decode(token) as any;
-      
+
       if (decoded && decoded.exp) {
         const currentTime = Math.floor(Date.now() / 1000);
         const expiresIn = decoded.exp - currentTime;
-        
+
         // Simpan token ke blacklist (contoh pakai Redis atau DB)
         // await this.redisService.setex(`blacklist:${token}`, expiresIn, 'true');
-        
+
         // Atau simpan ke database sementara
         // await this.prisma.invalidatedToken.create({
         //   data: { token, expiresAt: new Date(decoded.exp * 1000) }

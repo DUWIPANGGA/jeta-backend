@@ -3,36 +3,45 @@ import { CategoriesService } from '../categories/categories.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { Roles } from 'src/common/decorator/roles/roles.decorator';
 import { Role } from '@prisma/client';
+import { Access } from '../common/decorator/access/access.decorator';
 
-@UseGuards(JwtAuthGuard)
+
+
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(4, 'create')
   @Post()
-  @Roles(1, 2)
   create(@Body() createDto: any) {
     return this.categoriesService.create(createDto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(4, 'read')
   @Get()
   findAll() {
     return this.categoriesService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(4, 'read')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.categoriesService.findOne(+id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(4, 'update')
   @Patch(':id')
-  @Roles(1, 2)
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.categoriesService.update(+id, updateDto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(4, 'delete')
   @Delete(':id')
-  @Roles(1, 2)
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(+id);
   }

@@ -12,6 +12,10 @@ export class RegisterDto {
   password: string;
 
   @IsString()
+  @MinLength(6)
+  confirm_password: string;
+
+  @IsString()
   address: string;
 
   @nullable

@@ -20,6 +20,8 @@ import { Role, ProductStatus } from '@prisma/client';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
+import { Access } from '../common/decorator/access/access.decorator';
+
 
 // Pastikan folder uploads ada
 const uploadDir = './uploads/products';
@@ -49,35 +51,41 @@ const fileFilter = (req, file, cb) => {
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
 
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
 
-  // Public endpoints
+  @UseGuards(JwtAuthGuard)
+  @Access(16, 'read')
   @Get()
   findAll() {
     return this.productsService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(16, 'read')
   @Get('category/:category_id')
   findByCategory(@Param('category_id') categoryId: string) {
     return this.productsService.findByCategory(+categoryId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Access(16, 'read')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);
   }
 
   // Admin endpoints with file upload
-  @UseGuards(JwtAuthGuard)
-  @Roles(1, 2)
   @Post()
-  @UseInterceptors(FileInterceptor('image', { 
-    storage, 
+  @UseGuards(JwtAuthGuard)
+  @Access(16, 'create')
+  @UseInterceptors(FileInterceptor('image', {
+    storage,
     fileFilter,
     limits: {
       fileSize: 5 * 1024 * 1024, // 5MB
     },
   }))
+
   async create(
     @Body() createProductDto: any,
     @UploadedFile() file: Express.Multer.File,
@@ -85,19 +93,19 @@ export class ProductsController {
     this.logger.log('Create product request received');
     this.logger.log('Body:', createProductDto);
     this.logger.log('File:', file ? file.originalname : 'No file');
-    
+
     if (!file) {
       throw new BadRequestException('Product image is required');
     }
-    
+
     return this.productsService.create(createProductDto, file);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(1, 2)
+  @Access(16, 'update')
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('image', { 
-    storage, 
+  @UseInterceptors(FileInterceptor('image', {
+    storage,
     fileFilter,
     limits: {
       fileSize: 5 * 1024 * 1024,
@@ -111,12 +119,12 @@ export class ProductsController {
     this.logger.log(`Update product ${id} request received`);
     this.logger.log('Body:', updateProductDto);
     this.logger.log('File:', file ? file.originalname : 'No file');
-    
+
     return this.productsService.update(+id, updateProductDto, file);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(1, 2)
+  @Access(16, 'update')
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
@@ -126,7 +134,7 @@ export class ProductsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(1, 2)
+  @Access(16, 'delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);

@@ -63,6 +63,10 @@ model Role {
 model Access{
   id            Int     @id @default(autoincrement())
   name          String
+  create        Boolean
+  update        Boolean
+  read          Boolean
+  delete        Boolean
   role_id       Int
   page_id       Int
   created_at    DateTime  @default(now())
@@ -76,6 +80,7 @@ model Access{
 
 model Page{
   id            Int     @id@default(autoincrement())
+  nomor         Int
   name          String
   created_at    DateTime @default(now())
   updated_at    DateTime  @updatedAt
