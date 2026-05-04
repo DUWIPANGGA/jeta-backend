@@ -9,7 +9,7 @@ import { Role } from '@prisma/client';
 export class StagesController {
   constructor(private readonly stagesService: StagesService) { }
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Post()
   create(@Body() createDto: any) {
     return this.stagesService.create(createDto);
@@ -25,13 +25,13 @@ export class StagesController {
     return this.stagesService.findOne(+id);
   }
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.stagesService.update(+id, updateDto);
   }
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.stagesService.remove(+id);

@@ -62,14 +62,14 @@ export class AuthService {
     //   throw new UnauthorizedException('Please verify your email first');
     // }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, email: user.email, role_id: user.role_id };
     return {
       access_token: await this.jwtService.signAsync(payload),
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role_id: user.role_id,
       },
     };
   }

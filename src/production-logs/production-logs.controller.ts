@@ -8,7 +8,7 @@ import { Role } from '@prisma/client';
 export class ProductionLogsController {
   constructor(private readonly productionLogsService: ProductionLogsService) { }
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Post()
   create(@Body() createDto: any) {
     return this.productionLogsService.create(createDto);
@@ -25,14 +25,14 @@ export class ProductionLogsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.productionLogsService.update(+id, updateDto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productionLogsService.remove(+id);

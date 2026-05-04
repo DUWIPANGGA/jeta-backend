@@ -12,12 +12,6 @@ datasource db {
 
 // ─────────────────────────────────────────────
 // ENUMS
-enum Role {
-  superadmin
-  admin
-  pic
-  customer
-}
 
 enum ProductStatus {
   active
@@ -52,13 +46,52 @@ enum ConsultationStatus {
 // USERS & SESSIONS
 // ─────────────────────────────────────────────
 
+model Role {
+  id              Int     @id @default(autoincrement())
+  name            String 
+  level           Int
+  description     String   
+  cerated_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  accesses Access[]
+  users User[]
+
+  @@map("roles")
+}
+
+model Access{
+  id            Int     @id @default(autoincrement())
+  name          String
+  role_id       Int
+  page_id       Int
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // relation
+  role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  page Page @relation(fields: [page_id], references: [id], onDelete: Cascade)
+  @@map("accesses")
+}
+
+model Page{
+  id            Int     @id@default(autoincrement())
+  name          String
+  created_at    DateTime @default(now())
+  updated_at    DateTime  @updatedAt
+
+  accesses Access[]
+
+  @@map("pages")
+}
+
 model User {
   id                Int       @id @default(autoincrement())
   name              String
   phone             String?
   address           String
   email             String    @unique
-  role              Role      @default(customer)
+  role_id           Int
   email_verified_at DateTime?
   password          String
   image             String?
@@ -75,6 +108,8 @@ model User {
   consultations   Consultation[]
   production_logs ProductionLog[]
   staff           Staff?
+
+  role Role @relation(fields: [role_id],  references: [id], onDelete: Cascade)
 
   @@map("users")
 }

@@ -33,7 +33,15 @@ export class AuthController {
       path: '/',
     });
 
-    return { message: 'Login success' };
+    return { messagez: 'Login success',
+      user:{
+        id:result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role_id: result.user.role_id
+
+      }
+     };
   }
 
     // ✅ TAMBAHKAN METHOD LOGOUT INI

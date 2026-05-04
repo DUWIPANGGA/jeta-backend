@@ -69,7 +69,7 @@ export class ProductsController {
 
   // Admin endpoints with file upload
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Post()
   @UseInterceptors(FileInterceptor('image', { 
     storage, 
@@ -94,7 +94,7 @@ export class ProductsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id')
   @UseInterceptors(FileInterceptor('image', { 
     storage, 
@@ -116,7 +116,7 @@ export class ProductsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
@@ -126,7 +126,7 @@ export class ProductsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);

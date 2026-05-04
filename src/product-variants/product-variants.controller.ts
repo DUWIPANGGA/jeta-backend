@@ -9,7 +9,7 @@ export class ProductVariantsController {
   constructor(private readonly productVariantsService: ProductVariantsService) { }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Post()
   create(@Body() createDto: any) {
     return this.productVariantsService.create(createDto);
@@ -26,14 +26,14 @@ export class ProductVariantsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.productVariantsService.update(+id, updateDto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productVariantsService.remove(+id);

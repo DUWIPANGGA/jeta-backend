@@ -8,7 +8,7 @@ import { Role } from '@prisma/client';
 export class SalaryLogsController {
   constructor(private readonly salaryLogsService: SalaryLogsService) { }
 
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Post()
   create(@Body() createDto: any) {
     return this.salaryLogsService.create(createDto);
@@ -24,12 +24,12 @@ export class SalaryLogsController {
     return this.salaryLogsService.findOne(+id);
   }
 
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.salaryLogsService.update(+id, updateDto);
   }
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.salaryLogsService.remove(+id);

@@ -30,6 +30,7 @@ import { StagesModule } from './stages/stages.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from './email/email.module';
 import { PortofolioModule } from './portofolio/portofolio.module';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { PortofolioModule } from './portofolio/portofolio.module';
     StagesModule,
     EmailModule,
     PortofolioModule,
+    RoleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

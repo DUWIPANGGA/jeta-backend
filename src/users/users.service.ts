@@ -14,7 +14,10 @@ export class UsersService {
   }
 
   async findOne(id: number) {
-    const item = await this.prisma.user.findUnique({ where: { id } });
+    const item = await this.prisma.user.findUnique({ 
+      where: { id },
+      include: {role:true}
+    });
     if (!item) throw new NotFoundException(`User #${id} not found`);
     return item;
   }
@@ -47,8 +50,8 @@ export class UsersService {
     }
 
     // Admin can change non-admins (pic, customer)
-    if (requester.role === 'admin') {
-      if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
+    if (requester.role === 2) {
+      if (targetUser.role_id === 2 || targetUser.role_id === 1) {
         throw new ForbiddenException('Admin cannot modify other admins or superadmins');
       }
       return this.prisma.user.update({ where: { id }, data: dto });
@@ -73,8 +76,8 @@ export class UsersService {
     }
 
     // Admin can delete non-admins
-    if (requester.role === 'admin') {
-      if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
+    if (requester.role === 2) {
+      if (targetUser.role_id === 2 || targetUser.role_id === 1) {
         throw new ForbiddenException('Admin cannot delete other admins or superadmins');
       }
       await this.prisma.user.delete({ where: { id } });

@@ -8,7 +8,7 @@ import { UseGuards } from '@nestjs/common';
 import { Roles } from 'src/common/decorator/roles/roles.decorator';
 import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
-@Roles(Role.admin, Role.superadmin)
+@Roles(1, 2)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }

@@ -9,7 +9,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 export class TrackingHistorysController {
   constructor(private readonly trackingHistorysService: TrackingHistorysService) { }
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Post()
   create(@Body() createDto: any) {
     return this.trackingHistorysService.create(createDto);
@@ -25,13 +25,13 @@ export class TrackingHistorysController {
     return this.trackingHistorysService.findOne(+id);
   }
 
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.trackingHistorysService.update(+id, updateDto);
   }
 
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.trackingHistorysService.remove(+id);

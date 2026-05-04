@@ -1,7 +1,4 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('superadmin', 'admin', 'pic', 'customer');
-
--- CreateEnum
 CREATE TYPE "ProductStatus" AS ENUM ('active', 'inactive');
 
 -- CreateEnum
@@ -17,13 +14,47 @@ CREATE TYPE "DpStatus" AS ENUM ('pending', 'completed', 'failed');
 CREATE TYPE "ConsultationStatus" AS ENUM ('pending', 'completed', 'cancelled');
 
 -- CreateTable
+CREATE TABLE "roles" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "level" INTEGER NOT NULL,
+    "description" TEXT NOT NULL,
+    "cerated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "roles_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "accesses" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "role_id" INTEGER NOT NULL,
+    "page_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "accesses_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "pages" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "pages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
     "address" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'customer',
+    "role_id" INTEGER NOT NULL,
     "email_verified_at" TIMESTAMP(3),
     "password" TEXT NOT NULL,
     "image" TEXT,
@@ -339,6 +370,15 @@ CREATE UNIQUE INDEX "payments_transaction_id_key" ON "payments"("transaction_id"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "staff_user_id_key" ON "staff"("user_id");
+
+-- AddForeignKey
+ALTER TABLE "accesses" ADD CONSTRAINT "accesses_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "accesses" ADD CONSTRAINT "accesses_page_id_fkey" FOREIGN KEY ("page_id") REFERENCES "pages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;

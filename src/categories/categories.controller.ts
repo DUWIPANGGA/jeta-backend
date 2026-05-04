@@ -10,7 +10,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   create(@Body() createDto: any) {
     return this.categoriesService.create(createDto);
   }
@@ -26,13 +26,13 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.categoriesService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Roles(Role.admin, Role.superadmin)
+  @Roles(1, 2)
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(+id);
   }

@@ -1,5 +1,5 @@
-import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
-import { Role } from '@prisma/client';
+import { IsString, IsEmail, IsOptional, Min } from 'class-validator';
+// import { Role } from '@prisma/client';
 
 export class CreateUserDto {
   @IsString()
@@ -14,11 +14,9 @@ export class CreateUserDto {
   @IsString()
   address: string;
 
-  @IsOptional()
   @IsString()
-  phone?: string;
+  phone: string;
 
-  @IsOptional()
-  @IsEnum(Role)
-  role?: Role;
+  @Min(1)
+  role: Number;
 }
