@@ -46,7 +46,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 @Controller('products')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
 
