@@ -5,7 +5,7 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Injectable()
 export class RolesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createRoleDto: CreateRoleDto) {
     const { accesses, ...roleData } = createRoleDto;

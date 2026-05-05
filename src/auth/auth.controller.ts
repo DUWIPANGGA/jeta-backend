@@ -11,22 +11,8 @@ import { UseGuards } from '@nestjs/common';
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(1, 'create')
-  @Post('register')
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Access(1, 'read')
-  @Get('verify')
-  verify(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Access(1, 'read')
+  // @UseGuards(JwtAuthGuard)
+  // @Access(1, 'read')
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
@@ -53,6 +39,20 @@ export class AuthController {
       }
     };
   }
+  // @UseGuards(JwtAuthGuard)
+  // @Access(1, 'create')
+  @Post('register')
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  // @Access(1, 'read')
+  @Get('verify')
+  verify(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
 
   // ✅ TAMBAHKAN METHOD LOGOUT INI
   @UseGuards(JwtAuthGuard)
