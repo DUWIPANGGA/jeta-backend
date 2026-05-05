@@ -1,7 +1,14 @@
-import { IsString } from 'class-validator';
-import { Role } from '@prisma/client';
+import { IsString, IsInt, IsOptional, Min } from 'class-validator';
 
 export class CreateStageDto {
   @IsString()
-  name: String;
+  stage_name: string;
+
+  @IsInt()
+  @Min(0)
+  order: number;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }

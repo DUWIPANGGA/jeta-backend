@@ -1,45 +1,52 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SalaryLogsService } from './salary-logs.service';
-import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Roles } from 'src/common/decorator/roles/roles.decorator';
-import { Role } from '@prisma/client';
+import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { Roles } from '../common/decorator/roles/roles.decorator';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('salary-logs')
+@UseGuards(JwtAuthGuard)
 export class SalaryLogsController {
   constructor(private readonly salaryLogsService: SalaryLogsService) { }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(18, 'create')
   @Post()
+  @Roles(1, 2)
+  @Access(30, 'create')  // page_id = 30 (Rekap Penggajian)
   create(@Body() createDto: any) {
     return this.salaryLogsService.create(createDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(18, 'read')
   @Get()
+  @Roles(1, 2, 3)
+  @Access(30, 'read')
   findAll() {
     return this.salaryLogsService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(18, 'read')
   @Get(':id')
+  @Roles(1, 2, 3)
+  @Access(30, 'read')
   findOne(@Param('id') id: string) {
     return this.salaryLogsService.findOne(+id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(18, 'update')
+  @Get('staff/:staffId')
+  @Roles(1, 2, 3)
+  @Access(30, 'read')
+  findByStaff(@Param('staffId') staffId: string) {
+    return this.salaryLogsService.findByUser(+staffId);
+  }
+
   @Patch(':id')
+  @Roles(1, 2)
+  @Access(30, 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.salaryLogsService.update(+id, updateDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(18, 'delete')
   @Delete(':id')
+  @Roles(1, 2)
+  @Access(30, 'delete')
   remove(@Param('id') id: string) {
     return this.salaryLogsService.remove(+id);
   }

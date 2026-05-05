@@ -10,10 +10,11 @@ export class RolesService {
   async create(createRoleDto: CreateRoleDto) {
     const { accesses, ...roleData } = createRoleDto;
 
-    // Create role with its accesses
     const role = await this.prisma.role.create({
       data: {
-        ...roleData,
+        name: roleData.name,
+        level: roleData.level,
+        description: roleData.description,
         accesses: {
           create: accesses.map(access => ({
             name: `access_${roleData.name}_${access.pageId}`,
@@ -34,7 +35,11 @@ export class RolesService {
       },
     });
 
-    return role;
+    return {
+      success: true,
+      message: 'Role created successfully',
+      data: role,
+    };
   }
 
   async findAll() {
@@ -51,7 +56,12 @@ export class RolesService {
       },
     });
 
-    return roles;
+    return {
+      success: true,
+      message: 'Roles retrieved successfully',
+      data: roles,
+      total: roles.length,
+    };
   }
 
   async findOne(id: number) {
@@ -70,22 +80,26 @@ export class RolesService {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }
 
-    return role;
+    return {
+      success: true,
+      message: 'Role retrieved successfully',
+      data: role,
+    };
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     const { accesses, ...roleData } = updateRoleDto;
 
-    // First, delete existing accesses
     await this.prisma.access.deleteMany({
       where: { role_id: id },
     });
 
-    // Then update role and create new accesses
     const role = await this.prisma.role.update({
       where: { id },
       data: {
-        ...roleData,
+        name: roleData.name,
+        level: roleData.level,
+        description: roleData.description,
         accesses: {
           create: accesses?.map(access => ({
             name: `access_${roleData.name || 'role'}_${access.pageId}`,
@@ -106,11 +120,14 @@ export class RolesService {
       },
     });
 
-    return role;
+    return {
+      success: true,
+      message: 'Role updated successfully',
+      data: role,
+    };
   }
 
   async remove(id: number) {
-    // Check if role exists
     const role = await this.prisma.role.findUnique({
       where: { id },
     });
@@ -119,21 +136,21 @@ export class RolesService {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }
 
-    // Delete role (accesses will be deleted automatically due to cascade)
     await this.prisma.role.delete({
       where: { id },
     });
 
-    return { message: `Role with ID ${id} deleted successfully` };
+    return {
+      success: true,
+      message: `Role with ID ${id} deleted successfully`,
+    };
   }
 
   async getPagesWithAccess(roleId?: number) {
-    // Get all pages
     const pages = await this.prisma.page.findMany({
       orderBy: { nomor: 'asc' },
     });
 
-    // If roleId provided, get existing accesses
     let existingAccesses: any[] = [];
     if (roleId) {
       existingAccesses = await this.prisma.access.findMany({
@@ -141,7 +158,6 @@ export class RolesService {
       });
     }
 
-    // Map pages with access status
     const pagesWithAccess = pages.map(page => {
       const access = existingAccesses.find(a => a.page_id === page.id);
       return {
@@ -157,6 +173,11 @@ export class RolesService {
       };
     });
 
-    return pagesWithAccess;
+    return {
+      success: true,
+      message: 'Pages retrieved successfully',
+      data: pagesWithAccess,
+      total: pagesWithAccess.length,
+    };
   }
 }

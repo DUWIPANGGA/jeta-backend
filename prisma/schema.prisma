@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+// This is your Prisma schema file
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -12,10 +12,11 @@ datasource db {
 
 // ─────────────────────────────────────────────
 // ENUMS
+// ─────────────────────────────────────────────
 
-enum ProductStatus {
-  active
-  inactive
+enum PaymentType {
+  e_wallet
+  bank_transfer
 }
 
 enum OrderStatus {
@@ -47,43 +48,43 @@ enum ConsultationStatus {
 // ─────────────────────────────────────────────
 
 model Role {
-  id              Int     @id @default(autoincrement())
-  name            String 
-  level           Int
-  description     String   
-  cerated_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String
+  level       Int
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   accesses Access[]
-  users User[]
+  users    User[]
 
   @@map("roles")
 }
 
-model Access{
-  id            Int     @id @default(autoincrement())
-  name          String
-  create        Boolean
-  update        Boolean
-  read          Boolean
-  delete        Boolean
-  role_id       Int
-  page_id       Int
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+model Access {
+  id         Int      @id @default(autoincrement())
+  name       String
+  create     Boolean
+  update     Boolean
+  read       Boolean
+  delete     Boolean
+  role_id    Int
+  page_id    Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  // relation
   role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
   page Page @relation(fields: [page_id], references: [id], onDelete: Cascade)
+
   @@map("accesses")
 }
 
-model Page{
-  id            Int     @id@default(autoincrement())
-  nomor         Int
-  name          String
-  created_at    DateTime @default(now())
-  updated_at    DateTime  @updatedAt
+model Page {
+  id         Int      @id @default(autoincrement())
+  nomor      Int
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   accesses Access[]
 
@@ -91,36 +92,36 @@ model Page{
 }
 
 model User {
-  id                Int       @id @default(autoincrement())
-  name              String
-  phone             String?
-  address           String
-  email             String    @unique
-  role_id           Int
-  email_verified_at DateTime?
-  password          String
-  image             String?
-  verification_token String?   @unique
-  last_login        DateTime?
-  remember_token    String?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  id                  Int       @id @default(autoincrement())
+  name                String
+  phone               String?
+  address             String
+  email               String    @unique
+  role_id             Int
+  email_verified_at   DateTime?
+  password            String
+  image               String?
+  verification_token  String?   @unique
+  last_login          DateTime?
+  remember_token      String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
 
-  // Relations
-  carts           Cart[]
-  cart_items      CartItem[]
-  orders          Order[]
-  consultations   Consultation[]
-  production_logs ProductionLog[]
-  staff           Staff?
+  carts              Cart[]
+  cart_items         CartItem[]
+  orders             Order[]
+  consultations      Consultation[]
+  production_logs    ProductionLog[]
+  salary_logs        SalaryLog[]
 
-  role Role @relation(fields: [role_id],  references: [id], onDelete: Cascade)
+
+  role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   @@map("users")
 }
 
 model PasswordResetToken {
-  email      String    @id
+  email      String   @id
   token      String
   created_at DateTime?
 
@@ -148,27 +149,26 @@ model Category {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  products  Product[]
+  products Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          Int           @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   category_id Int
   name        String
   description String
   price       Int
   image       String
-  status      ProductStatus
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  // Relations
-  variants    ProductVariant[]
-  cart_items  CartItem[]
-  order_items OrderItem[]
-  category    Category     @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  variants           ProductVariant[]
+  cart_items         CartItem[]
+  order_items        OrderItem[]
+
+  category Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
 
   @@map("products")
 }
@@ -186,7 +186,6 @@ model ProductVariant {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  // Relations
   product     Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
   cart_items  CartItem[]
   order_items OrderItem[]
@@ -205,7 +204,6 @@ model Cart {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  // Relations
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("carts")
@@ -221,7 +219,6 @@ model CartItem {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  // Relations
   user    User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   product Product        @relation(fields: [product_id], references: [id], onDelete: Cascade)
   variant ProductVariant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
@@ -246,13 +243,11 @@ model Order {
   created_at       DateTime    @default(now())
   updated_at       DateTime    @updatedAt
 
-  // Relations
   user              User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
   order_items       OrderItem[]
   payments          Payment[]
   trackings         Tracking[]
   production_logs   ProductionLog[]
-  production_stages ProductionStage[]
 
   @@map("orders")
 }
@@ -267,7 +262,6 @@ model OrderItem {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  // Relations
   order   Order          @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product Product        @relation(fields: [product_id], references: [id], onDelete: Cascade)
   variant ProductVariant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
@@ -280,21 +274,38 @@ model OrderItem {
 // ─────────────────────────────────────────────
 
 model Payment {
-  id             Int           @id @default(autoincrement())
-  order_id       Int
-  payment_method String
-  amount         Int
-  transaction_id String        @unique
-  paid_at        DateTime?
-  payment_proof  String
-  payment_status PaymentStatus @default(pending)
-  created_at     DateTime      @default(now())
-  updated_at     DateTime      @updatedAt
+  id                Int           @id @default(autoincrement())
+  order_id          Int
+  payment_method_id Int
+  amount            Int
+  transaction_id    String        @unique
+  paid_at           DateTime?
+  payment_proof     String?
+  payment_status    PaymentStatus @default(pending)
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
 
-  // Relations
-  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order          Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  payment_method PaymentMethod @relation(fields: [payment_method_id], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+model PaymentMethod {
+  id                       Int         @id @default(autoincrement())
+  bank_code                String      @unique
+  bank_name                String
+  bank_account             String
+  owner_name               String
+  type                     PaymentType
+  status_method            Boolean     @default(true)
+  expired_duration_minutes Int         @default(60)
+  created_at               DateTime    @default(now())
+  updated_at               DateTime    @updatedAt
+
+  payments Payment[]
+
+  @@map("payment_methods")
 }
 
 // ─────────────────────────────────────────────
@@ -310,7 +321,6 @@ model Tracking {
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
 
-  // Relations
   order              Order             @relation(fields: [order_id], references: [id], onDelete: Cascade)
   tracking_histories TrackingHistory[]
 
@@ -324,7 +334,6 @@ model TrackingHistory {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  // Relations
   tracking Tracking @relation(fields: [tracking_id], references: [id], onDelete: Cascade)
 
   @@map("tracking_histories")
@@ -343,7 +352,6 @@ model Consultation {
   created_at        DateTime           @default(now())
   updated_at        DateTime           @updatedAt
 
-  // Relations
   user                   User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   consultation_files     ConsultationFile[]
   consultation_materials ConsultationMaterial[]
@@ -360,7 +368,6 @@ model ConsultationFile {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  // Relations
   consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
 
   @@map("consultation_files")
@@ -376,7 +383,6 @@ model ConsultationMaterial {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  // Relations
   consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
 
   @@map("consultation_materials")
@@ -391,7 +397,6 @@ model CustomOrder {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  // Relations
   consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
 
   @@map("custom_orders")
@@ -404,30 +409,15 @@ model CustomOrder {
 model Stage {
   id          Int       @id @default(autoincrement())
   stage_name  String
-  created_at  DateTime @default(now()) @map("created_at")
-  updated_at  DateTime @default(now()) @map("updated_at")
+  order       Int       @unique @default(0)
+  description String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
-  production_stages ProductionStage[]
-  staff Staff[]
+
   @@map("stages")
 }
 
-model ProductionStage {
-  id         Int       @id @default(autoincrement())
-  stage_id   Int
-  order_id   Int
-  start_date DateTime?
-  end_date   DateTime?
-  progress   Int?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-
-  // Relations
-  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  stage Stage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
-
-  @@map("production_stages")
-}
 
 model ProductionLog {
   id          Int      @id @default(autoincrement())
@@ -439,7 +429,6 @@ model ProductionLog {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  // Relations
   order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -450,24 +439,10 @@ model ProductionLog {
 // STAFF & SALARY
 // ─────────────────────────────────────────────
 
-model Staff {
-  id         Int      @id @default(autoincrement())
-  user_id    Int      @unique
-  stage_id   Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  salary_logs SalaryLog[]
-  stage Stage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
-
-  @@map("staff")
-}
 
 model SalaryLog {
   id           Int      @id @default(autoincrement())
-  staff_id     Int
+  user_id      Int      
   amount       Int
   bonus        Int      @default(0)
   deduction    Int      @default(0)
@@ -477,8 +452,7 @@ model SalaryLog {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  // Relations
-  staff Staff @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("salary_logs")
 }
@@ -488,14 +462,13 @@ model SalaryLog {
 // ─────────────────────────────────────────────
 
 model Portofolio {
-  id            Int     @id @default(autoincrement())
-  title         String
-  description   String?
-  image         String
-  client        String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  image       String
+  client      String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   @@map("portofolios")
 }

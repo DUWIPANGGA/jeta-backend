@@ -1,35 +1,48 @@
-// src/modules/users/users.controller.ts
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { UsersService } from './users.service';
 import { Access } from '../common/decorator/access/access.decorator';
-import { AccessGuard } from '../common/decorator/access/access.decorator';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { Roles } from '../common/decorator/roles/roles.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, AccessGuard)
+@UseGuards(JwtAuthGuard)
 export class UsersController {
-  
-  // Menggunakan page_id dari database (angka)
+  constructor(private readonly usersService: UsersService) { }
+
   @Get()
-  @Access(23, 'read')  // page_id = 23 (users)
+  // @Roles(1, 2, 3)
+  // @Access(14, 'read')  // page_id = 14 (Data Pelanggan)
   findAll() {
-    return 'Get all users';
+    return this.usersService.findAll();
+  }
+
+  @Get(':id')
+  // @Roles(1, 2, 3)
+  // @Access(14, 'read')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(+id);
   }
 
   @Post()
-  @Access(23, 'create')
-  create(@Body() createUserDto: any) {
-    return 'Create user';
+  // @Roles(1, 2)
+  // @Access(14, 'create')
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Put(':id')
-  @Access(23, 'update')
-  update(@Param('id') id: string, @Body() updateUserDto: any) {
-    return 'Update user';
+  // @Roles(1, 2)
+  // @Access(14, 'update')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
-  @Access(23, 'delete')
+  // @Roles(1, 2)
+  // @Access(14, 'delete')
   remove(@Param('id') id: string) {
-    return 'Delete user';
+    return this.usersService.remove(+id);
   }
 }

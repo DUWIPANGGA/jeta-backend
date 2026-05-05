@@ -1,0 +1,144 @@
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
+const prisma = new PrismaClient();
+
+async function main() {
+    console.log('🌱 Seeding users...');
+
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
+    // Cari roles
+    const superadminRole = await prisma.role.findFirst({
+        where: { name: 'superadmin' }
+    });
+
+    const adminRole = await prisma.role.findFirst({
+        where: { name: 'admin' }
+    });
+
+    const staffRole = await prisma.role.findFirst({
+        where: { name: 'staff' }
+    });
+
+    const userRole = await prisma.role.findFirst({
+        where: { name: 'user' }
+    });
+
+    if (!superadminRole || !adminRole || !staffRole || !userRole) {
+        console.log('⚠️  Roles not found. Please run role seeder first.');
+        return;
+    }
+
+    const users = [
+        {
+            name: 'Super Admin',
+            email: 'superadmin@jeta.com',
+            password: hashedPassword,
+            address: 'Jeta Office',
+            role_id: superadminRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Admin User',
+            email: 'admin@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Admin No. 1',
+            role_id: adminRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Staff User',
+            email: 'staff@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Staff No. 2',
+            role_id: staffRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Regular User',
+            email: 'user@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. User No. 3',
+            role_id: userRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Budi Santoso',
+            email: 'budi@example.com',
+            password: hashedPassword,
+            address: 'Jl. Merdeka No. 45',
+            role_id: userRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Siti Aminah',
+            email: 'siti@example.com',
+            password: hashedPassword,
+            address: 'Jl. Sudirman No. 10',
+            role_id: userRole.id,
+            email_verified_at: new Date(),
+        },
+    ];
+
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const user of users) {
+        const existingUser = await prisma.user.findFirst({
+            where: { email: user.email }
+        });
+
+        if (existingUser) {
+            skippedCount++;
+            console.log(`⏭️  User already exists: ${user.email}`);
+        } else {
+            await prisma.user.create({
+                data: user
+            });
+            createdCount++;
+            console.log(`✅ Created user: ${user.email} (Password: admin123, Role: ${user.role_id === superadminRole.id ? 'superadmin' : user.role_id === adminRole.id ? 'admin' : user.role_id === staffRole.id ? 'staff' : 'user'})`);
+        }
+    }
+
+    console.log(`\n📊 Summary:`);
+    console.log(`✅ Created: ${createdCount} new users`);
+    console.log(`⏭️  Skipped: ${skippedCount} existing users`);
+
+    // Tampilkan daftar user
+    const allUsers = await prisma.user.findMany({
+        include: { role: true },
+        orderBy: { id: 'asc' }
+    });
+
+    console.log(`\n📋 All users in database:`);
+    allUsers.forEach(user => {
+        console.log(`  - ${user.email} (Role: ${user.role?.name})`);
+    });
+}
+
+async function down() {
+    console.log('🗑️ Rolling back users...');
+
+    await prisma.user.deleteMany({
+        where: {
+            email: {
+                in: ['superadmin@jeta.com', 'admin@jeta.com', 'staff@jeta.com', 'user@jeta.com', 'budi@example.com', 'siti@example.com']
+            }
+        }
+    });
+
+    console.log(`↩️ Rollback completed`);
+}
+
+module.exports = { main, down };
+
+if (require.main === module) {
+    main()
+        .catch((e) => {
+            console.error('❌ User seed failed:', e);
+            process.exit(1);
+        })
+        .finally(async () => {
+            await prisma.$disconnect();
+        });
+}

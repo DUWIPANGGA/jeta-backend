@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "ProductStatus" AS ENUM ('active', 'inactive');
+CREATE TYPE "PaymentType" AS ENUM ('e_wallet', 'bank_transfer');
 
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('pending', 'completed', 'cancelled');
@@ -19,7 +19,7 @@ CREATE TABLE "roles" (
     "name" TEXT NOT NULL,
     "level" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
-    "cerated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "roles_pkey" PRIMARY KEY ("id")
@@ -29,6 +29,10 @@ CREATE TABLE "roles" (
 CREATE TABLE "accesses" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "create" BOOLEAN NOT NULL,
+    "update" BOOLEAN NOT NULL,
+    "read" BOOLEAN NOT NULL,
+    "delete" BOOLEAN NOT NULL,
     "role_id" INTEGER NOT NULL,
     "page_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +44,7 @@ CREATE TABLE "accesses" (
 -- CreateTable
 CREATE TABLE "pages" (
     "id" SERIAL NOT NULL,
+    "nomor" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -106,7 +111,6 @@ CREATE TABLE "products" (
     "description" TEXT NOT NULL,
     "price" INTEGER NOT NULL,
     "image" TEXT NOT NULL,
-    "status" "ProductStatus" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -190,16 +194,32 @@ CREATE TABLE "order_items" (
 CREATE TABLE "payments" (
     "id" SERIAL NOT NULL,
     "order_id" INTEGER NOT NULL,
-    "payment_method" TEXT NOT NULL,
+    "payment_method_id" INTEGER NOT NULL,
     "amount" INTEGER NOT NULL,
     "transaction_id" TEXT NOT NULL,
     "paid_at" TIMESTAMP(3),
-    "payment_proof" TEXT NOT NULL,
+    "payment_proof" TEXT,
     "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "payment_methods" (
+    "id" SERIAL NOT NULL,
+    "bank_code" TEXT NOT NULL,
+    "bank_name" TEXT NOT NULL,
+    "bank_account" TEXT NOT NULL,
+    "owner_name" TEXT NOT NULL,
+    "type" "PaymentType" NOT NULL,
+    "status_method" BOOLEAN NOT NULL DEFAULT true,
+    "expired_duration_minutes" INTEGER NOT NULL DEFAULT 60,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "payment_methods_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -282,24 +302,12 @@ CREATE TABLE "custom_orders" (
 CREATE TABLE "stages" (
     "id" SERIAL NOT NULL,
     "stage_name" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "stages_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "production_stages" (
-    "id" SERIAL NOT NULL,
-    "stage_id" INTEGER NOT NULL,
-    "order_id" INTEGER NOT NULL,
-    "start_date" TIMESTAMP(3),
-    "end_date" TIMESTAMP(3),
-    "progress" INTEGER,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "description" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "production_stages_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "stages_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -317,20 +325,9 @@ CREATE TABLE "production_logs" (
 );
 
 -- CreateTable
-CREATE TABLE "staff" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "stage_id" INTEGER NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "staff_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "salary_logs" (
     "id" SERIAL NOT NULL,
-    "staff_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
     "amount" INTEGER NOT NULL,
     "bonus" INTEGER NOT NULL DEFAULT 0,
     "deduction" INTEGER NOT NULL DEFAULT 0,
@@ -369,7 +366,10 @@ CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 CREATE UNIQUE INDEX "payments_transaction_id_key" ON "payments"("transaction_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "staff_user_id_key" ON "staff"("user_id");
+CREATE UNIQUE INDEX "payment_methods_bank_code_key" ON "payment_methods"("bank_code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "stages_order_key" ON "stages"("order");
 
 -- AddForeignKey
 ALTER TABLE "accesses" ADD CONSTRAINT "accesses_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -414,6 +414,9 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_id_fkey" FOREIGN K
 ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "trackings" ADD CONSTRAINT "trackings_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -432,22 +435,10 @@ ALTER TABLE "consultation_materials" ADD CONSTRAINT "consultation_materials_cons
 ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_consultation_id_fkey" FOREIGN KEY ("consultation_id") REFERENCES "consultations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "production_stages" ADD CONSTRAINT "production_stages_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "production_stages" ADD CONSTRAINT "production_stages_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "staff" ADD CONSTRAINT "staff_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "staff" ADD CONSTRAINT "staff_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "salary_logs" ADD CONSTRAINT "salary_logs_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staff"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "salary_logs" ADD CONSTRAINT "salary_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

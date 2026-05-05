@@ -51,7 +51,7 @@ export class AuthService {
       address: dto.address,
       password: hashedPassword,
       role_id: defaultRole.id,
-      email_verified_at: new Date(),
+      // email_verified_at: new Date(),
     });
 
     const { password, ...result } = user;

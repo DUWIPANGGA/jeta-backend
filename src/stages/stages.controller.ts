@@ -1,43 +1,70 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { StagesService } from './stages.service';
+import { CreateStageDto } from './dto/create-stage.dto';
+import { UpdateStageDto } from './dto/update-stage.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
-import { UseGuards } from '@nestjs/common';
 import { Roles } from '../common/decorator/roles/roles.decorator';
-import { Role } from '@prisma/client';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('stages')
+@UseGuards(JwtAuthGuard)
 export class StagesController {
   constructor(private readonly stagesService: StagesService) { }
-  @UseGuards(JwtAuthGuard)
-  @Access(20, 'create')
+
   @Post()
-  create(@Body() createDto: any) {
-    return this.stagesService.create(createDto);
+  // @Roles(1, 2)
+  // @Access(11, 'create')
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() createStageDto: CreateStageDto) {
+    return this.stagesService.create(createStageDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(20, 'read')
   @Get()
+  // @Roles(1, 2, 3)
+  // @Access(11, 'read')
   findAll() {
     return this.stagesService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(20, 'read')
   @Get(':id')
+  // @Roles(1, 2, 3)
+  // @Access(11, 'read')
   findOne(@Param('id') id: string) {
     return this.stagesService.findOne(+id);
   }
-  @UseGuards(JwtAuthGuard)
-  @Access(22, 'update')
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: any) {
-    return this.stagesService.update(+id, updateDto);
+  // @Roles(1, 2)
+  // @Access(11, 'update')
+  update(@Param('id') id: string, @Body() updateStageDto: UpdateStageDto) {
+    return this.stagesService.update(+id, updateStageDto);
   }
-  @UseGuards(JwtAuthGuard)
-  @Access(22, 'delete')
+
+  @Patch(':id/order')
+  // @Roles(1, 2)
+  // @Access(11, 'update')
+  updateOrder(
+    @Param('id') id: string,
+    @Body('order') order: number,
+  ) {
+    return this.stagesService.updateOrder(+id, order);
+  }
+
   @Delete(':id')
+  // @Roles(1, 2)
+  // @Access(11, 'delete')
+  @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
     return this.stagesService.remove(+id);
   }

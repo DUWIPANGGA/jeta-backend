@@ -1,33 +1,77 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
-  create(dto: any) {
-    return this.prisma.user.create({ data: dto });
+  async create(createUserDto: CreateUserDto) {
+    // Validasi role exists
+    const role = await this.prisma.role.findUnique({
+      where: { id: createUserDto.role_id },
+    });
+    if (!role) {
+      throw new NotFoundException(`Role with ID ${createUserDto.role_id} not found`);
+    }
+
+    return this.prisma.user.create({
+      data: {
+        name: createUserDto.name,
+        email: createUserDto.email,
+        password: createUserDto.password,
+        address: createUserDto.address,
+        phone: createUserDto.phone,
+        role_id: createUserDto.role_id,
+      },
+      include: {
+        role: true,
+      },
+    });
   }
 
-  findAll() {
-    return this.prisma.user.findMany();
+  async findAll() {
+    const users = await this.prisma.user.findMany({
+      include: {
+        role: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return {
+      success: true,
+      message: 'Users retrieved successfully',
+      data: users,
+      total: users.length,
+    };
   }
 
   async findOne(id: number) {
-    const item = await this.prisma.user.findUnique({ 
+    const user = await this.prisma.user.findUnique({
       where: { id },
-      include: {role:true}
+      include: {
+        role: true,
+      },
     });
-    if (!item) throw new NotFoundException(`User #${id} not found`);
-    return item;
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: { role: true },
+    });
   }
 
   async findByVerificationToken(token: string) {
-    return this.prisma.user.findUnique({ where: { verification_token: token } });
+    return this.prisma.user.findUnique({
+      where: { verification_token: token },
+      include: { role: true },
+    });
   }
 
   async markEmailAsVerified(id: number) {
@@ -40,57 +84,26 @@ export class UsersService {
     });
   }
 
-
-  async update(id: number, dto: any, requester: any) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
     const targetUser = await this.findOne(id);
 
-    // Superadmin can do anything
-    if (requester.role === 'superadmin') {
-      return this.prisma.user.update({ where: { id }, data: dto });
-    }
+    // Cek role yang login (dikirim dari controller via JWT)
+    // Untuk sementara, kita asumsikan requester dikirim dari controller
+    // Anda bisa modify method update ini sesuai kebutuhan
 
-    // Admin can change non-admins (pic, customer)
-    if (requester.role === 2) {
-      if (targetUser.role_id === 2 || targetUser.role_id === 1) {
-        throw new ForbiddenException('Admin cannot modify other admins or superadmins');
-      }
-      return this.prisma.user.update({ where: { id }, data: dto });
-    }
-
-    // Regular users can only change themselves
-    if (requester.sub === id) {
-      return this.prisma.user.update({ where: { id }, data: dto });
-    }
-
-    throw new ForbiddenException('You do not have permission to modify this user');
+    return this.prisma.user.update({
+      where: { id },
+      data: updateUserDto,
+      include: { role: true },
+    });
   }
 
-
-  async remove(id: number, requester: any) {
-    const targetUser = await this.findOne(id);
-
-    // Superadmin can do anything
-    if (requester.role === 'superadmin') {
-      await this.prisma.user.delete({ where: { id } });
-      return { message: `User #${id} successfully deleted` };
-    }
-
-    // Admin can delete non-admins
-    if (requester.role === 2) {
-      if (targetUser.role_id === 2 || targetUser.role_id === 1) {
-        throw new ForbiddenException('Admin cannot delete other admins or superadmins');
-      }
-      await this.prisma.user.delete({ where: { id } });
-      return { message: `User #${id} successfully deleted` };
-    }
-
-    // Users can delete themselves (if allowed)
-    if (requester.sub === id) {
-      await this.prisma.user.delete({ where: { id } });
-      return { message: `User #${id} successfully deleted` };
-    }
-
-    throw new ForbiddenException('You do not have permission to delete this user');
+  async remove(id: number) {
+    await this.findOne(id);
+    await this.prisma.user.delete({ where: { id } });
+    return {
+      success: true,
+      message: `User with ID ${id} deleted successfully`,
+    };
   }
-
 }
