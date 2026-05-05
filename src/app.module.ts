@@ -88,11 +88,7 @@ import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
   ],
   controllers: [AppController],
   providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: AccessGuard,
-    },
+    AppService
   ],
 })
 export class AppModule { }

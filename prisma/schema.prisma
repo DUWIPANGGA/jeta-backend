@@ -112,7 +112,7 @@ model User {
   orders             Order[]
   consultations      Consultation[]
   production_logs    ProductionLog[]
-  salary_logs        SalaryLog[]
+  salary_logs        SalaryLog[]yy
 
 
   role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)

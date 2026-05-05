@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Access } from '../common/decorator/access/access.decorator';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
@@ -32,7 +32,7 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Put(':id')
+  @Patch(':id')
   // @Roles(1, 2)
   // @Access(14, 'update')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {

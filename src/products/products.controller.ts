@@ -74,8 +74,7 @@ export class ProductsController {
   }
 
   @Post()
-  // @Roles(1, 2)
-  // @Access(12, 'create')
+  @Access(12, 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createProductDto: CreateProductDto,
@@ -88,8 +87,7 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  // @Roles(1, 2)
-  // @Access(12, 'update')
+  @Access(12, 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id') id: string,
@@ -100,8 +98,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  // @Roles(1, 2)
-  // @Access(12, 'delete')
+  @Access(12, 'delete')
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);
   }
