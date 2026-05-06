@@ -23,13 +23,14 @@ export class AuthController {
 
     res.cookie('token', result.access_token, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       path: '/',
     });
 
     return {
       message: 'Login success',
+      access_token: result.access_token,
       user: {
         id: result.user.id,
         name: result.user.name,
