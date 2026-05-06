@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "OrderType" AS ENUM ('order', 'custom_order');
+
+-- CreateEnum
 CREATE TYPE "PaymentType" AS ENUM ('e_wallet', 'bank_transfer');
 
 -- CreateEnum
@@ -138,7 +141,8 @@ CREATE TABLE "product_variants" (
 CREATE TABLE "carts" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
-    "session_id" TEXT,
+    "product_id" INTEGER NOT NULL,
+    "product_variant_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -157,6 +161,28 @@ CREATE TABLE "cart_items" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "cart_items_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "custom_orders" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "jenis_produk" TEXT NOT NULL,
+    "jumlah" INTEGER NOT NULL,
+    "deadline" TIMESTAMP(3) NOT NULL,
+    "upload_referensi" TEXT NOT NULL,
+    "catatan_tambahan" TEXT NOT NULL,
+    "dp_amount" INTEGER NOT NULL,
+    "remaining_amount" INTEGER NOT NULL,
+    "payment_id" INTEGER NOT NULL,
+    "accept_status" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "custom_orders_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -200,6 +226,7 @@ CREATE TABLE "payments" (
     "paid_at" TIMESTAMP(3),
     "payment_proof" TEXT,
     "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
+    "oreder_type" "OrderType" NOT NULL DEFAULT 'order',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -283,19 +310,6 @@ CREATE TABLE "consultation_materials" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "consultation_materials_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "custom_orders" (
-    "id" SERIAL NOT NULL,
-    "consultation_id" INTEGER NOT NULL,
-    "dp_amount" INTEGER NOT NULL,
-    "remaining_amount" INTEGER NOT NULL,
-    "dp_status" "DpStatus" NOT NULL DEFAULT 'pending',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "custom_orders_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -390,6 +404,12 @@ ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_product_id_fkey"
 ALTER TABLE "carts" ADD CONSTRAINT "carts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "carts" ADD CONSTRAINT "carts_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "carts" ADD CONSTRAINT "carts_product_variant_id_fkey" FOREIGN KEY ("product_variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -397,6 +417,12 @@ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -430,9 +456,6 @@ ALTER TABLE "consultation_files" ADD CONSTRAINT "consultation_files_consultation
 
 -- AddForeignKey
 ALTER TABLE "consultation_materials" ADD CONSTRAINT "consultation_materials_consultation_id_fkey" FOREIGN KEY ("consultation_id") REFERENCES "consultations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_consultation_id_fkey" FOREIGN KEY ("consultation_id") REFERENCES "consultations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;

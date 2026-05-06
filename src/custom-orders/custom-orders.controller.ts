@@ -1,44 +1,73 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+// src/custom-orders/custom-orders.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  HttpStatus,
+  HttpCode,
+  UseGuards,
+  Req
+} from '@nestjs/common';
 import { CustomOrdersService } from './custom-orders.service';
+import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
+import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Access } from 'src/common/decorator/access/access.decorator';
 
 @Controller('custom-orders')
 export class CustomOrdersController {
   constructor(private readonly customOrdersService: CustomOrdersService) { }
-
   @UseGuards(JwtAuthGuard)
-  @Access(8, 'create')
   @Post()
-  create(@Body() createDto: any) {
-    return this.customOrdersService.create(createDto);
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() createCustomOrderDto: CreateCustomOrderDto, @Req() req: any) {
+    const user = req.user; // user sudah disimpan oleh JwtAuthGuard
+    return this.customOrdersService.create(createCustomOrderDto, user);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(8, 'read')
   @Get()
   findAll() {
     return this.customOrdersService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(8, 'read')
+  @Get('statistics')
+  getStatistics() {
+    return this.customOrdersService.getStatistics();
+  }
+
+  @Get('user/:userId')
+  findByUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.customOrdersService.findByUser(userId);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.customOrdersService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.customOrdersService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(8, 'update')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: any) {
-    return this.customOrdersService.update(+id, updateDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCustomOrderDto: UpdateCustomOrderDto
+  ) {
+    return this.customOrdersService.update(id, updateCustomOrderDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(8, 'delete')
+  @Patch(':id/accept-status')
+  updateAcceptStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('accept_status') acceptStatus: boolean
+  ) {
+    return this.customOrdersService.updateAcceptStatus(id, acceptStatus);
+  }
+
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.customOrdersService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.customOrdersService.remove(id);
   }
 }

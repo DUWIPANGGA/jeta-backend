@@ -14,6 +14,11 @@ datasource db {
 // ENUMS
 // ─────────────────────────────────────────────
 
+enum OrderType {
+  order
+  custom_order
+}
+
 enum PaymentType {
   e_wallet
   bank_transfer
@@ -113,6 +118,7 @@ model User {
   consultations      Consultation[]
   production_logs    ProductionLog[]
   salary_logs        SalaryLog[]
+  custom_orders      CustomOrder[]
 
 
   role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
@@ -167,6 +173,7 @@ model Product {
   variants           ProductVariant[]
   cart_items         CartItem[]
   order_items        OrderItem[]
+  carts              Cart[]
 
   category Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
 
@@ -189,6 +196,7 @@ model ProductVariant {
   product     Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
   cart_items  CartItem[]
   order_items OrderItem[]
+  carts       Cart[]
 
   @@map("product_variants")
 }
@@ -198,13 +206,16 @@ model ProductVariant {
 // ─────────────────────────────────────────────
 
 model Cart {
-  id         Int      @id @default(autoincrement())
-  user_id    Int
-  session_id String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  product_id          Int
+  product_variant_id  Int
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product            Product          @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_variant    ProductVariant   @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
 
   @@map("carts")
 }
@@ -229,6 +240,31 @@ model CartItem {
 // ─────────────────────────────────────────────
 // ORDERS
 // ─────────────────────────────────────────────
+
+
+model CustomOrder {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  name             String
+  phone            String
+  email            String
+  jenis_produk     String
+  jumlah           Int
+  deadline         DateTime
+  upload_referensi String
+  catatan_tambahan String
+  dp_amount        Int
+  remaining_amount Int
+  payment_id       Int
+  accept_status    Boolean @default(false)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  payment      Payment      @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+
+  @@map("custom_orders")
+}
 
 model Order {
   id               Int         @id @default(autoincrement())
@@ -269,6 +305,8 @@ model OrderItem {
   @@map("order_items")
 }
 
+
+
 // ─────────────────────────────────────────────
 // PAYMENTS
 // ─────────────────────────────────────────────
@@ -282,11 +320,13 @@ model Payment {
   paid_at           DateTime?
   payment_proof     String?
   payment_status    PaymentStatus @default(pending)
+  oreder_type       OrderType   @default(order)
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
 
   order          Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
   payment_method PaymentMethod @relation(fields: [payment_method_id], references: [id], onDelete: Cascade)
+  custom_orders  CustomOrder[]
 
   @@map("payments")
 }
@@ -355,7 +395,6 @@ model Consultation {
   user                   User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   consultation_files     ConsultationFile[]
   consultation_materials ConsultationMaterial[]
-  custom_orders          CustomOrder[]
 
   @@map("consultations")
 }
@@ -388,19 +427,6 @@ model ConsultationMaterial {
   @@map("consultation_materials")
 }
 
-model CustomOrder {
-  id               Int      @id @default(autoincrement())
-  consultation_id  Int
-  dp_amount        Int
-  remaining_amount Int
-  dp_status        DpStatus @default(pending)
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-
-  consultation Consultation @relation(fields: [consultation_id], references: [id], onDelete: Cascade)
-
-  @@map("custom_orders")
-}
 
 // ─────────────────────────────────────────────
 // PRODUCTION
