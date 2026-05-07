@@ -1,12 +1,13 @@
 import {
-    IsInt,
     IsString,
     IsEmail,
     IsNotEmpty,
     IsOptional,
     IsBoolean,
+    IsInt,
     Min,
     MaxLength,
+    Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -47,20 +48,21 @@ export class CreateCustomOrderDto {
     @IsOptional()
     catatan_tambahan?: string;
 
-    @IsInt()
+    // Tiga field finansial – String opsional, hanya berisi digit
+    @IsString()
     @IsOptional()
-    @Min(0)
-    dp_amount?: number;
+    @Matches(/^\d*$/, { message: 'dp_amount must be a numeric string or empty' })
+    dp_amount?: string;
 
-    @IsInt()
+    @IsString()
     @IsOptional()
-    @Min(0)
-    remaining_amount?: number;
+    @Matches(/^\d*$/, { message: 'remaining_amount must be a numeric string or empty' })
+    remaining_amount?: string;
 
-    @IsInt()
+    @IsString()
     @IsOptional()
-    @Min(0)
-    total_amount?: number;        // ← tambahkan
+    @Matches(/^\d*$/, { message: 'total_amount must be a numeric string or empty' })
+    total_amount?: string;
 
     @IsInt()
     @IsOptional()

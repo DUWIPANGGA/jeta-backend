@@ -251,10 +251,10 @@ model CustomOrder {
   deadline         DateTime
   upload_referensi String
   catatan_tambahan String
-  dp_amount        Int
-  remaining_amount Int
+  dp_amount        String?
+  remaining_amount String?
   payment_id       Int?     @unique   // ← wajib unique untuk one-to-one
-  total_amount     Int?
+  total_amount     String?
   accept_status    Boolean  @default(false)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt

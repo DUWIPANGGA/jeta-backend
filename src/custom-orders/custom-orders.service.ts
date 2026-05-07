@@ -1,4 +1,3 @@
-// src/custom-orders/custom-orders.service.ts
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
@@ -18,20 +17,17 @@ export class CustomOrdersService {
   }
 
   async create(createCustomOrderDto: CreateCustomOrderDto, user: any) {
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
-    const dpAmount = createCustomOrderDto.dp_amount ?? 0;
-    const remainingAmount = createCustomOrderDto.remaining_amount ?? 0;
-    // total_amount bisa dihitung otomatis
+    const dpAmount = createCustomOrderDto.dp_amount ?? null;
+    const remainingAmount = createCustomOrderDto.remaining_amount ?? null;
     let totalAmount = createCustomOrderDto.total_amount;
-    if (totalAmount === undefined || totalAmount === null) {
-      totalAmount = dpAmount + remainingAmount;
-    }
 
-    if (dpAmount < 0 || remainingAmount < 0 || (totalAmount && totalAmount < 0)) {
-      throw new BadRequestException('Amounts must be non-negative');
+    // Otomatis hitung total jika tidak diberikan dan dp+remaining ada
+    if (!totalAmount && dpAmount !== null && remainingAmount !== null) {
+      const dpNum = parseInt(dpAmount, 10) || 0;
+      const remNum = parseInt(remainingAmount, 10) || 0;
+      totalAmount = String(dpNum + remNum);
     }
 
     const deadline = createCustomOrderDto.deadline;
@@ -46,12 +42,12 @@ export class CustomOrdersService {
       email: createCustomOrderDto.email,
       jenis_produk: createCustomOrderDto.jenis_produk,
       jumlah: createCustomOrderDto.jumlah,
-      deadline: deadline,
+      deadline,
       upload_referensi: createCustomOrderDto.upload_referensi,
       catatan_tambahan: createCustomOrderDto.catatan_tambahan ?? '',
       dp_amount: dpAmount,
       remaining_amount: remainingAmount,
-      total_amount: totalAmount, // ← field ini harus ada di Prisma client
+      total_amount: totalAmount ?? null,
       accept_status: createCustomOrderDto.accept_status ?? false,
     };
 
@@ -127,8 +123,8 @@ export class CustomOrdersService {
   async update(id: number, updateCustomOrderDto: UpdateCustomOrderDto, currentUser: any) {
     await this.findOne(id);
     const isAdmin = currentUser.role_id === 1;
-
     const protectedFields = ['dp_amount', 'remaining_amount', 'total_amount', 'payment_id'];
+
     if (!isAdmin) {
       for (const field of protectedFields) {
         if ((updateCustomOrderDto as any)[field] !== undefined) {
@@ -139,6 +135,7 @@ export class CustomOrdersService {
 
     const updateData: Prisma.CustomOrderUncheckedUpdateInput = {};
 
+    // Field umum
     if (updateCustomOrderDto.name !== undefined) updateData.name = updateCustomOrderDto.name;
     if (updateCustomOrderDto.phone !== undefined) updateData.phone = updateCustomOrderDto.phone;
     if (updateCustomOrderDto.email !== undefined) updateData.email = updateCustomOrderDto.email;
@@ -156,6 +153,7 @@ export class CustomOrdersService {
       updateData.deadline = deadline;
     }
 
+    // Field protected (hanya admin)
     if (isAdmin) {
       if (updateCustomOrderDto.dp_amount !== undefined) updateData.dp_amount = updateCustomOrderDto.dp_amount;
       if (updateCustomOrderDto.remaining_amount !== undefined) updateData.remaining_amount = updateCustomOrderDto.remaining_amount;
@@ -215,23 +213,26 @@ export class CustomOrdersService {
     const pendingOrders = await this.prisma.customOrder.count({
       where: { accept_status: false },
     });
-    const totalDpAmount = await this.prisma.customOrder.aggregate({
-      _sum: { dp_amount: true },
+
+    // Ambil semua data untuk dijumlah (karena field string)
+    const all = await this.prisma.customOrder.findMany({
+      select: { dp_amount: true, remaining_amount: true, total_amount: true },
     });
-    const totalRemainingAmount = await this.prisma.customOrder.aggregate({
-      _sum: { remaining_amount: true },
-    });
-    const totalAmount = await this.prisma.customOrder.aggregate({
-      _sum: { total_amount: true },
-    });
+
+    let totalDp = 0, totalRemaining = 0, totalAmountSum = 0;
+    for (const order of all) {
+      totalDp += parseInt(order.dp_amount ?? '0', 10);
+      totalRemaining += parseInt(order.remaining_amount ?? '0', 10);
+      totalAmountSum += parseInt(order.total_amount ?? '0', 10);
+    }
 
     return {
       total_orders: totalOrders,
       accepted_orders: acceptedOrders,
       pending_orders: pendingOrders,
-      total_dp_amount: totalDpAmount._sum.dp_amount || 0,
-      total_remaining_amount: totalRemainingAmount._sum.remaining_amount || 0,
-      total_amount: totalAmount._sum.total_amount || 0,
+      total_dp_amount: totalDp,
+      total_remaining_amount: totalRemaining,
+      total_amount: totalAmountSum,
     };
   }
 }

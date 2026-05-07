@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateCustomOrderDto } from './create-custom-order.dto';
-import { IsBoolean, IsOptional, IsInt, Min, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsInt, Min, IsString, Matches } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateCustomOrderDto extends PartialType(CreateCustomOrderDto) {
@@ -8,27 +8,27 @@ export class UpdateCustomOrderDto extends PartialType(CreateCustomOrderDto) {
     @IsOptional()
     accept_status?: boolean;
 
-    // Field di bawah ini hanya boleh diupdate oleh admin
-    @IsInt()
+    // Field finansial (hanya admin)
+    @IsString()
     @IsOptional()
-    @Min(0)
-    dp_amount?: number;
+    @Matches(/^\d*$/, { message: 'dp_amount must be a numeric string' })
+    dp_amount?: string;
 
-    @IsInt()
+    @IsString()
     @IsOptional()
-    @Min(0)
-    remaining_amount?: number;
+    @Matches(/^\d*$/, { message: 'remaining_amount must be a numeric string' })
+    remaining_amount?: string;
 
-    @IsInt()
+    @IsString()
     @IsOptional()
-    @Min(0)
-    total_amount?: number;
+    @Matches(/^\d*$/, { message: 'total_amount must be a numeric string' })
+    total_amount?: string;
 
     @IsInt()
     @IsOptional()
     payment_id?: number;
 
-    // User biasa hanya bisa update field ini
+    // Field umum (user biasa)
     @IsString()
     @IsOptional()
     phone?: string;
