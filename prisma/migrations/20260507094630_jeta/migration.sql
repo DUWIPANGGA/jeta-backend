@@ -221,9 +221,8 @@ CREATE TABLE "order_items" (
 CREATE TABLE "payments" (
     "id" SERIAL NOT NULL,
     "order_id" INTEGER,
-    "payment_method_id" INTEGER NOT NULL,
-    "amount" INTEGER NOT NULL,
-    "transaction_id" TEXT NOT NULL,
+    "payment_method_id" INTEGER,
+    "amount" INTEGER,
     "paid_at" TIMESTAMP(3),
     "payment_proof" TEXT,
     "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
@@ -381,9 +380,6 @@ CREATE UNIQUE INDEX "custom_orders_payment_id_key" ON "custom_orders"("payment_i
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "payments_transaction_id_key" ON "payments"("transaction_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "payment_methods_bank_code_key" ON "payment_methods"("bank_code");
 
 -- CreateIndex
@@ -444,7 +440,7 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_id_fkey" FOREIGN K
 ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "trackings" ADD CONSTRAINT "trackings_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;

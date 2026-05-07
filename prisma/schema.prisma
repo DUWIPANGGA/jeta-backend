@@ -310,11 +310,9 @@ model OrderItem {
 
 model Payment {
   id                Int           @id @default(autoincrement())
-  order_id          Int?          // opsional
-  // custom_order_id   Int?          // ← HAPUS baris ini
-  payment_method_id Int
-  amount            Int
-  transaction_id    String        @unique
+  order_id          Int?
+  payment_method_id Int?
+  amount            Int?
   paid_at           DateTime?
   payment_proof     String?
   payment_status    PaymentStatus @default(pending)
@@ -323,8 +321,8 @@ model Payment {
   updated_at        DateTime      @updatedAt
 
   order          Order?         @relation(fields: [order_id], references: [id], onDelete: SetNull)
-  custom_order   CustomOrder?   // ← tanpa fields, references, onDelete
-  payment_method PaymentMethod  @relation(fields: [payment_method_id], references: [id])
+  custom_order   CustomOrder?   
+  payment_method PaymentMethod? @relation(fields: [payment_method_id], references: [id])
 
   @@map("payments")
 }

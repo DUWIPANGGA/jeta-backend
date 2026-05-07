@@ -167,9 +167,9 @@ export class CustomOrdersService {
           const payment = await this.prisma.payment.findUnique({
             where: { id: newPaymentId },
           });
-          if (!payment) {
-            throw new NotFoundException(`Payment with ID ${newPaymentId} not found`);
-          }
+          // if (!payment) {
+          //   throw new NotFoundException(`Payment with ID ${newPaymentId} not found`);
+          // }
           const conflict = await this.prisma.customOrder.findFirst({
             where: { payment_id: newPaymentId, NOT: { id } },
           });
@@ -192,15 +192,51 @@ export class CustomOrdersService {
   }
 
   async updateAcceptStatus(id: number, acceptStatus: boolean) {
-    await this.findOne(id);
-    return this.prisma.customOrder.update({
-      where: { id },
-      data: { accept_status: acceptStatus },
-      include: { payment: true },
-    });
+    const customOrder = await this.findOne(id);
+
+    // Jika ACC (acceptStatus = true) dan custom order belum punya payment
+    if (acceptStatus === true && !customOrder.payment_id) {
+      // Cari payment method aktif pertama (boleh null)
+      const defaultPaymentMethod = await this.prisma.paymentMethod.findFirst({
+        where: { status_method: true },
+      });
+
+      // Buat payment baru dengan data minimal
+      const newPayment = await this.prisma.payment.create({
+        data: {
+          order_type: 'custom_order',
+          payment_status: 'pending',
+          payment_method_id: defaultPaymentMethod?.id ?? null,
+          amount: null,
+          paid_at: null,
+          payment_proof: null,
+          // order_id tetap null (karena ini custom order)
+        },
+      });
+
+      // Update custom order: set accept_status = true dan payment_id = newPayment.id
+      return this.prisma.customOrder.update({
+        where: { id },
+        data: {
+          accept_status: true,
+          payment_id: newPayment.id,
+        },
+        include: {
+          payment: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+      });
+    } else {
+      // Jika ACC = false atau sudah punya payment, hanya update status
+      return this.prisma.customOrder.update({
+        where: { id },
+        data: { accept_status: acceptStatus },
+        include: { payment: true },
+      });
+    }
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<{ id: number; created_at: Date; updated_at: Date; name: string; user_id: number; phone: string; email: string; jenis_produk: string; jumlah: number; deadline: Date; upload_referensi: string; catatan_tambahan: string; dp_amount: string | null; remaining_amount: string | null; payment_id: number | null; total_amount: string | null; accept_status: boolean; }> {
     await this.findOne(id);
     return this.prisma.customOrder.delete({ where: { id } });
   }
