@@ -120,7 +120,6 @@ model User {
   salary_logs        SalaryLog[]
   custom_orders      CustomOrder[]
 
-
   role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   @@map("users")
@@ -186,7 +185,7 @@ model ProductVariant {
   color            String?
   atribute         String?
   product_id       Int
-  image            String
+  image            String?   // dibuat nullable (opsional)
   description      String?
   stock            Int
   price_adjustment Int
@@ -241,7 +240,6 @@ model CartItem {
 // ORDERS
 // ─────────────────────────────────────────────
 
-
 model CustomOrder {
   id               Int      @id @default(autoincrement())
   user_id          Int
@@ -255,13 +253,13 @@ model CustomOrder {
   catatan_tambahan String
   dp_amount        Int
   remaining_amount Int
-  payment_id       Int
-  accept_status    Boolean @default(false)
+  payment_id       Int?     @unique   // ← wajib unique untuk one-to-one
+  accept_status    Boolean  @default(false)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  payment      Payment      @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  payment Payment?       @relation(fields: [payment_id], references: [id]) // ← hanya di sini
 
   @@map("custom_orders")
 }
@@ -305,28 +303,27 @@ model OrderItem {
   @@map("order_items")
 }
 
-
-
 // ─────────────────────────────────────────────
 // PAYMENTS
 // ─────────────────────────────────────────────
 
 model Payment {
   id                Int           @id @default(autoincrement())
-  order_id          Int
+  order_id          Int?          // opsional
+  // custom_order_id   Int?          // ← HAPUS baris ini
   payment_method_id Int
   amount            Int
   transaction_id    String        @unique
   paid_at           DateTime?
   payment_proof     String?
   payment_status    PaymentStatus @default(pending)
-  oreder_type       OrderType   @default(order)
+  order_type        OrderType     @default(order)
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
 
-  order          Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  payment_method PaymentMethod @relation(fields: [payment_method_id], references: [id], onDelete: Cascade)
-  custom_orders  CustomOrder[]
+  order          Order?         @relation(fields: [order_id], references: [id], onDelete: SetNull)
+  custom_order   CustomOrder?   // ← tanpa fields, references, onDelete
+  payment_method PaymentMethod  @relation(fields: [payment_method_id], references: [id])
 
   @@map("payments")
 }
@@ -427,7 +424,6 @@ model ConsultationMaterial {
   @@map("consultation_materials")
 }
 
-
 // ─────────────────────────────────────────────
 // PRODUCTION
 // ─────────────────────────────────────────────
@@ -440,10 +436,8 @@ model Stage {
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
 
-
   @@map("stages")
 }
-
 
 model ProductionLog {
   id          Int      @id @default(autoincrement())
@@ -465,7 +459,6 @@ model ProductionLog {
 // STAFF & SALARY
 // ─────────────────────────────────────────────
 
-
 model SalaryLog {
   id           Int      @id @default(autoincrement())
   user_id      Int      
@@ -478,7 +471,7 @@ model SalaryLog {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("salary_logs")
 }

@@ -127,7 +127,7 @@ CREATE TABLE "product_variants" (
     "color" TEXT,
     "atribute" TEXT,
     "product_id" INTEGER NOT NULL,
-    "image" TEXT NOT NULL,
+    "image" TEXT,
     "description" TEXT,
     "stock" INTEGER NOT NULL,
     "price_adjustment" INTEGER NOT NULL,
@@ -177,7 +177,7 @@ CREATE TABLE "custom_orders" (
     "catatan_tambahan" TEXT NOT NULL,
     "dp_amount" INTEGER NOT NULL,
     "remaining_amount" INTEGER NOT NULL,
-    "payment_id" INTEGER NOT NULL,
+    "payment_id" INTEGER,
     "accept_status" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -219,14 +219,14 @@ CREATE TABLE "order_items" (
 -- CreateTable
 CREATE TABLE "payments" (
     "id" SERIAL NOT NULL,
-    "order_id" INTEGER NOT NULL,
+    "order_id" INTEGER,
     "payment_method_id" INTEGER NOT NULL,
     "amount" INTEGER NOT NULL,
     "transaction_id" TEXT NOT NULL,
     "paid_at" TIMESTAMP(3),
     "payment_proof" TEXT,
     "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
-    "oreder_type" "OrderType" NOT NULL DEFAULT 'order',
+    "order_type" "OrderType" NOT NULL DEFAULT 'order',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -374,6 +374,9 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "users_verification_token_key" ON "users"("verification_token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "custom_orders_payment_id_key" ON "custom_orders"("payment_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 
 -- CreateIndex
@@ -422,7 +425,7 @@ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_id_fkey" FOREIGN KEY
 ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -437,10 +440,10 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey" FOREIGN K
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "trackings" ADD CONSTRAINT "trackings_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -12,7 +12,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { ProductVariantsModule } from './product-variants/product-variants.module';
 import { CartsModule } from './carts/carts.module';
-import { CartItemsModule } from './cart-items/cart-items.module';
+// import { CartItemsModule } from './cart-items/cart-items.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderItemsModule } from './order-items/order-items.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -62,7 +62,7 @@ import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
     ProductsModule,
     ProductVariantsModule,
     CartsModule,
-    CartItemsModule,
+    // CartItemsModule,
     OrdersModule,
     OrderItemsModule,
     PaymentsModule,
