@@ -59,6 +59,11 @@ export class CreateCustomOrderDto {
 
     @IsInt()
     @IsOptional()
+    @Min(0)
+    total_amount?: number;        // ← tambahkan
+
+    @IsInt()
+    @IsOptional()
     payment_id?: number;
 
     @IsBoolean()

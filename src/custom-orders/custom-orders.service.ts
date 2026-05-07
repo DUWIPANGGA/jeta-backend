@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// src/custom-orders/custom-orders.service.ts
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
@@ -23,9 +24,14 @@ export class CustomOrdersService {
 
     const dpAmount = createCustomOrderDto.dp_amount ?? 0;
     const remainingAmount = createCustomOrderDto.remaining_amount ?? 0;
+    // total_amount bisa dihitung otomatis
+    let totalAmount = createCustomOrderDto.total_amount;
+    if (totalAmount === undefined || totalAmount === null) {
+      totalAmount = dpAmount + remainingAmount;
+    }
 
-    if (dpAmount < 0 || remainingAmount < 0) {
-      throw new BadRequestException('DP amount and remaining amount must be non-negative');
+    if (dpAmount < 0 || remainingAmount < 0 || (totalAmount && totalAmount < 0)) {
+      throw new BadRequestException('Amounts must be non-negative');
     }
 
     const deadline = createCustomOrderDto.deadline;
@@ -45,6 +51,7 @@ export class CustomOrdersService {
       catatan_tambahan: createCustomOrderDto.catatan_tambahan ?? '',
       dp_amount: dpAmount,
       remaining_amount: remainingAmount,
+      total_amount: totalAmount, // ← field ini harus ada di Prisma client
       accept_status: createCustomOrderDto.accept_status ?? false,
     };
 
@@ -117,8 +124,18 @@ export class CustomOrdersService {
     });
   }
 
-  async update(id: number, updateCustomOrderDto: UpdateCustomOrderDto) {
+  async update(id: number, updateCustomOrderDto: UpdateCustomOrderDto, currentUser: any) {
     await this.findOne(id);
+    const isAdmin = currentUser.role_id === 1;
+
+    const protectedFields = ['dp_amount', 'remaining_amount', 'total_amount', 'payment_id'];
+    if (!isAdmin) {
+      for (const field of protectedFields) {
+        if ((updateCustomOrderDto as any)[field] !== undefined) {
+          throw new ForbiddenException(`You are not allowed to update ${field}`);
+        }
+      }
+    }
 
     const updateData: Prisma.CustomOrderUncheckedUpdateInput = {};
 
@@ -129,8 +146,6 @@ export class CustomOrdersService {
     if (updateCustomOrderDto.jumlah !== undefined) updateData.jumlah = updateCustomOrderDto.jumlah;
     if (updateCustomOrderDto.upload_referensi !== undefined) updateData.upload_referensi = updateCustomOrderDto.upload_referensi;
     if (updateCustomOrderDto.catatan_tambahan !== undefined) updateData.catatan_tambahan = updateCustomOrderDto.catatan_tambahan;
-    if (updateCustomOrderDto.dp_amount !== undefined) updateData.dp_amount = updateCustomOrderDto.dp_amount;
-    if (updateCustomOrderDto.remaining_amount !== undefined) updateData.remaining_amount = updateCustomOrderDto.remaining_amount;
     if (updateCustomOrderDto.accept_status !== undefined) updateData.accept_status = updateCustomOrderDto.accept_status;
 
     if (updateCustomOrderDto.deadline !== undefined) {
@@ -141,24 +156,30 @@ export class CustomOrdersService {
       updateData.deadline = deadline;
     }
 
-    if (updateCustomOrderDto.payment_id !== undefined) {
-      const newPaymentId = updateCustomOrderDto.payment_id;
-      if (newPaymentId === null) {
-        updateData.payment_id = null;
-      } else if (typeof newPaymentId === 'number') {
-        const payment = await this.prisma.payment.findUnique({
-          where: { id: newPaymentId },
-        });
-        if (!payment) {
-          throw new NotFoundException(`Payment with ID ${newPaymentId} not found`);
+    if (isAdmin) {
+      if (updateCustomOrderDto.dp_amount !== undefined) updateData.dp_amount = updateCustomOrderDto.dp_amount;
+      if (updateCustomOrderDto.remaining_amount !== undefined) updateData.remaining_amount = updateCustomOrderDto.remaining_amount;
+      if (updateCustomOrderDto.total_amount !== undefined) updateData.total_amount = updateCustomOrderDto.total_amount;
+
+      if (updateCustomOrderDto.payment_id !== undefined) {
+        const newPaymentId = updateCustomOrderDto.payment_id;
+        if (newPaymentId === null) {
+          updateData.payment_id = null;
+        } else if (typeof newPaymentId === 'number') {
+          const payment = await this.prisma.payment.findUnique({
+            where: { id: newPaymentId },
+          });
+          if (!payment) {
+            throw new NotFoundException(`Payment with ID ${newPaymentId} not found`);
+          }
+          const conflict = await this.prisma.customOrder.findFirst({
+            where: { payment_id: newPaymentId, NOT: { id } },
+          });
+          if (conflict) {
+            throw new BadRequestException('Payment already used for another custom order');
+          }
+          updateData.payment_id = newPaymentId;
         }
-        const conflict = await this.prisma.customOrder.findFirst({
-          where: { payment_id: newPaymentId, NOT: { id } },
-        });
-        if (conflict) {
-          throw new BadRequestException('Payment already used for another custom order');
-        }
-        updateData.payment_id = newPaymentId;
       }
     }
 
@@ -200,6 +221,9 @@ export class CustomOrdersService {
     const totalRemainingAmount = await this.prisma.customOrder.aggregate({
       _sum: { remaining_amount: true },
     });
+    const totalAmount = await this.prisma.customOrder.aggregate({
+      _sum: { total_amount: true },
+    });
 
     return {
       total_orders: totalOrders,
@@ -207,6 +231,7 @@ export class CustomOrdersService {
       pending_orders: pendingOrders,
       total_dp_amount: totalDpAmount._sum.dp_amount || 0,
       total_remaining_amount: totalRemainingAmount._sum.remaining_amount || 0,
+      total_amount: totalAmount._sum.total_amount || 0,
     };
   }
 }

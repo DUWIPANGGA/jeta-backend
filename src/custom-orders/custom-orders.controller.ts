@@ -1,3 +1,4 @@
+// src/custom-orders/custom-orders.controller.ts
 import {
   Controller,
   Get,
@@ -77,7 +78,7 @@ export class CustomOrdersController {
     if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {
       throw new ForbiddenException('You do not have permission to update this order');
     }
-    return this.customOrdersService.update(id, updateCustomOrderDto);
+    return this.customOrdersService.update(id, updateCustomOrderDto, req.user);
   }
 
   @UseGuards(JwtAuthGuard)

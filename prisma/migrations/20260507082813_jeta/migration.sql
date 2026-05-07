@@ -178,6 +178,7 @@ CREATE TABLE "custom_orders" (
     "dp_amount" INTEGER NOT NULL,
     "remaining_amount" INTEGER NOT NULL,
     "payment_id" INTEGER,
+    "total_amount" INTEGER,
     "accept_status" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,

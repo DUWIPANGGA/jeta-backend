@@ -254,6 +254,7 @@ model CustomOrder {
   dp_amount        Int
   remaining_amount Int
   payment_id       Int?     @unique   // ← wajib unique untuk one-to-one
+  total_amount     Int?
   accept_status    Boolean  @default(false)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
