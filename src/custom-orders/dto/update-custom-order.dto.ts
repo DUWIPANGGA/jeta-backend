@@ -1,4 +1,3 @@
-// src/custom-orders/dto/update-custom-order.dto.ts
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateCustomOrderDto } from './create-custom-order.dto';
 import { IsBoolean, IsOptional, IsInt, Min, IsString } from 'class-validator';
@@ -20,5 +19,5 @@ export class UpdateCustomOrderDto extends PartialType(CreateCustomOrderDto) {
 
     @IsString()
     @IsOptional()
-    phone?: string;  // ← String
+    phone?: string;
 }

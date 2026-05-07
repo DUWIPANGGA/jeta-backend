@@ -1,4 +1,3 @@
-// src/custom-orders/dto/create-custom-order.dto.ts
 import {
     IsInt,
     IsString,
@@ -6,10 +5,10 @@ import {
     IsNotEmpty,
     IsOptional,
     IsBoolean,
-    IsDateString,
     Min,
-    MaxLength
+    MaxLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateCustomOrderDto {
     @IsString()
@@ -36,9 +35,9 @@ export class CreateCustomOrderDto {
     @Min(1)
     jumlah: number;
 
-    @IsDateString()
+    @Type(() => Date)
     @IsNotEmpty()
-    deadline: Date;  // Input manual dari user
+    deadline: Date;
 
     @IsString()
     @IsNotEmpty()
@@ -46,21 +45,21 @@ export class CreateCustomOrderDto {
 
     @IsString()
     @IsOptional()
-    catatan_tambahan: string;
+    catatan_tambahan?: string;
 
     @IsInt()
-    @IsNotEmpty()
+    @IsOptional()
     @Min(0)
-    dp_amount: number;
+    dp_amount?: number;
 
     @IsInt()
-    @IsNotEmpty()
+    @IsOptional()
     @Min(0)
-    remaining_amount: number;
+    remaining_amount?: number;
 
     @IsInt()
-    @IsNotEmpty()
-    payment_id: number;
+    @IsOptional()
+    payment_id?: number;
 
     @IsBoolean()
     @IsOptional()

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CustomOrdersService } from './custom-orders.service';
 import { CustomOrdersController } from './custom-orders.controller';
-import { PrismaModule } from '../prisma/prisma.module'; // <-- import
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule], // <-- tambahkan
+  imports: [PrismaModule],
   controllers: [CustomOrdersController],
   providers: [CustomOrdersService],
   exports: [CustomOrdersService],

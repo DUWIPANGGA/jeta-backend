@@ -1,3 +1,4 @@
+// ===== src/auth/auth.service.ts =====
 import {
   Injectable,
   UnauthorizedException,
@@ -12,7 +13,6 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesService } from '../roles/roles.service';
 
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -20,10 +20,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly prisma: PrismaService,
-    private readonly rolesService: RolesService
-
+    private readonly rolesService: RolesService,
   ) { }
-
 
   async register(dto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(dto.email);
@@ -33,10 +31,9 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Ambil default role (level paling besar / role terendah)
     const defaultRole = await this.prisma.role.findFirst({
       orderBy: {
-        level: 'desc',  // ambil level terbesar
+        level: 'desc',
       },
     });
 
@@ -51,7 +48,6 @@ export class AuthService {
       address: dto.address,
       password: hashedPassword,
       role_id: defaultRole.id,
-      // email_verified_at: new Date(),
     });
 
     const { password, ...result } = user;
@@ -59,10 +55,8 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    // Optional: bisa dihapus atau dibiarkan saja
     return { message: 'Email verification is disabled' };
   }
-
 
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
@@ -75,13 +69,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // HAPUS pengecekan email_verified_at
-    // if (!user.email_verified_at) {
-    //   throw new UnauthorizedException('Please verify your email first');
-    // }
     const role = await this.prisma.role.findUnique({
       where: { id: user.role_id },
     });
+
     const payload = { sub: user.id, email: user.email, role_id: user.role_id };
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -94,28 +85,48 @@ export class AuthService {
     };
   }
 
-
-  // ✅ TAMBAHKAN METHOD INI (opsional, untuk blacklist token)
   async logout(token: string): Promise<void> {
     try {
-      // Decode token untuk dapatkan exp (expiration)
       const decoded = this.jwtService.decode(token) as any;
-
       if (decoded && decoded.exp) {
-        const currentTime = Math.floor(Date.now() / 1000);
-        const expiresIn = decoded.exp - currentTime;
-
-        // Simpan token ke blacklist (contoh pakai Redis atau DB)
-        // await this.redisService.setex(`blacklist:${token}`, expiresIn, 'true');
-
-        // Atau simpan ke database sementara
+        // Optional: blacklist token
         // await this.prisma.invalidatedToken.create({
         //   data: { token, expiresAt: new Date(decoded.exp * 1000) }
         // });
       }
     } catch (error) {
-      // Token invalid, tetap lanjutkan logout
       console.error('Error logging out:', error);
     }
+  }
+
+  // ✅ TAMBAHKAN METHOD INI
+  async getProfile(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        image: true,
+        created_at: true,
+        updated_at: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+            description: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
   }
 }
