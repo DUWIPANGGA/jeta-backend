@@ -35,6 +35,8 @@ import { WorkLogsModule } from './work-logs/work-logs.module';
 import { CheckoutModule } from './checkout/checkout.module';
 // import { LogisticsModule } from './logistics/logistics.module';
 import { LogisticsModule } from './logistics/logistics.module';
+// import { CustomerDataModule } from './customer-data/customer-data.module';
+import { CustomerDataModule } from './customer-data/customer-data.module';
 
 @Module({
   imports: [
@@ -83,6 +85,7 @@ import { LogisticsModule } from './logistics/logistics.module';
     WorkLogsModule,
     CheckoutModule,
     LogisticsModule,
+    CustomerDataModule,
   ],
   controllers: [AppController],
   providers: [
