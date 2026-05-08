@@ -1,27 +1,28 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsEnum, IsDateString, Min } from 'class-validator';
 import { PaymentStatus } from '@prisma/client';
 
 export class CreatePaymentDto {
-  @IsNumber()
-  order_id: number;
+  @IsInt()
+  @Min(1)
+  custom_order_id: number;
+
+  @IsInt()
+  @IsOptional()
+  payment_method_id?: number;
 
   @IsString()
-  payment_method: string;
-
-  @IsNumber()
-  amount: number;
-
-  @IsString()
-  transaction_id: string;
+  @IsOptional()
+  amount?: string;
 
   @IsOptional()
   @IsDateString()
   paid_at?: string;
 
   @IsString()
-  payment_proof: string;
-
   @IsOptional()
+  payment_proof?: string;
+
   @IsEnum(PaymentStatus)
+  @IsOptional()
   payment_status?: PaymentStatus;
 }

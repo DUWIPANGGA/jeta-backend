@@ -1,64 +1,31 @@
+// update-custom-order.dto.ts
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateCustomOrderDto } from './create-custom-order.dto';
-import { IsBoolean, IsOptional, IsInt, Min, IsString, Matches } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString, Matches } from 'class-validator';
 
 export class UpdateCustomOrderDto extends PartialType(CreateCustomOrderDto) {
-    @IsBoolean()
-    @IsOptional()
-    accept_status?: boolean;
-
-    // Field finansial (hanya admin)
+    // Field finansial – hanya boleh diupdate oleh admin
     @IsString()
     @IsOptional()
-    @Matches(/^\d*$/, { message: 'dp_amount must be a numeric string' })
+    @Matches(/^\d*$/, { message: 'dp_amount must be a numeric string or empty' })
     dp_amount?: string;
 
     @IsString()
     @IsOptional()
-    @Matches(/^\d*$/, { message: 'remaining_amount must be a numeric string' })
+    @Matches(/^\d*$/, { message: 'remaining_amount must be a numeric string or empty' })
     remaining_amount?: string;
 
     @IsString()
     @IsOptional()
-    @Matches(/^\d*$/, { message: 'total_amount must be a numeric string' })
+    @Matches(/^\d*$/, { message: 'total_amount must be a numeric string or empty' })
     total_amount?: string;
 
-    @IsInt()
+    // Field status – hanya untuk admin
+    @IsBoolean()
     @IsOptional()
-    payment_id?: number;
+    accept_status?: boolean;
 
-    // Field umum (user biasa)
-    @IsString()
+    @IsBoolean()
     @IsOptional()
-    phone?: string;
-
-    @IsString()
-    @IsOptional()
-    catatan_tambahan?: string;
-
-    @IsString()
-    @IsOptional()
-    upload_referensi?: string;
-
-    @IsString()
-    @IsOptional()
-    name?: string;
-
-    @IsString()
-    @IsOptional()
-    email?: string;
-
-    @IsString()
-    @IsOptional()
-    jenis_produk?: string;
-
-    @IsInt()
-    @IsOptional()
-    @Min(1)
-    jumlah?: number;
-
-    @Type(() => Date)
-    @IsOptional()
-    deadline?: Date;
+    payment_status?: boolean;
 }

@@ -119,6 +119,8 @@ model User {
   production_logs    ProductionLog[]
   salary_logs        SalaryLog[]
   custom_orders      CustomOrder[]
+  projects           Project[]
+  project_members    ProjectMember[]
 
   role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -243,26 +245,62 @@ model CartItem {
 model CustomOrder {
   id               Int      @id @default(autoincrement())
   user_id          Int
-  name             String
-  phone            String
-  email            String
-  jenis_produk     String
-  jumlah           Int
-  deadline         DateTime
-  upload_referensi String
-  catatan_tambahan String
+  name             String?
+  phone            String?
+  email            String?
+  jenis_produk     String?
+  jumlah           String?
+  deadline         DateTime?
+  upload_referensi String?
+  catatan_tambahan String?
   dp_amount        String?
   remaining_amount String?
-  payment_id       Int?     @unique   // ← wajib unique untuk one-to-one
   total_amount     String?
   accept_status    Boolean  @default(false)
+  payment_status   Boolean  @default(false)   // opsional: true jika lunas
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  user    User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  payment Payment?       @relation(fields: [payment_id], references: [id]) // ← hanya di sini
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  payment  Payment? // one-to-one via Payment.custom_order_id
+
+  projects Project[]
 
   @@map("custom_orders")
+}
+
+model Payment {
+  id                Int           @id @default(autoincrement())
+  custom_order_id   Int           @unique
+  payment_method_id Int?
+  amount            String?          // total tagihan
+  paid_at           DateTime?
+  payment_proof     String?
+  payment_status    PaymentStatus @default(pending)
+  order_type        OrderType     @default(custom_order)
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  custom_order   CustomOrder   @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  payment_method PaymentMethod? @relation(fields: [payment_method_id], references: [id])
+  transactions   Transaction[]
+
+  @@map("payments")
+}
+
+model Transaction {
+  id         Int      @id @default(autoincrement())
+  payment_id Int
+  amount     String?
+  type       String?
+  reference  String?
+  note       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  payment Payment @relation(fields: [payment_id], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
 }
 
 model Order {
@@ -280,7 +318,6 @@ model Order {
 
   user              User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
   order_items       OrderItem[]
-  payments          Payment[]
   trackings         Tracking[]
   production_logs   ProductionLog[]
 
@@ -307,25 +344,6 @@ model OrderItem {
 // ─────────────────────────────────────────────
 // PAYMENTS
 // ─────────────────────────────────────────────
-
-model Payment {
-  id                Int           @id @default(autoincrement())
-  order_id          Int?
-  payment_method_id Int?
-  amount            Int?
-  paid_at           DateTime?
-  payment_proof     String?
-  payment_status    PaymentStatus @default(pending)
-  order_type        OrderType     @default(order)
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
-
-  order          Order?         @relation(fields: [order_id], references: [id], onDelete: SetNull)
-  custom_order   CustomOrder?   
-  payment_method PaymentMethod? @relation(fields: [payment_method_id], references: [id])
-
-  @@map("payments")
-}
 
 model PaymentMethod {
   id                       Int         @id @default(autoincrement())
@@ -473,6 +491,35 @@ model SalaryLog {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("salary_logs")
+}
+
+model Project {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  custom_order_id Int
+  status          Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user         User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  custom_order CustomOrder    @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  members      ProjectMember[] // Relasi ke pivot
+
+  @@map("projects")
+}
+
+// Tabel pivot: many-to-many antara Project dan User (staff)
+model ProjectMember {
+  project_id    Int
+  user_id       Int
+  assigned_name String?   // snapshot nama user saat assign
+  assigned_at   DateTime @default(now())
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([project_id, user_id])
+  @@map("project_members")
 }
 
 // ─────────────────────────────────────────────

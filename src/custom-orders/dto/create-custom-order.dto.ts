@@ -1,9 +1,9 @@
+// create-custom-order.dto.ts
 import {
     IsString,
     IsEmail,
     IsNotEmpty,
     IsOptional,
-    IsBoolean,
     IsInt,
     Min,
     MaxLength,
@@ -47,28 +47,4 @@ export class CreateCustomOrderDto {
     @IsString()
     @IsOptional()
     catatan_tambahan?: string;
-
-    // Tiga field finansial – String opsional, hanya berisi digit
-    @IsString()
-    @IsOptional()
-    @Matches(/^\d*$/, { message: 'dp_amount must be a numeric string or empty' })
-    dp_amount?: string;
-
-    @IsString()
-    @IsOptional()
-    @Matches(/^\d*$/, { message: 'remaining_amount must be a numeric string or empty' })
-    remaining_amount?: string;
-
-    @IsString()
-    @IsOptional()
-    @Matches(/^\d*$/, { message: 'total_amount must be a numeric string or empty' })
-    total_amount?: string;
-
-    @IsInt()
-    @IsOptional()
-    payment_id?: number;
-
-    @IsBoolean()
-    @IsOptional()
-    accept_status?: boolean;
 }

@@ -167,23 +167,53 @@ CREATE TABLE "cart_items" (
 CREATE TABLE "custom_orders" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
-    "name" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "jenis_produk" TEXT NOT NULL,
-    "jumlah" INTEGER NOT NULL,
-    "deadline" TIMESTAMP(3) NOT NULL,
-    "upload_referensi" TEXT NOT NULL,
-    "catatan_tambahan" TEXT NOT NULL,
+    "name" TEXT,
+    "phone" TEXT,
+    "email" TEXT,
+    "jenis_produk" TEXT,
+    "jumlah" TEXT,
+    "deadline" TIMESTAMP(3),
+    "upload_referensi" TEXT,
+    "catatan_tambahan" TEXT,
     "dp_amount" TEXT,
     "remaining_amount" TEXT,
-    "payment_id" INTEGER,
     "total_amount" TEXT,
     "accept_status" BOOLEAN NOT NULL DEFAULT false,
+    "payment_status" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "custom_orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "payments" (
+    "id" SERIAL NOT NULL,
+    "custom_order_id" INTEGER NOT NULL,
+    "payment_method_id" INTEGER,
+    "amount" TEXT,
+    "paid_at" TIMESTAMP(3),
+    "payment_proof" TEXT,
+    "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
+    "order_type" "OrderType" NOT NULL DEFAULT 'custom_order',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "transactions" (
+    "id" SERIAL NOT NULL,
+    "payment_id" INTEGER NOT NULL,
+    "amount" TEXT,
+    "type" TEXT,
+    "reference" TEXT,
+    "note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "transactions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -215,22 +245,6 @@ CREATE TABLE "order_items" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "order_items_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "payments" (
-    "id" SERIAL NOT NULL,
-    "order_id" INTEGER,
-    "payment_method_id" INTEGER,
-    "amount" INTEGER,
-    "paid_at" TIMESTAMP(3),
-    "payment_proof" TEXT,
-    "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
-    "order_type" "OrderType" NOT NULL DEFAULT 'order',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -355,6 +369,28 @@ CREATE TABLE "salary_logs" (
 );
 
 -- CreateTable
+CREATE TABLE "projects" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "custom_order_id" INTEGER NOT NULL,
+    "status" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "projects_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "project_members" (
+    "project_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "assigned_name" TEXT,
+    "assigned_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "project_members_pkey" PRIMARY KEY ("project_id","user_id")
+);
+
+-- CreateTable
 CREATE TABLE "portofolios" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL,
@@ -374,7 +410,7 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "users_verification_token_key" ON "users"("verification_token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "custom_orders_payment_id_key" ON "custom_orders"("payment_id");
+CREATE UNIQUE INDEX "payments_custom_order_id_key" ON "payments"("custom_order_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
@@ -422,7 +458,13 @@ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_id_fkey" FOREIGN KEY
 ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_custom_order_id_fkey" FOREIGN KEY ("custom_order_id") REFERENCES "custom_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -435,12 +477,6 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "trackings" ADD CONSTRAINT "trackings_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -465,3 +501,15 @@ ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_user_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "salary_logs" ADD CONSTRAINT "salary_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "projects" ADD CONSTRAINT "projects_custom_order_id_fkey" FOREIGN KEY ("custom_order_id") REFERENCES "custom_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_members" ADD CONSTRAINT "project_members_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_members" ADD CONSTRAINT "project_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

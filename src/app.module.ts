@@ -36,6 +36,7 @@ import { PagesModule } from './pages/pages.module';
 import { AccessGuard } from './common/guard/access/access.guard';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 // import { StaffStagesModule } from './staff-stages/staff-stages.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
     RolesModule,
     PagesModule,
     PaymentMethodsModule,
+    ProjectsModule,
     // StaffStagesModule,
   ],
   controllers: [AppController],

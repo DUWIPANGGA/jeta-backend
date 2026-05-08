@@ -1,3 +1,4 @@
+// custom-orders.controller.ts
 import {
   Controller,
   Get,
@@ -23,17 +24,16 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('custom-orders')
+@UseGuards(JwtAuthGuard)
 export class CustomOrdersController {
   constructor(private readonly customOrdersService: CustomOrdersService) { }
 
-  @UseGuards(JwtAuthGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createCustomOrderDto: CreateCustomOrderDto, @Req() req: RequestWithUser) {
     return this.customOrdersService.create(createCustomOrderDto, req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(@Req() req: RequestWithUser) {
     if (req.user.role_id !== 1) {
@@ -47,7 +47,6 @@ export class CustomOrdersController {
     return this.customOrdersService.getStatistics();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('user/:userId')
   async findByUser(@Param('userId', ParseIntPipe) userId: number, @Req() req: RequestWithUser) {
     if (req.user.role_id !== 1 && req.user.id !== userId) {
@@ -56,7 +55,6 @@ export class CustomOrdersController {
     return this.customOrdersService.findByUser(userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const customOrder = await this.customOrdersService.findOne(id);
@@ -66,7 +64,6 @@ export class CustomOrdersController {
     return customOrder;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -80,7 +77,6 @@ export class CustomOrdersController {
     return this.customOrdersService.update(id, updateCustomOrderDto, req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id/accept-status')
   async updateAcceptStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -93,7 +89,6 @@ export class CustomOrdersController {
     return this.customOrdersService.updateAcceptStatus(id, acceptStatus);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
