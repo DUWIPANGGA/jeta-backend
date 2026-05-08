@@ -54,7 +54,7 @@ export class CheckoutService {
           order_id: order.id,
           order_type: 'order',
           payment_method_id: Number(paymentMethodId),
-          amount: String(grandTotal),
+          amount: grandTotal,
           payment_status: 'pending',
         }
       });

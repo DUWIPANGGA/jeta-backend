@@ -14,9 +14,9 @@ export class CreatePaymentDto {
   @IsOptional()
   payment_method_id?: number;
 
-  @IsString()
+  @IsInt()
   @IsOptional()
-  amount?: string;
+  amount?: number;
 
   @IsOptional()
   @IsDateString()

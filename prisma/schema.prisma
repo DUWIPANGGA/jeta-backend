@@ -290,7 +290,7 @@ model CustomOrder {
   phone            String?
   email            String?
   jenis_produk     String?
-  jumlah           String?
+  jumlah           Int?
   deadline         DateTime?
   upload_referensi String?
   catatan_tambahan String?

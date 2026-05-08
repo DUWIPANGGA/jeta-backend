@@ -20,7 +20,7 @@ export class WorkLogsService {
     if (orderType === 'CUSTOM') {
       const order = await this.prisma.customOrder.findUnique({ where: { id: Number(orderId) } });
       if (!order) throw new BadRequestException('Custom order not found');
-      totalQuantity = parseInt(order.jumlah || '0') || 0;
+      totalQuantity = order.jumlah ?? 0;
     } else if (orderType === 'SPORT') {
       const order = await this.prisma.order.findUnique({
         where: { id: Number(orderId) },
@@ -74,7 +74,7 @@ export class WorkLogsService {
     if (orderType === 'CUSTOM') {
       const order = await this.prisma.customOrder.findUnique({ where: { id: orderId } });
       if (!order) throw new BadRequestException('Custom order not found');
-      totalQuantity = parseInt(order.jumlah || '0') || 0;
+      totalQuantity = order.jumlah ?? 0;
     } else if (orderType === 'SPORT') {
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },

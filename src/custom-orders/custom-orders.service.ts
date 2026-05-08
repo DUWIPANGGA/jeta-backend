@@ -45,7 +45,7 @@ export class CustomOrdersService {
       phone: createCustomOrderDto.phone,
       email: createCustomOrderDto.email,
       jenis_produk: createCustomOrderDto.jenis_produk,
-      jumlah: String(createCustomOrderDto.jumlah),
+      jumlah: createCustomOrderDto.jumlah,
       deadline,
       upload_referensi: createCustomOrderDto.upload_referensi,
       catatan_tambahan: createCustomOrderDto.catatan_tambahan ?? '',
@@ -59,9 +59,7 @@ export class CustomOrdersService {
 
     // Otomatis hitung total_amount jika admin memberikan dp+remaining tapi tidak total
     if (isAdmin && !data.total_amount && data.dp_amount && data.remaining_amount) {
-      const dpNum = parseInt(data.dp_amount, 10) || 0;
-      const remNum = parseInt(data.remaining_amount, 10) || 0;
-      data.total_amount = String(dpNum + remNum);
+      data.total_amount = data.dp_amount + data.remaining_amount;
     }
 
     try {
@@ -148,7 +146,7 @@ export class CustomOrdersService {
     if (updateCustomOrderDto.phone !== undefined) updateData.phone = updateCustomOrderDto.phone;
     if (updateCustomOrderDto.email !== undefined) updateData.email = updateCustomOrderDto.email;
     if (updateCustomOrderDto.jenis_produk !== undefined) updateData.jenis_produk = updateCustomOrderDto.jenis_produk;
-    if (updateCustomOrderDto.jumlah !== undefined) updateData.jumlah = String(updateCustomOrderDto.jumlah);
+    if (updateCustomOrderDto.jumlah !== undefined) updateData.jumlah = updateCustomOrderDto.jumlah;
     if (updateCustomOrderDto.upload_referensi !== undefined) updateData.upload_referensi = updateCustomOrderDto.upload_referensi;
     if (updateCustomOrderDto.catatan_tambahan !== undefined) updateData.catatan_tambahan = updateCustomOrderDto.catatan_tambahan;
     if (updateCustomOrderDto.deadline !== undefined) {
@@ -244,9 +242,9 @@ export class CustomOrdersService {
       totalRemaining = 0,
       totalAmountSum = 0;
     for (const order of all) {
-      totalDp += parseInt(order.dp_amount ?? '0', 10);
-      totalRemaining += parseInt(order.remaining_amount ?? '0', 10);
-      totalAmountSum += parseInt(order.total_amount ?? '0', 10);
+      totalDp += order.dp_amount ?? 0;
+      totalRemaining += order.remaining_amount ?? 0;
+      totalAmountSum += order.total_amount ?? 0;
     }
 
     return {
