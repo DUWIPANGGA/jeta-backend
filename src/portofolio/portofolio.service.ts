@@ -5,77 +5,39 @@ import { UpdatePortofolioDto } from './dto/update-portofolio.dto';
 
 @Injectable()
 export class PortofolioService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  // CREATE
-  async create(createPortofolioDto: CreatePortofolioDto) {
-    return await this.prisma.portofolio.create({
-      data: {
-        title: createPortofolioDto.title,
-        description: createPortofolioDto.description,
-        image: createPortofolioDto.image,
-        client: createPortofolioDto.client
-      },
+  async create(dto: CreatePortofolioDto) {
+    return this.prisma.portofolio.create({
+      data: dto,
     });
   }
 
-  // READ ALL - HAPUS include user
   async findAll() {
-    return await this.prisma.portofolio.findMany({
-      orderBy: { created_at: 'desc' }
-      // ✅ Hapus include user
+    return this.prisma.portofolio.findMany({
+      orderBy: [
+        { order: 'asc' },      // Pertama urutkan berdasarkan nomor urut
+        { created_at: 'desc' } // Jika order sama, urutkan dari yang terbaru
+      ],
     });
   }
 
-  // READ ONE - HAPUS include user
   async findOne(id: number) {
-    const portofolio = await this.prisma.portofolio.findUnique({
-      where: { id }
-      // ✅ Hapus include user
-    });
-
-    if (!portofolio) {
-      throw new NotFoundException(`Portofolio with ID ${id} not found`);
-    }
-
-    return portofolio;
+    const data = await this.prisma.portofolio.findUnique({ where: { id } });
+    if (!data) throw new NotFoundException(`Portofolio dengan ID ${id} tidak ditemukan`);
+    return data;
   }
 
-  // UPDATE
-  async update(id: number, updatePortofolioDto: UpdatePortofolioDto) {
+  async update(id: number, dto: UpdatePortofolioDto) {
     await this.findOne(id);
-
-    return await this.prisma.portofolio.update({
+    return this.prisma.portofolio.update({
       where: { id },
-      data: {
-        title: updatePortofolioDto.title,
-        description: updatePortofolioDto.description,
-        image: updatePortofolioDto.image,
-        client: updatePortofolioDto.client,
-      },
+      data: dto,
     });
   }
 
-  // DELETE
   async remove(id: number) {
     await this.findOne(id);
-
-    return await this.prisma.portofolio.delete({
-      where: { id },
-    });
-  }
-
-  // SEARCH
-  async search(keyword: string) {
-    return await this.prisma.portofolio.findMany({
-      where: {
-        OR: [
-          { title: { contains: keyword, mode: 'insensitive' } },
-          { client: { contains: keyword, mode: 'insensitive' } },
-          { description: { contains: keyword, mode: 'insensitive' } },
-        ],
-      },
-      orderBy: { created_at: 'desc' },
-    });
+    return this.prisma.portofolio.delete({ where: { id } });
   }
 }

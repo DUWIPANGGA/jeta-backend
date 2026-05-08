@@ -37,6 +37,8 @@ import { AccessGuard } from './common/guard/access/access.guard';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 // import { StaffStagesModule } from './staff-stages/staff-stages.module';
 import { ProjectsModule } from './projects/projects.module';
+// import { LogisticsModule } from './logistics/logistics.module';
+import { LogisticsModule } from './logistics/logistics.module';
 
 @Module({
   imports: [
@@ -86,6 +88,8 @@ import { ProjectsModule } from './projects/projects.module';
     PagesModule,
     PaymentMethodsModule,
     ProjectsModule,
+    // NewModule,
+    LogisticsModule,
     // StaffStagesModule,
   ],
   controllers: [AppController],

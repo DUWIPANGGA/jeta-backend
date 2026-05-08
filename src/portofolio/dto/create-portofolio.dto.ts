@@ -1,20 +1,24 @@
-import { IsString, IsOptional, IsNotEmpty, IsInt } from 'class-validator';
+// src/portofolio/dto/create-portofolio.dto.ts
+import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePortofolioDto {
   @IsString()
-  @IsNotEmpty()
-  title: string;
+  @IsNotEmpty({ message: 'Nama portofolio tidak boleh kosong' })
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  image?: string; // Biasanya berisi path/URL gambar
 
   @IsString()
   @IsOptional()
   description?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  image: string;
-
-  @IsString()
+  @IsInt()
+  @Min(0)
   @IsOptional()
-  client?: string;
-
+  @Type(() => Number)
+  order?: number;
 }
+
