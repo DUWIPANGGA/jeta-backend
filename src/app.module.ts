@@ -33,6 +33,8 @@ import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 import { ProjectsModule } from './projects/projects.module';
 import { WorkLogsModule } from './work-logs/work-logs.module';
 import { CheckoutModule } from './checkout/checkout.module';
+// import { LogisticsModule } from './logistics/logistics.module';
+import { LogisticsModule } from './logistics/logistics.module';
 
 @Module({
   imports: [
@@ -80,6 +82,9 @@ import { CheckoutModule } from './checkout/checkout.module';
     ProjectsModule,
     WorkLogsModule,
     CheckoutModule,
+    // NewModule,
+    LogisticsModule,
+    // StaffStagesModule,
   ],
   controllers: [AppController],
   providers: [
