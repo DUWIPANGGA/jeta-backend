@@ -10,11 +10,22 @@ export class CartsService {
   }
 
   findAll() {
-    return this.prisma.cart.findMany();
+    return this.prisma.cart.findMany({
+      include: {
+        product: true,
+        product_variant: true,
+      },
+    });
   }
 
   async findOne(id: number) {
-    const item = await this.prisma.cart.findUnique({ where: { id } });
+    const item = await this.prisma.cart.findUnique({
+      where: { id },
+      include: {
+        product: true,
+        product_variant: true,
+      },
+    });
     if (!item) throw new NotFoundException(`Cart #${id} not found`);
     return item;
   }

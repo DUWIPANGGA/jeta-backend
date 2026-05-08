@@ -39,6 +39,12 @@ export class ProjectsController {
     return this.projectsService.findAll(req.user.id, isAdmin);
   }
 
+  @Get('queue')
+  getQueue(@Req() req: RequestWithUser) {
+    const isAdmin = req.user.role_id === 1;
+    return this.projectsService.getQueue(isAdmin);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const isAdmin = req.user.role_id === 1;

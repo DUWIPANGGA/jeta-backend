@@ -1,10 +1,14 @@
 import { IsInt, IsOptional, IsString, IsEnum, IsDateString, Min } from 'class-validator';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus, OrderType } from '@prisma/client';
 
 export class CreatePaymentDto {
   @IsInt()
-  @Min(1)
-  custom_order_id: number;
+  @IsOptional()
+  custom_order_id?: number;
+
+  @IsInt()
+  @IsOptional()
+  order_id?: number;
 
   @IsInt()
   @IsOptional()
@@ -25,4 +29,8 @@ export class CreatePaymentDto {
   @IsEnum(PaymentStatus)
   @IsOptional()
   payment_status?: PaymentStatus;
+
+  @IsEnum(OrderType)
+  @IsOptional()
+  order_type?: OrderType;
 }

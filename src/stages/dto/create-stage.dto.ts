@@ -6,7 +6,7 @@ export class CreateStageDto {
 
   @IsInt()
   @Min(0)
-  order: number;
+  order_index: number;
 
   @IsString()
   @IsOptional()

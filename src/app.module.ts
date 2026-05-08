@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -12,7 +11,6 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { ProductVariantsModule } from './product-variants/product-variants.module';
 import { CartsModule } from './carts/carts.module';
-// import { CartItemsModule } from './cart-items/cart-items.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderItemsModule } from './order-items/order-items.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -22,9 +20,7 @@ import { ConsultationsModule } from './consultations/consultations.module';
 import { ConsultationFilesModule } from './consultation-files/consultation-files.module';
 import { ConsultationMaterialsModule } from './consultation-materials/consultation-materials.module';
 import { CustomOrdersModule } from './custom-orders/custom-orders.module';
-// import { ProductionStagesModule } from './production-stages/production-stages.module';
 import { ProductionLogsModule } from './production-logs/production-logs.module';
-// import { StaffsModule } from './staffs/staffs.module';
 import { SalaryLogsModule } from './salary-logs/salary-logs.module';
 import { GuestModule } from './guest/guest.module';
 import { StagesModule } from './stages/stages.module';
@@ -33,10 +29,10 @@ import { EmailModule } from './email/email.module';
 import { PortofolioModule } from './portofolio/portofolio.module';
 import { RolesModule } from './roles/roles.module';
 import { PagesModule } from './pages/pages.module';
-import { AccessGuard } from './common/guard/access/access.guard';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
-// import { StaffStagesModule } from './staff-stages/staff-stages.module';
 import { ProjectsModule } from './projects/projects.module';
+import { WorkLogsModule } from './work-logs/work-logs.module';
+import { CheckoutModule } from './checkout/checkout.module';
 
 @Module({
   imports: [
@@ -63,7 +59,6 @@ import { ProjectsModule } from './projects/projects.module';
     ProductsModule,
     ProductVariantsModule,
     CartsModule,
-    // CartItemsModule,
     OrdersModule,
     OrderItemsModule,
     PaymentsModule,
@@ -74,9 +69,7 @@ import { ProjectsModule } from './projects/projects.module';
     ConsultationFilesModule,
     ConsultationMaterialsModule,
     CustomOrdersModule,
-    // ProductionStagesModule,
     ProductionLogsModule,
-    // StaffsModule,
     SalaryLogsModule,
     GuestModule,
     StagesModule,
@@ -84,9 +77,9 @@ import { ProjectsModule } from './projects/projects.module';
     PortofolioModule,
     RolesModule,
     PagesModule,
-    PaymentMethodsModule,
     ProjectsModule,
-    // StaffStagesModule,
+    WorkLogsModule,
+    CheckoutModule,
   ],
   controllers: [AppController],
   providers: [

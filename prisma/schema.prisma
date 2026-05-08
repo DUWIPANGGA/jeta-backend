@@ -26,12 +26,15 @@ enum PaymentType {
 
 enum OrderStatus {
   pending
+  processing
+  shipped
   completed
   cancelled
 }
 
 enum PaymentStatus {
   pending
+  waiting_verification
   completed
   failed
 }
@@ -121,6 +124,7 @@ model User {
   custom_orders      CustomOrder[]
   projects           Project[]
   project_members    ProjectMember[]
+  work_logs          WorkLog[]
 
   role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -211,6 +215,7 @@ model Cart {
   user_id             Int
   product_id          Int
   product_variant_id  Int
+  quantity            Int      @default(1)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
@@ -265,13 +270,15 @@ model CustomOrder {
   payment  Payment? // one-to-one via Payment.custom_order_id
 
   projects Project[]
+  work_logs WorkLog[]
 
   @@map("custom_orders")
 }
 
 model Payment {
   id                Int           @id @default(autoincrement())
-  custom_order_id   Int           @unique
+  custom_order_id   Int?          @unique
+  order_id          Int?          @unique
   payment_method_id Int?
   amount            String?          // total tagihan
   paid_at           DateTime?
@@ -281,7 +288,8 @@ model Payment {
   created_at        DateTime      @default(now())
   updated_at        DateTime      @updatedAt
 
-  custom_order   CustomOrder   @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  custom_order   CustomOrder?  @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  order          Order?        @relation(fields: [order_id], references: [id], onDelete: Cascade)
   payment_method PaymentMethod? @relation(fields: [payment_method_id], references: [id])
   transactions   Transaction[]
 
@@ -320,6 +328,9 @@ model Order {
   order_items       OrderItem[]
   trackings         Tracking[]
   production_logs   ProductionLog[]
+  work_logs         WorkLog[]
+  payment           Payment?
+  projects          Project[]
 
   @@map("orders")
 }
@@ -328,15 +339,15 @@ model OrderItem {
   id         Int      @id @default(autoincrement())
   order_id   Int
   product_id Int
-  variant_id Int
+  variant_id Int?
   quantity   Int
   price      Int?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  order   Order          @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  product Product        @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  variant ProductVariant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  order   Order           @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variant_id], references: [id], onDelete: Cascade)
 
   @@map("order_items")
 }
@@ -447,11 +458,13 @@ model ConsultationMaterial {
 
 model Stage {
   id          Int       @id @default(autoincrement())
-  stage_name  String
-  order       Int       @unique @default(0)
+  stage_name  String    @unique
+  order_index Int       @default(0)
   description String?
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
+
+  work_logs   WorkLog[]
 
   @@map("stages")
 }
@@ -496,13 +509,15 @@ model SalaryLog {
 model Project {
   id              Int      @id @default(autoincrement())
   user_id         Int
-  custom_order_id Int
+  custom_order_id Int?
+  order_id        Int?
   status          Boolean  @default(true)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
   user         User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  custom_order CustomOrder    @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  custom_order CustomOrder?   @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  order        Order?         @relation(fields: [order_id], references: [id], onDelete: Cascade)
   members      ProjectMember[] // Relasi ke pivot
 
   @@map("projects")
@@ -536,4 +551,28 @@ model Portofolio {
   updated_at  DateTime @updatedAt
 
   @@map("portofolios")
+}
+
+// ─────────────────────────────────────────────
+// WORK LOG
+// ─────────────────────────────────────────────
+
+model WorkLog {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  stage_id        Int
+  order_type      String   // "CUSTOM" or "SPORT"
+  custom_order_id Int?
+  sport_order_id  Int?
+  quantity        Int
+  earned_amount   Int?     // For staff-payroll (future spec)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  stage           Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  custom_order    CustomOrder?  @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  sport_order     Order?        @relation(fields: [sport_order_id], references: [id], onDelete: Cascade)
+
+  @@map("work_logs")
 }

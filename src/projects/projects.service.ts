@@ -15,11 +15,14 @@ export class ProjectsService {
 
   async create(createDto: CreateProjectDto, currentUserId: number) {
     try {
+      const user = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+      const isAdmin = user?.role_id === 1;
+
       // 1. Cek custom order
       const customOrder = await this.prisma.customOrder.findFirst({
         where: {
           id: createDto.custom_order_id,
-          user_id: currentUserId,
+          ...(!isAdmin ? { user_id: currentUserId } : {}),
         },
       });
 
@@ -63,31 +66,17 @@ export class ProjectsService {
           })) ||
           (await tx.project.create({
             data: {
-              user_id: currentUserId,
+              user_id: customOrder.user_id, // Gunakan user_id dari customOrder (customer)
               custom_order_id: createDto.custom_order_id,
               status: createDto.status ?? true,
             },
           }));
 
         if (teamList.length > 0) {
-          // Cek apakah ada member yang sudah terdaftar di project ini
-          const userIds = teamList.map((item) => item.user_id);
-          const alreadyInProject = await tx.projectMember.findMany({
-            where: {
-              project_id: project.id,
-              user_id: { in: userIds },
-            },
-            include: { user: { select: { name: true } } },
+          // 3. Update team (Hapus yang lama, ganti yang baru) - Agar bersifat Upsert Team
+          await tx.projectMember.deleteMany({
+            where: { project_id: project.id },
           });
-
-          if (alreadyInProject.length > 0) {
-            const names = alreadyInProject
-              .map((m) => m.user?.name || `ID:${m.user_id}`)
-              .join(', ');
-            const errorMsg = `Staff [${names}] sudah ada di project ini`;
-            console.error(`[Project Create Error]: ${errorMsg}`);
-            throw new BadRequestException(errorMsg);
-          }
 
           const membersData = teamList.map((member) => {
             const user = existingUsers.find((u) => u.id === member.user_id);
@@ -105,6 +94,9 @@ export class ProjectsService {
           where: { id: project.id },
           include: {
             user: { select: { id: true, name: true, email: true } },
+            order: {
+              select: { id: true, order_number: true, status: true },
+            },
             custom_order: {
               select: { id: true, name: true, jenis_produk: true, accept_status: true },
             },
@@ -117,12 +109,9 @@ export class ProjectsService {
         });
       });
     } catch (error) {
-      // Jika error sudah merupakan HttpException (seperti NotFoundException), langsung throw
       if (error.status && error.response) {
         throw error;
       }
-
-      // Jika error tidak terduga (misal database error)
       console.error('[Project Create Unexpected Error]:', error);
       throw error;
     }
@@ -135,6 +124,33 @@ export class ProjectsService {
       orderBy: { created_at: 'desc' },
       include: {
         user: { select: { id: true, name: true, email: true } },
+        order: {
+          select: { id: true, order_number: true, status: true },
+        },
+        custom_order: {
+          select: { id: true, name: true, jenis_produk: true, accept_status: true },
+        },
+        members: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async getQueue(isAdmin: boolean) {
+    if (!isAdmin) throw new ForbiddenException('Only admin can access production queue');
+    return this.prisma.project.findMany({
+      where: {
+        status: true,
+      },
+      orderBy: { created_at: 'asc' },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        order: {
+          select: { id: true, order_number: true, status: true },
+        },
         custom_order: {
           select: { id: true, name: true, jenis_produk: true, accept_status: true },
         },
@@ -152,6 +168,9 @@ export class ProjectsService {
       where: { id },
       include: {
         user: { select: { id: true, name: true, email: true } },
+        order: {
+          select: { id: true, order_number: true, status: true },
+        },
         custom_order: {
           select: { id: true, name: true, jenis_produk: true, accept_status: true },
         },
@@ -263,6 +282,9 @@ export class ProjectsService {
           where: { id },
           include: {
             user: { select: { id: true, name: true, email: true } },
+            order: {
+              select: { id: true, order_number: true, status: true },
+            },
             custom_order: {
               select: { id: true, name: true, jenis_produk: true, accept_status: true },
             },

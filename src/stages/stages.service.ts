@@ -9,16 +9,16 @@ export class StagesService {
 
   async create(createStageDto: CreateStageDto) {
     const existingOrder = await this.prisma.stage.findFirst({
-      where: { order: createStageDto.order },
+      where: { order_index: createStageDto.order_index },
     });
     if (existingOrder) {
-      throw new ConflictException(`Stage with order ${createStageDto.order} already exists`);
+      throw new ConflictException(`Stage with order ${createStageDto.order_index} already exists`);
     }
 
     const stage = await this.prisma.stage.create({
       data: {
         stage_name: createStageDto.stage_name,
-        order: createStageDto.order,
+        order_index: createStageDto.order_index,
         description: createStageDto.description,
       },
     });
@@ -32,7 +32,7 @@ export class StagesService {
 
   async findAll() {
     const stages = await this.prisma.stage.findMany({
-      orderBy: { order: 'asc' },
+      orderBy: { order_index: 'asc' },
     });
 
     return {
@@ -62,15 +62,15 @@ export class StagesService {
   async update(id: number, updateStageDto: UpdateStageDto) {
     await this.findOne(id);
 
-    if (updateStageDto.order !== undefined) {
+    if (updateStageDto.order_index !== undefined) {
       const existingOrder = await this.prisma.stage.findFirst({
         where: {
-          order: updateStageDto.order,
+          order_index: updateStageDto.order_index,
           id: { not: id },
         },
       });
       if (existingOrder) {
-        throw new ConflictException(`Stage with order ${updateStageDto.order} already exists`);
+        throw new ConflictException(`Stage with order ${updateStageDto.order_index} already exists`);
       }
     }
 
@@ -91,7 +91,7 @@ export class StagesService {
 
     const existingOrder = await this.prisma.stage.findFirst({
       where: {
-        order: newOrder,
+        order_index: newOrder,
         id: { not: id },
       },
     });
@@ -102,7 +102,7 @@ export class StagesService {
 
     const updated = await this.prisma.stage.update({
       where: { id },
-      data: { order: newOrder },
+      data: { order_index: newOrder },
     });
 
     return {

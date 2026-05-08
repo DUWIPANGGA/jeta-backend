@@ -87,6 +87,11 @@ export class CustomOrdersService {
       include: {
         user: { select: { id: true, name: true, email: true } },
         payment: true,
+        projects: {
+          include: {
+            members: true,
+          },
+        },
       },
     });
   }
@@ -97,6 +102,11 @@ export class CustomOrdersService {
       include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
         payment: true,
+        projects: {
+          include: {
+            members: true,
+          },
+        },
       },
     });
     if (!customOrder) {

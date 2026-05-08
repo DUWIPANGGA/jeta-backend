@@ -32,6 +32,12 @@ export class OrdersController {
     return this.ordersService.update(+id, updateDto);
   }
 
+  @Access(10, 'update')
+  @Post(':id/tracking')
+  updateTracking(@Param('id') id: string, @Body('stage_name') stageName: string) {
+    return this.ordersService.updateTracking(+id, stageName);
+  }
+
   @Access(10, 'delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
