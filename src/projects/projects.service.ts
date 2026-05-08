@@ -11,7 +11,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateProjectDto, currentUserId: number) {
     try {
@@ -116,7 +116,7 @@ export class ProjectsService {
           },
         });
       });
-    } catch (error) {
+    } catch (error: any) {
       // Jika error sudah merupakan HttpException (seperti NotFoundException), langsung throw
       if (error.status && error.response) {
         throw error;
@@ -274,7 +274,7 @@ export class ProjectsService {
           },
         });
       });
-    } catch (error) {
+    } catch (error: any) {
       if (error.status && error.response) {
         throw error;
       }
@@ -288,12 +288,10 @@ export class ProjectsService {
       await this.findOne(id, currentUserId, isAdmin);
       await this.prisma.project.delete({ where: { id } });
       return { message: `Project ${id} deleted successfully` };
-    } catch (error) {
-      // If it's a known NestJS exception (from findOne), re-throw it
+    } catch (error: any) {
       if (error.status && error.response) {
         throw error;
       }
-
       console.error(`[Project Remove Error]: Unexpected error deleting project ${id}`, error);
       throw error;
     }
