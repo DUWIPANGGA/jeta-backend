@@ -21,10 +21,10 @@ import { Access } from 'src/common/decorator/access/access.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('logistics')
 export class LogisticsController {
-  constructor(private readonly logisticsService: LogisticsService) {}
+  constructor(private readonly logisticsService: LogisticsService) { }
 
   @Post()
-  @Access(11, 'create') // Gunakan page_id baru (misal: 11) untuk modul Logistics
+  @Access(11, 'create')
   create(@Body() createDto: CreateLogisticDto) {
     return this.logisticsService.create(createDto);
   }

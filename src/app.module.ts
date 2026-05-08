@@ -82,9 +82,7 @@ import { LogisticsModule } from './logistics/logistics.module';
     ProjectsModule,
     WorkLogsModule,
     CheckoutModule,
-    // NewModule,
     LogisticsModule,
-    // StaffStagesModule,
   ],
   controllers: [AppController],
   providers: [
