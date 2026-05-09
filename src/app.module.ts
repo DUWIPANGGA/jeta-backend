@@ -37,6 +37,8 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { LogisticsModule } from './logistics/logistics.module';
 // import { CustomerDataModule } from './customer-data/customer-data.module';
 import { CustomerDataModule } from './customer-data/customer-data.module';
+import { ReportsModule } from './reports/reports.module';
+import { ProgressReportsModule } from './progress-reports/progress-reports.module';
 
 @Module({
   imports: [
@@ -86,6 +88,8 @@ import { CustomerDataModule } from './customer-data/customer-data.module';
     CheckoutModule,
     LogisticsModule,
     CustomerDataModule,
+    ReportsModule,
+    ProgressReportsModule,
   ],
   controllers: [AppController],
   providers: [

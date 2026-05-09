@@ -46,6 +46,12 @@ enum ConsultationStatus {
   cancelled
 }
 
+enum ProgressStatus {
+  pending
+  proses
+  selesai
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // USERS, ROLES & ACCESS CONTROL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,6 +127,7 @@ model User {
   production_logs    ProductionLog[]
   salary_logs        SalaryLog[]
   work_logs          WorkLog[]
+  progressReports    ProgressReport[]
 
   role               Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -294,9 +301,9 @@ model CustomOrder {
   deadline         DateTime?
   upload_referensi String?
   catatan_tambahan String?
-  dp_amount        Int?      // Diubah ke Int untuk konsistensi
-  remaining_amount Int?      // Diubah ke Int untuk konsistensi
-  total_amount     Int?      // Diubah ke Int untuk konsistensi
+  dp_amount        Int?
+  remaining_amount Int?
+  total_amount     Int?
   accept_status    Boolean   @default(false)
   payment_status   Boolean   @default(false)
   created_at       DateTime  @default(now())
@@ -314,8 +321,8 @@ model CustomOrder {
 model Project {
   id              Int             @id @default(autoincrement())
   user_id         Int
-  custom_order_id Int?            @unique // Dibuat Unique: Satu custom order = Satu Proyek
-  order_id        Int?            @unique // Dibuat Unique: Satu order = Satu Proyek
+  custom_order_id Int?            @unique
+  order_id        Int?            @unique
   status          Boolean         @default(true)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
@@ -324,6 +331,7 @@ model Project {
   custom_order    CustomOrder?    @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
   order           Order?          @relation(fields: [order_id], references: [id], onDelete: Cascade)
   members         ProjectMember[]
+  progressReports ProgressReport[]
 
   @@map("projects")
 }
@@ -379,7 +387,7 @@ model Payment {
   custom_order_id   Int?          @unique
   order_id          Int?          @unique
   payment_method_id Int?
-  amount            Int?          // Diubah ke Int untuk konsistensi
+  amount            Int?
   paid_at           DateTime?
   payment_proof     String?
   payment_status    PaymentStatus @default(pending)
@@ -398,7 +406,7 @@ model Payment {
 model Transaction {
   id         Int      @id @default(autoincrement())
   payment_id Int
-  amount     Int?     // Diubah ke Int
+  amount     Int?
   type       String?
   reference  String?
   note       String?
@@ -497,7 +505,8 @@ model Stage {
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
 
-  work_logs   WorkLog[]
+  work_logs        WorkLog[]
+  progressReports  ProgressReport[]
 
   @@map("stages")
 }
@@ -555,11 +564,11 @@ model WorkLog {
   id              Int      @id @default(autoincrement())
   user_id         Int
   stage_id        Int
-  order_type      String   // "CUSTOM" or "SPORT"
+  order_type      String
   custom_order_id Int?
   sport_order_id  Int?
   quantity        Int
-  earned_amount   Int?     // For staff-payroll (future spec)
+  earned_amount   Int?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
@@ -569,4 +578,27 @@ model WorkLog {
   sport_order     Order?        @relation(fields: [sport_order_id], references: [id], onDelete: Cascade)
 
   @@map("work_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRESS REPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ProgressReport {
+  id          Int           @id @default(autoincrement())
+  project_id  Int
+  stage_id    Int
+  user_id     Int
+  status      ProgressStatus @default(pending)
+  catatan     String?
+  image       String?
+  percentage  Int?
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  project     Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  stage       Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("progress_reports")
 }

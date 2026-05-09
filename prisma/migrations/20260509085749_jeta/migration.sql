@@ -13,6 +13,9 @@ CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'waiting_verification', 'complet
 -- CreateEnum
 CREATE TYPE "ConsultationStatus" AS ENUM ('pending', 'completed', 'cancelled');
 
+-- CreateEnum
+CREATE TYPE "ProgressStatus" AS ENUM ('pending', 'proses', 'selesai');
+
 -- CreateTable
 CREATE TABLE "roles" (
     "id" SERIAL NOT NULL,
@@ -432,6 +435,22 @@ CREATE TABLE "work_logs" (
     CONSTRAINT "work_logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "progress_reports" (
+    "id" SERIAL NOT NULL,
+    "project_id" INTEGER NOT NULL,
+    "stage_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "status" "ProgressStatus" NOT NULL DEFAULT 'pending',
+    "catatan" TEXT,
+    "image" TEXT,
+    "percentage" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "progress_reports_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -575,3 +594,12 @@ ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_custom_order_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_sport_order_id_fkey" FOREIGN KEY ("sport_order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
