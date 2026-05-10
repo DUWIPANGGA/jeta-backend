@@ -46,11 +46,44 @@ async function main() {
             role_id: adminRole.id,
             email_verified_at: new Date(),
         },
+        // Staff Users (ditambah lebih banyak)
         {
-            name: 'Staff User',
-            email: 'staff@jeta.com',
+            name: 'Staff User 1',
+            email: 'staff1@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Staff No. 1',
+            role_id: staffRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Staff User 2',
+            email: 'staff2@jeta.com',
             password: hashedPassword,
             address: 'Jl. Staff No. 2',
+            role_id: staffRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Staff User 3',
+            email: 'staff3@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Staff No. 3',
+            role_id: staffRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Staff User 4',
+            email: 'staff4@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Staff No. 4',
+            role_id: staffRole.id,
+            email_verified_at: new Date(),
+        },
+        {
+            name: 'Staff User 5',
+            email: 'staff5@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Staff No. 5',
             role_id: staffRole.id,
             email_verified_at: new Date(),
         },
@@ -122,7 +155,18 @@ async function down() {
     await prisma.user.deleteMany({
         where: {
             email: {
-                in: ['superadmin@jeta.com', 'admin@jeta.com', 'staff@jeta.com', 'user@jeta.com', 'budi@example.com', 'siti@example.com']
+                in: [
+                    'superadmin@jeta.com',
+                    'admin@jeta.com',
+                    'staff1@jeta.com',
+                    'staff2@jeta.com',
+                    'staff3@jeta.com',
+                    'staff4@jeta.com',
+                    'staff5@jeta.com',
+                    'user@jeta.com',
+                    'budi@example.com',
+                    'siti@example.com'
+                ]
             }
         }
     });

@@ -585,16 +585,16 @@ model WorkLog {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model ProgressReport {
-  id          Int           @id @default(autoincrement())
-  project_id  Int
-  stage_id    Int
-  user_id     Int
-  status      ProgressStatus @default(pending)
-  catatan     String?
-  image       String?
-  percentage  Int?
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
+  id                Int             @id @default(autoincrement())
+  project_id        Int
+  stage_id          Int
+  user_id           Int
+  status            ProgressStatus  @default(pending)
+  catatan           String?
+  image             String?
+  approval_status   Boolean?        @default(false)
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
 
   project     Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
   stage       Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)

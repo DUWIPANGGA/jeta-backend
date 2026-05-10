@@ -26,7 +26,7 @@ interface RequestWithUser extends Request {
 @UseGuards(JwtAuthGuard)
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
   create(@Body() createDto: CreateProjectDto, @Req() req: RequestWithUser) {
@@ -37,6 +37,11 @@ export class ProjectsController {
   findAll(@Req() req: RequestWithUser) {
     const isAdmin = req.user.role_id === 1;
     return this.projectsService.findAll(req.user.id, isAdmin);
+  }
+
+  @Get('my-tasks')
+  async getMyTasks(@Req() req: RequestWithUser) {
+    return this.projectsService.getMyTasks(req.user.id);
   }
 
   @Get('queue')

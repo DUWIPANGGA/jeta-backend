@@ -444,7 +444,7 @@ CREATE TABLE "progress_reports" (
     "status" "ProgressStatus" NOT NULL DEFAULT 'pending',
     "catatan" TEXT,
     "image" TEXT,
-    "percentage" INTEGER,
+    "approval_status" BOOLEAN DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

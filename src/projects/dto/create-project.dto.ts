@@ -2,22 +2,22 @@ import { IsInt, IsNotEmpty, IsBoolean, IsOptional, IsArray, ValidateNested } fro
 import { Type } from 'class-transformer';
 
 class TeamMemberDto {
-    @IsInt()
-    user_id: number;
+  @IsInt()
+  user_id: number;
 }
 
 export class CreateProjectDto {
-    @IsInt()
-    @IsNotEmpty()
-    custom_order_id: number;
+  @IsInt()
+  @IsNotEmpty()
+  custom_order_id: number;
 
-    @IsBoolean()
-    @IsOptional()
-    status?: boolean; // default true di service
+  @IsBoolean()
+  @IsOptional()
+  status?: boolean;
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => TeamMemberDto)
-    @IsOptional()
-    team?: TeamMemberDto[]; // array of { user_id: number }
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TeamMemberDto)
+  @IsOptional()
+  team?: TeamMemberDto[];
 }
