@@ -31,7 +31,7 @@ export class ProjectsService {
         throw new ForbiddenException('Cannot create project for unapproved custom order');
       }
 
-      const teamList = createDto.team || []; // untuk kemudahan
+      const teamList = createDto.team || [];
       let existingUsers: { id: number; name: string }[] = [];
       if (teamList.length > 0) {
         const userIds = teamList.map((item) => item.user_id);
@@ -61,11 +61,9 @@ export class ProjectsService {
         }
         const projectId = project.id;
 
-        // Perbaikan: jika field team disertakan dalam request (termasuk array kosong)
+        // 🔧 PERBAIKAN: Jika field team disertakan (meskipun kosong), hapus semua member
         if (createDto.team !== undefined) {
-          // Hapus semua member yang ada
           await tx.projectMember.deleteMany({ where: { project_id: projectId } });
-          // Jika ada member baru (tidak kosong), tambahkan
           if (teamList.length > 0) {
             const membersData = teamList.map((member) => ({
               project_id: projectId,
@@ -112,7 +110,7 @@ export class ProjectsService {
         project: {
           include: {
             user: { select: { id: true, name: true, email: true } },
-            custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
+            custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true, jumlah: true, deadline: true } },
             members: { include: { user: { select: { id: true, name: true, email: true } } } },
           },
         },

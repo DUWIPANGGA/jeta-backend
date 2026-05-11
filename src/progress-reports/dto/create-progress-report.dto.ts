@@ -1,19 +1,12 @@
-// src/progress-reports/dto/create-progress-report.dto.ts
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsEnum, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsEnum } from 'class-validator';
 import { ProgressStatus } from '@prisma/client';
 
 export class CreateProgressReportDto {
-  @IsInt()
   @IsNotEmpty()
-  project_id: number;
+  project_id: any;
 
-  @IsInt()
   @IsNotEmpty()
-  stage_id: number;
-
-  @IsInt()
-  @IsNotEmpty()
-  user_id: number;
+  stage_id: any;
 
   @IsEnum(ProgressStatus)
   @IsOptional()
@@ -23,13 +16,10 @@ export class CreateProgressReportDto {
   @IsOptional()
   catatan?: string;
 
-  @IsString()
   @IsOptional()
-  image?: string;
+  quantity?: any;
 
-  @IsInt()
-  @Min(0)
-  @Max(100)
+  // TAMBAHKAN field image opsional (hanya untuk menghindari error validasi, tidak akan tersimpan)
   @IsOptional()
-  percentage?: number;
+  image?: any;
 }

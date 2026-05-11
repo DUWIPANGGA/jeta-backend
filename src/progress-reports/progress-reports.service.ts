@@ -11,115 +11,160 @@ import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
 
 @Injectable()
 export class ProgressReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
-  // ==================== CREATE ====================
-  async create(createDto: CreateProgressReportDto, userId: number) {
-    // Cek apakah user adalah member dari project
-    const isMember = await this.prisma.projectMember.findFirst({
-      where: {
-        project_id: createDto.project_id,
-        user_id: userId,
-      },
+  // ---------- Helper: validasi quantity tidak melebihi jumlah custom order ----------
+  private async validateQuantity(projectId: number, quantity: number | undefined) {
+    if (quantity === undefined) return;
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { custom_order: true },
     });
-    if (!isMember) {
-      throw new ForbiddenException('You are not a member of this project');
+    if (!project) throw new BadRequestException('Project not found');
+    if (!project.custom_order) throw new BadRequestException('Project tidak memiliki custom order');
+    const maxQuantity = project.custom_order.jumlah ?? 0;
+    if (quantity > maxQuantity) {
+      throw new BadRequestException(`Quantity tidak boleh melebihi ${maxQuantity}`);
+    }
+  }
+
+  // ---------- Helper: cek apakah staff adalah member project (opsional) ----------
+  private async isStaffMemberOfProject(staffId: number, projectId: number): Promise<boolean> {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+      select: { user_id: true },
+    });
+    if (!staff) return false;
+    const member = await this.prisma.projectMember.findFirst({
+      where: { project_id: projectId, user_id: staff.user_id },
+    });
+    return !!member;
+  }
+
+  // ---------- CREATE ----------
+  async create(
+    createDto: CreateProgressReportDto,
+    userIdFromToken: number,
+    imagePath?: string,
+  ) {
+    const projectId = Number(createDto.project_id);
+    const stageId = Number(createDto.stage_id);
+    const quantity = createDto.quantity ? Number(createDto.quantity) : undefined;
+
+    if (isNaN(projectId) || isNaN(stageId)) {
+      throw new BadRequestException('project_id and stage_id must be valid numbers');
     }
 
-    // Cek stage exist
-    const stage = await this.prisma.stage.findUnique({
-      where: { id: createDto.stage_id },
+    // Dapatkan staff_id berdasarkan user_id dari token
+    const staff = await this.prisma.staff.findUnique({
+      where: { user_id: userIdFromToken },
     });
-    if (!stage) {
-      throw new NotFoundException(`Stage with ID ${createDto.stage_id} not found`);
+    if (!staff) {
+      throw new BadRequestException('User tidak memiliki data staff. Hubungi admin.');
     }
+    const staffId = staff.id;
 
-    // Buat laporan
+    // Opsional: cek member (komentari jika tidak diperlukan)
+    // const isMember = await this.isStaffMemberOfProject(staffId, projectId);
+    // if (!isMember) throw new ForbiddenException('You are not a member of this project');
+
+    const stage = await this.prisma.stage.findUnique({ where: { id: stageId } });
+    if (!stage) throw new NotFoundException(`Stage with ID ${stageId} not found`);
+
+    await this.validateQuantity(projectId, quantity);
+
     return this.prisma.progressReport.create({
       data: {
-        project_id: createDto.project_id,
-        stage_id: createDto.stage_id,
-        user_id: userId,
+        staff_id: staffId,
+        project_id: projectId,
+        stage_id: stageId,
         status: createDto.status ?? 'pending',
+        quantity: quantity ?? null,
         catatan: createDto.catatan,
-        image: createDto.image,
-        approval_status: false, // default
+        image: imagePath ?? null,
+        approval_status: false,
       },
       include: {
-        project: { include: { custom_order: true, order: true } },
+        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+        project: { include: { custom_order: true } },
         stage: true,
-        user: { select: { id: true, name: true, email: true } },
       },
     });
   }
 
-  // ==================== FIND ALL ====================
+  // ---------- FIND ALL ----------
   async findAll(projectId?: number) {
     const where = projectId ? { project_id: projectId } : {};
     return this.prisma.progressReport.findMany({
       where,
       orderBy: { created_at: 'desc' },
       include: {
-        project: { include: { custom_order: true, order: true } },
+        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+        project: { include: { custom_order: true } },
         stage: true,
-        user: { select: { id: true, name: true, email: true } },
       },
     });
   }
 
-  // ==================== FIND ONE ====================
+  // ---------- FIND ONE ----------
   async findOne(id: number) {
     const report = await this.prisma.progressReport.findUnique({
       where: { id },
       include: {
-        project: { include: { custom_order: true, order: true } },
+        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+        project: { include: { custom_order: true } },
         stage: true,
-        user: { select: { id: true, name: true, email: true } },
       },
     });
     if (!report) throw new NotFoundException(`Progress report #${id} not found`);
     return report;
   }
 
-  // ==================== UPDATE ====================
+  // ---------- UPDATE ----------
   async update(
     id: number,
     updateDto: UpdateProgressReportDto,
-    userId: number,
+    userIdFromToken: number,
     isAdmin: boolean,
   ) {
     const report = await this.findOne(id);
 
-    // Hanya admin atau pembuat laporan yang boleh update
-    if (!isAdmin && report.user_id !== userId) {
+    // Dapatkan staff_id dari user token
+    const staff = await this.prisma.staff.findUnique({
+      where: { user_id: userIdFromToken },
+    });
+    const staffId = staff?.id;
+    if (!isAdmin && (!staff || report.staff_id !== staffId)) {
       throw new ForbiddenException('You can only update your own reports');
     }
 
-    // Field yang boleh diupdate oleh staff (pembuat)
+    let quantity: number | undefined = undefined;
+    if (updateDto.quantity !== undefined) {
+      quantity = Number(updateDto.quantity);
+      if (isNaN(quantity)) throw new BadRequestException('Quantity must be a number');
+    }
+    if (quantity !== undefined) await this.validateQuantity(report.project_id, quantity);
+
+    // Data yang boleh diupdate oleh staff
     const commonData: any = {};
     if (updateDto.status !== undefined) commonData.status = updateDto.status;
     if (updateDto.catatan !== undefined) commonData.catatan = updateDto.catatan;
-    if (updateDto.image !== undefined) commonData.image = updateDto.image;
+    if (quantity !== undefined) commonData.quantity = quantity;
+    // image tidak diupdate via PATCH (gunakan endpoint terpisah jika perlu)
 
-    // Field yang hanya admin yang boleh update
+    // Data khusus admin
     let adminData: any = {};
     if (updateDto.approval_status !== undefined) {
-      if (!isAdmin) {
-        throw new ForbiddenException('Only admin can update approval status');
-      }
+      if (!isAdmin) throw new ForbiddenException('Only admin can update approval status');
       adminData.approval_status = updateDto.approval_status;
     }
     if (updateDto.stage_id !== undefined) {
-      if (!isAdmin) {
-        throw new ForbiddenException('Only admin can change stage');
-      }
-      const stageExists = await this.prisma.stage.findUnique({
-        where: { id: updateDto.stage_id },
-      });
-      if (!stageExists) {
-        throw new BadRequestException(`Stage with ID ${updateDto.stage_id} not found`);
-      }
-      adminData.stage_id = updateDto.stage_id;
+      if (!isAdmin) throw new ForbiddenException('Only admin can change stage');
+      const newStageId = Number(updateDto.stage_id);
+      if (isNaN(newStageId)) throw new BadRequestException('Stage ID must be a number');
+      const stageExists = await this.prisma.stage.findUnique({ where: { id: newStageId } });
+      if (!stageExists) throw new BadRequestException(`Stage with ID ${newStageId} not found`);
+      adminData.stage_id = newStageId;
     }
 
     const updateData = { ...commonData, ...adminData };
@@ -127,45 +172,53 @@ export class ProgressReportsService {
       where: { id },
       data: updateData,
       include: {
-        project: { include: { custom_order: true, order: true } },
+        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+        project: { include: { custom_order: true } },
         stage: true,
-        user: { select: { id: true, name: true, email: true } },
       },
     });
   }
 
-  // ==================== REMOVE ====================
-  async remove(id: number, userId: number, isAdmin: boolean) {
+  // ---------- DELETE ----------
+  async remove(id: number, userIdFromToken: number, isAdmin: boolean) {
     const report = await this.findOne(id);
-    if (!isAdmin && report.user_id !== userId) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { user_id: userIdFromToken },
+    });
+    const staffId = staff?.id;
+    if (!isAdmin && (!staff || report.staff_id !== staffId)) {
       throw new ForbiddenException('You can only delete your own reports');
     }
     await this.prisma.progressReport.delete({ where: { id } });
     return { message: `Progress report ${id} deleted successfully` };
   }
 
-  // ==================== GET MY TASKS ====================
-  async getMyTasks(userId: number) {
+  // ---------- GET MY TASKS (progress reports milik staff yang login) ----------
+  async getMyTasks(userIdFromToken: number) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { user_id: userIdFromToken },
+    });
+    if (!staff) return [];
     return this.prisma.progressReport.findMany({
-      where: { user_id: userId },
+      where: { staff_id: staff.id },
       orderBy: { created_at: 'desc' },
       include: {
-        project: { include: { custom_order: true, order: true } },
+        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+        project: { include: { custom_order: true } },
         stage: true,
-        user: { select: { id: true, name: true, email: true } },
       },
     });
   }
 
-  // ==================== GET QUEUE (belum disetujui admin) ====================
+  // ---------- GET QUEUE (laporan yang belum disetujui admin) ----------
   async getQueue() {
     return this.prisma.progressReport.findMany({
       where: { approval_status: false },
       orderBy: { created_at: 'asc' },
       include: {
-        project: { include: { custom_order: true, order: true } },
+        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+        project: { include: { custom_order: true } },
         stage: true,
-        user: { select: { id: true, name: true, email: true } },
       },
     });
   }

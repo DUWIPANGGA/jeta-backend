@@ -1,3 +1,4 @@
+// src/users/users.service.ts
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -47,26 +48,47 @@ export class UsersService {
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }
+
+  // ==================== ENDPOINT UNTUK STAFF DENGAN DETAIL STAGE ====================
   async getStaffWithDetails() {
     const users = await this.prisma.user.findMany({
       where: { role_id: 3 },
       include: {
         role: true,
-        staffs: true, // karena relasi di User ke Staff adalah one-to-many (array)
+        staffs: {
+          include: {
+            staffStages: {
+              include: { stage: true },
+            },
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });
 
-    // Ubah format: staffs array menjadi object staff jika ada, atau null
-    return users.map(user => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role_id: user.role_id,
-      role: user.role,
-      staff: user.staffs.length > 0 ? user.staffs[0] : null,
-    }));
+    return users.map((user) => {
+      const staff = user.staffs.length > 0 ? user.staffs[0] : null;
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role_id: user.role_id,
+        role: user.role,
+        staff: staff
+          ? {
+            id: staff.id,
+            user_id: staff.user_id,
+            tgl_masuk: staff.tgl_masuk,
+            salary: staff.salary,
+            stage_ids: staff.staffStages.map((ss) => ss.stage_id),
+            stages: staff.staffStages.map((ss) => ss.stage),
+          }
+          : null,
+      };
+    });
   }
+
+  // ==================== SIMPLE STAFF LIST (TANPA DETAIL) ====================
   async getStaffUsers() {
     return this.prisma.user.findMany({
       where: { role_id: 3 },

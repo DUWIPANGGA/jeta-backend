@@ -10,6 +10,7 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
+
   // Serve static files from uploads directory (AGAR GAMBAR BISA DIAKSES)
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/', // URL prefix untuk mengakses file

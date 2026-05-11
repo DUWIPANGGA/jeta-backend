@@ -470,10 +470,11 @@ CREATE TABLE "work_logs" (
 -- CreateTable
 CREATE TABLE "progress_reports" (
     "id" SERIAL NOT NULL,
+    "staff_id" INTEGER NOT NULL,
     "project_id" INTEGER NOT NULL,
     "stage_id" INTEGER NOT NULL,
-    "user_id" INTEGER NOT NULL,
     "status" "ProgressStatus" NOT NULL DEFAULT 'pending',
+    "quantity" INTEGER,
     "catatan" TEXT,
     "image" TEXT,
     "approval_status" BOOLEAN DEFAULT false,
@@ -649,10 +650,10 @@ ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_custom_order_id_fkey" FOREIGN 
 ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_sport_order_id_fkey" FOREIGN KEY ("sport_order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staffs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
