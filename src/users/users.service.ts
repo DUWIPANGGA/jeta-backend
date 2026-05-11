@@ -1,99 +1,101 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(createUserDto: CreateUserDto) {
-    // Validasi role exists
-    const role = await this.prisma.role.findUnique({
-      where: { id: createUserDto.role_id },
+  async create(createDto: CreateUserDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: createDto.email },
     });
-    if (!role) {
-      throw new NotFoundException(`Role with ID ${createUserDto.role_id} not found`);
-    }
+    if (existing) throw new ConflictException('Email already exists');
 
+    const hashedPassword = await bcrypt.hash(createDto.password, 10);
     return this.prisma.user.create({
       data: {
-        name: createUserDto.name,
-        email: createUserDto.email,
-        password: createUserDto.password,
-        address: createUserDto.address,
-        phone: createUserDto.phone,
-        role_id: createUserDto.role_id,
+        name: createDto.name,
+        email: createDto.email,
+        password: hashedPassword,
+        phone: createDto.phone,
+        address: createDto.address,
+        role_id: createDto.role_id,
       },
-      include: {
-        role: true,
-      },
+      include: { role: true },
     });
   }
 
   async findAll() {
-    const users = await this.prisma.user.findMany({
-      include: {
-        role: true,
-      },
-      orderBy: { created_at: 'desc' },
+    return this.prisma.user.findMany({
+      include: { role: true },
+      orderBy: { id: 'asc' },
     });
-
-    return {
-      success: true,
-      message: 'Users retrieved successfully',
-      data: users,
-      total: users.length,
-    };
   }
 
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: {
-        role: true,
-      },
+      include: { role: true },
     });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     return user;
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-      include: { role: true },
-    });
+    return this.prisma.user.findUnique({ where: { email } });
   }
-
-  async findByVerificationToken(token: string) {
-    return this.prisma.user.findUnique({
-      where: { verification_token: token },
-      include: { role: true },
-    });
-  }
-
-  async markEmailAsVerified(id: number) {
-    return this.prisma.user.update({
-      where: { id },
-      data: {
-        email_verified_at: new Date(),
-        verification_token: null,
+  async getStaffWithDetails() {
+    const users = await this.prisma.user.findMany({
+      where: { role_id: 3 },
+      include: {
+        role: true,
+        staffs: true, // karena relasi di User ke Staff adalah one-to-many (array)
       },
+      orderBy: { name: 'asc' },
+    });
+
+    // Ubah format: staffs array menjadi object staff jika ada, atau null
+    return users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role_id: user.role_id,
+      role: user.role,
+      staff: user.staffs.length > 0 ? user.staffs[0] : null,
+    }));
+  }
+  async getStaffUsers() {
+    return this.prisma.user.findMany({
+      where: { role_id: 3 },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        image: true,
+      },
+      orderBy: { name: 'asc' },
     });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const targetUser = await this.findOne(id);
-
-    // Cek role yang login (dikirim dari controller via JWT)
-    // Untuk sementara, kita asumsikan requester dikirim dari controller
-    // Anda bisa modify method update ini sesuai kebutuhan
-
+  async update(id: number, updateDto: UpdateUserDto) {
+    await this.findOne(id);
+    if (updateDto.email) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email: updateDto.email, NOT: { id } },
+      });
+      if (existing) throw new ConflictException('Email already taken');
+    }
+    if (updateDto.password) {
+      updateDto.password = await bcrypt.hash(updateDto.password, 10);
+    }
     return this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data: updateDto,
       include: { role: true },
     });
   }
@@ -101,9 +103,6 @@ export class UsersService {
   async remove(id: number) {
     await this.findOne(id);
     await this.prisma.user.delete({ where: { id } });
-    return {
-      success: true,
-      message: `User with ID ${id} deleted successfully`,
-    };
+    return { message: `User ${id} deleted successfully` };
   }
 }

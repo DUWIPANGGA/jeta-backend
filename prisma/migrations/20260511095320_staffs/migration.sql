@@ -365,6 +365,38 @@ CREATE TABLE "consultation_materials" (
 );
 
 -- CreateTable
+CREATE TABLE "staffs" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "tgl_masuk" DATE,
+    "salary" INTEGER DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "staffs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "staff_stages" (
+    "staff_id" INTEGER NOT NULL,
+    "stage_id" INTEGER NOT NULL,
+
+    CONSTRAINT "staff_stages_pkey" PRIMARY KEY ("staff_id","stage_id")
+);
+
+-- CreateTable
+CREATE TABLE "salary_projects" (
+    "id" SERIAL NOT NULL,
+    "staff_id" INTEGER NOT NULL,
+    "project_id" INTEGER NOT NULL,
+    "adjustment_salary" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "salary_projects_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "stages" (
     "id" SERIAL NOT NULL,
     "stage_name" TEXT NOT NULL,
@@ -482,6 +514,12 @@ CREATE UNIQUE INDEX "payments_custom_order_id_key" ON "payments"("custom_order_i
 CREATE UNIQUE INDEX "payments_order_id_key" ON "payments"("order_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "staffs_user_id_key" ON "staffs"("user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "salary_projects_staff_id_project_id_key" ON "salary_projects"("staff_id", "project_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "stages_stage_name_key" ON "stages"("stage_name");
 
 -- AddForeignKey
@@ -573,6 +611,21 @@ ALTER TABLE "consultation_files" ADD CONSTRAINT "consultation_files_consultation
 
 -- AddForeignKey
 ALTER TABLE "consultation_materials" ADD CONSTRAINT "consultation_materials_consultation_id_fkey" FOREIGN KEY ("consultation_id") REFERENCES "consultations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "staffs" ADD CONSTRAINT "staffs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "staff_stages" ADD CONSTRAINT "staff_stages_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staffs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "staff_stages" ADD CONSTRAINT "staff_stages_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_projects" ADD CONSTRAINT "salary_projects_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staffs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_projects" ADD CONSTRAINT "salary_projects_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;

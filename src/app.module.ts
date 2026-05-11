@@ -39,6 +39,8 @@ import { LogisticsModule } from './logistics/logistics.module';
 import { CustomerDataModule } from './customer-data/customer-data.module';
 import { ReportsModule } from './reports/reports.module';
 import { ProgressReportsModule } from './progress-reports/progress-reports.module';
+import { StaffsModule } from './staffs/staffs.module';
+import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
 
 @Module({
   imports: [
@@ -90,6 +92,8 @@ import { ProgressReportsModule } from './progress-reports/progress-reports.modul
     CustomerDataModule,
     ReportsModule,
     ProgressReportsModule,
+    StaffsModule,
+    SalaryProjectsModule,
   ],
   controllers: [AppController],
   providers: [

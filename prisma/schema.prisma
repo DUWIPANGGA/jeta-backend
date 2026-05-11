@@ -128,6 +128,7 @@ model User {
   salary_logs        SalaryLog[]
   work_logs          WorkLog[]
   progressReports    ProgressReport[]
+  staffs             Staff[]
 
   role               Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -332,6 +333,7 @@ model Project {
   order           Order?          @relation(fields: [order_id], references: [id], onDelete: Cascade)
   members         ProjectMember[]
   progressReports ProgressReport[]
+  salaryProjects  SalaryProjects[]
 
   @@map("projects")
 }
@@ -497,6 +499,48 @@ model ConsultationMaterial {
 // PRODUCTION, SALARY & PORTFOLIO
 // ─────────────────────────────────────────────────────────────────────────────
 
+model Staff {
+  id          Int       @id @default(autoincrement())
+  user_id     Int       @unique
+  // stage_id dihapus
+  tgl_masuk   DateTime? @db.Date
+  salary      Int?      @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  user            User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  staffStages     StaffStage[]
+  salaryProjects  SalaryProjects[]
+
+  @@map("staffs")
+}
+
+model StaffStage {
+  staff_id Int
+  stage_id Int
+
+  staff Staff @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  stage Stage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+
+  @@id([staff_id, stage_id])
+  @@map("staff_stages")
+}
+
+model SalaryProjects {
+  id                Int       @id @default(autoincrement())
+  staff_id          Int
+  project_id        Int
+  adjustment_salary Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  staff   Staff   @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([staff_id, project_id])
+  @@map("salary_projects")
+}
+
 model Stage {
   id          Int       @id @default(autoincrement())
   stage_name  String    @unique
@@ -507,6 +551,7 @@ model Stage {
 
   work_logs        WorkLog[]
   progressReports  ProgressReport[]
+  staffStages      StaffStage[]
 
   @@map("stages")
 }

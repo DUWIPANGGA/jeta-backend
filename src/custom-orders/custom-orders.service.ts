@@ -179,19 +179,15 @@ export class CustomOrdersService {
   async updateAcceptStatus(id: number, acceptStatus: boolean) {
     const customOrder = await this.findOne(id);
 
-    // Jika ACC = true, pastikan sudah ada Payment entry
     if (acceptStatus === true) {
+      // 1. Pastikan Payment ada (kode yang sudah ada)
       const existingPayment = await this.prisma.payment.findUnique({
         where: { custom_order_id: id },
       });
-
       if (!existingPayment) {
-        // Cari payment method aktif pertama (boleh null)
         const defaultPaymentMethod = await this.prisma.paymentMethod.findFirst({
           where: { status_method: true },
         });
-
-        // Buat Payment baru yang terhubung ke custom order ini
         await this.prisma.payment.create({
           data: {
             custom_order_id: id,
@@ -205,11 +201,29 @@ export class CustomOrdersService {
         });
       }
 
-      // Update accept_status menjadi true
+      // 2. 🔥 TAMBAHKAN: Pastikan Project ada (otomatis buat jika belum)
+      let project = await this.prisma.project.findFirst({
+        where: { custom_order_id: id },
+      });
+      if (!project) {
+        project = await this.prisma.project.create({
+          data: {
+            user_id: customOrder.user_id, // owner project adalah pembeli custom order
+            custom_order_id: id,
+            status: true, // project aktif
+          },
+        });
+      }
+
+      // 3. Update accept_status menjadi true dan kembalikan data dengan include project
       return this.prisma.customOrder.update({
         where: { id },
         data: { accept_status: true },
-        include: { payment: true, user: { select: { id: true, name: true, email: true } } },
+        include: {
+          payment: true,
+          projects: true, // sertakan data project yang baru dibuat
+          user: { select: { id: true, name: true, email: true } },
+        },
       });
     } else {
       // Jika ACC = false, cukup update status saja

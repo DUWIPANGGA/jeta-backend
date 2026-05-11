@@ -11,7 +11,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createDto: CreateProjectDto, currentUserId: number) {
     try {
@@ -31,7 +31,7 @@ export class ProjectsService {
         throw new ForbiddenException('Cannot create project for unapproved custom order');
       }
 
-      const teamList = createDto.team || [];
+      const teamList = createDto.team || []; // untuk kemudahan
       let existingUsers: { id: number; name: string }[] = [];
       if (teamList.length > 0) {
         const userIds = teamList.map((item) => item.user_id);
@@ -59,19 +59,25 @@ export class ProjectsService {
             },
           });
         }
+        const projectId = project.id;
 
-        if (teamList.length > 0) {
-          await tx.projectMember.deleteMany({ where: { project_id: project.id } });
-          const membersData = teamList.map((member) => ({
-            project_id: project.id,
-            user_id: member.user_id,
-            assigned_name: existingUsers.find((u) => u.id === member.user_id)?.name || null,
-          }));
-          await tx.projectMember.createMany({ data: membersData });
+        // Perbaikan: jika field team disertakan dalam request (termasuk array kosong)
+        if (createDto.team !== undefined) {
+          // Hapus semua member yang ada
+          await tx.projectMember.deleteMany({ where: { project_id: projectId } });
+          // Jika ada member baru (tidak kosong), tambahkan
+          if (teamList.length > 0) {
+            const membersData = teamList.map((member) => ({
+              project_id: projectId,
+              user_id: member.user_id,
+              assigned_name: existingUsers.find((u) => u.id === member.user_id)?.name || null,
+            }));
+            await tx.projectMember.createMany({ data: membersData });
+          }
         }
 
         return tx.project.findUnique({
-          where: { id: project.id },
+          where: { id: projectId },
           include: {
             user: { select: { id: true, name: true, email: true } },
             custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
