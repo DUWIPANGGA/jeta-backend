@@ -62,22 +62,15 @@ export class ProgressReportsController {
   @Post()
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
-    @Body() dto: CreateProgressReportDto,
+    @Body() createProgressReportDto: CreateProgressReportDto,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: RequestWithUser,
   ) {
-    // 🔍 DEBUG: Cek apakah file diterima
-    console.log('=== FILE RECEIVED ===', file);
-    console.log('=== BODY ===', dto);
-
-    let imagePath: string | undefined = undefined;
-    if (file) {
-      imagePath = `/uploads/progress/${file.filename}`;
-      console.log('✅ Image path:', imagePath);
-    } else {
-      console.warn('⚠️ No file uploaded');
+    if (!file) {
+      throw new BadRequestException('Progress image is required');
     }
-    return this.service.create(dto, req.user.id, imagePath);
+    const imagePath = `/uploads/progress/${file.filename}`;
+    return this.service.create(createProgressReportDto, req.user.id, file);
   }
 
   @Get()

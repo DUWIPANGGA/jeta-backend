@@ -13,7 +13,7 @@ import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
 export class ProgressReportsService {
   constructor(private readonly prisma: PrismaService) { }
 
-  // ---------- Helper: validasi quantity tidak melebihi jumlah custom order ----------
+  // ---------- Helper: validasi quantity ----------
   private async validateQuantity(projectId: number, quantity: number | undefined) {
     if (quantity === undefined) return;
     const project = await this.prisma.project.findUnique({
@@ -28,7 +28,7 @@ export class ProgressReportsService {
     }
   }
 
-  // ---------- Helper: cek apakah staff adalah member project (opsional) ----------
+  // ---------- Helper: cek member (opsional) ----------
   private async isStaffMemberOfProject(staffId: number, projectId: number): Promise<boolean> {
     const staff = await this.prisma.staff.findUnique({
       where: { id: staffId },
@@ -41,12 +41,13 @@ export class ProgressReportsService {
     return !!member;
   }
 
-  // ---------- CREATE ----------
+  // ---------- CREATE (mirip dengan product) ----------
   async create(
     createDto: CreateProgressReportDto,
     userIdFromToken: number,
-    imagePath?: string,
+    file: Express.Multer.File,
   ) {
+    const imagePath = `/uploads/progress/${file.filename}`;
     const projectId = Number(createDto.project_id);
     const stageId = Number(createDto.stage_id);
     const quantity = createDto.quantity ? Number(createDto.quantity) : undefined;
@@ -55,7 +56,6 @@ export class ProgressReportsService {
       throw new BadRequestException('project_id and stage_id must be valid numbers');
     }
 
-    // Dapatkan staff_id berdasarkan user_id dari token
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
     });
@@ -64,7 +64,6 @@ export class ProgressReportsService {
     }
     const staffId = staff.id;
 
-    // Opsional: cek member (komentari jika tidak diperlukan)
     // const isMember = await this.isStaffMemberOfProject(staffId, projectId);
     // if (!isMember) throw new ForbiddenException('You are not a member of this project');
 
@@ -81,7 +80,7 @@ export class ProgressReportsService {
         status: createDto.status ?? 'pending',
         quantity: quantity ?? null,
         catatan: createDto.catatan,
-        image: imagePath ?? null,
+        image: imagePath,
         approval_status: false,
       },
       include: {
@@ -128,8 +127,6 @@ export class ProgressReportsService {
     isAdmin: boolean,
   ) {
     const report = await this.findOne(id);
-
-    // Dapatkan staff_id dari user token
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
     });
@@ -145,14 +142,11 @@ export class ProgressReportsService {
     }
     if (quantity !== undefined) await this.validateQuantity(report.project_id, quantity);
 
-    // Data yang boleh diupdate oleh staff
     const commonData: any = {};
     if (updateDto.status !== undefined) commonData.status = updateDto.status;
     if (updateDto.catatan !== undefined) commonData.catatan = updateDto.catatan;
     if (quantity !== undefined) commonData.quantity = quantity;
-    // image tidak diupdate via PATCH (gunakan endpoint terpisah jika perlu)
 
-    // Data khusus admin
     let adminData: any = {};
     if (updateDto.approval_status !== undefined) {
       if (!isAdmin) throw new ForbiddenException('Only admin can update approval status');
@@ -193,7 +187,7 @@ export class ProgressReportsService {
     return { message: `Progress report ${id} deleted successfully` };
   }
 
-  // ---------- GET MY TASKS (progress reports milik staff yang login) ----------
+  // ---------- GET MY TASKS ----------
   async getMyTasks(userIdFromToken: number) {
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
@@ -210,7 +204,7 @@ export class ProgressReportsService {
     });
   }
 
-  // ---------- GET QUEUE (laporan yang belum disetujui admin) ----------
+  // ---------- GET QUEUE ----------
   async getQueue() {
     return this.prisma.progressReport.findMany({
       where: { approval_status: false },
