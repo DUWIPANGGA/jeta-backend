@@ -41,6 +41,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ProgressReportsModule } from './progress-reports/progress-reports.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
+import { SubCategoriesModule } from './sub-categories/sub-categories.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
     ProgressReportsModule,
     StaffsModule,
     SalaryProjectsModule,
+    SubCategoriesModule,
   ],
   controllers: [AppController],
   providers: [

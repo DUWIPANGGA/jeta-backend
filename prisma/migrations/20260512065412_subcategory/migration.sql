@@ -99,11 +99,23 @@ CREATE TABLE "password_reset_tokens" (
 -- CreateTable
 CREATE TABLE "categories" (
     "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
+    "name" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "subcategories" (
+    "id" SERIAL NOT NULL,
+    "category_id" INTEGER NOT NULL,
+    "name" TEXT,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "subcategories_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -531,6 +543,9 @@ ALTER TABLE "accesses" ADD CONSTRAINT "accesses_page_id_fkey" FOREIGN KEY ("page
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subcategories" ADD CONSTRAINT "subcategories_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;

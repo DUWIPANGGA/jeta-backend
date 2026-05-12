@@ -160,13 +160,27 @@ model PasswordResetToken {
 
 model Category {
   id         Int       @id @default(autoincrement())
-  name       String
+  name       String?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
   products   Product[]
+  subcategories SubCategory[]
 
   @@map("categories")
+}
+
+model SubCategory {
+  id            Int       @id @default(autoincrement())
+  category_id   Int
+  name          String?
+  description   String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  category    Category?  @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  @@map("subcategories")
 }
 
 model Product {
