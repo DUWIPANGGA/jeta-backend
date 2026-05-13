@@ -11,16 +11,22 @@ async function bootstrap() {
   });
 
 
-  // Serve static files from uploads directory (AGAR GAMBAR BISA DIAKSES)
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/', // URL prefix untuk mengakses file
-  });
+  // // Serve static files from uploads directory (AGAR GAMBAR BISA DIAKSES)
+  // app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  //   prefix: '/uploads/', // URL prefix untuk mengakses file
+  // });
 
   // Trust proxy untuk reverse proxy (Nginx, etc)
   app.set('trust proxy', true);
 
   // Cookie parser middleware
-  app.use(cookieParser());
+  // main.ts
+  app.use((req, res, next) => {
+    if (req.url.includes('\\')) {
+      req.url = req.url.replace(/\\/g, '/');
+    }
+    next();
+  });
 
   // CORS configuration
   app.enableCors({

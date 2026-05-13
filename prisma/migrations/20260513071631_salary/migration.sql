@@ -496,6 +496,33 @@ CREATE TABLE "progress_reports" (
     CONSTRAINT "progress_reports_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "salary_payments" (
+    "id" SERIAL NOT NULL,
+    "staff_id" INTEGER NOT NULL,
+    "paid_by" INTEGER NOT NULL,
+    "total_amount" INTEGER,
+    "payment_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "proof" TEXT,
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "salary_payments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "salary_payment_details" (
+    "id" SERIAL NOT NULL,
+    "salary_payment_id" INTEGER NOT NULL,
+    "project_id" INTEGER NOT NULL,
+    "amount" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "salary_payment_details_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -672,3 +699,15 @@ ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_project_id_fkey"
 
 -- AddForeignKey
 ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_payments" ADD CONSTRAINT "salary_payments_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staffs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_payments" ADD CONSTRAINT "salary_payments_paid_by_fkey" FOREIGN KEY ("paid_by") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_salary_payment_id_fkey" FOREIGN KEY ("salary_payment_id") REFERENCES "salary_payments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;

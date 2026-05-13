@@ -35,7 +35,7 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard, AccessGuard)
   // @Access(4, 'update')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: UpdateCategoryDto) { // ganti any
+  update(@Param('id') id  : string, @Body() updateDto: UpdateCategoryDto) { // ganti any
     return this.categoriesService.update(+id, updateDto);
   }
 

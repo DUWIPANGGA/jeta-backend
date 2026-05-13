@@ -32,6 +32,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Konfigurasi penyimpanan file
 const storage = diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -42,6 +43,7 @@ const storage = diskStorage({
   },
 });
 
+// Filter file (hanya gambar)
 const fileFilter = (req, file, cb) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     return cb(new BadRequestException('Only image files are allowed!'), false);
@@ -59,6 +61,7 @@ export class ProgressReportsController {
   constructor(private readonly service: ProgressReportsService) { }
   private readonly logger = new Logger(ProgressReportsController.name);
 
+  // CREATE (dengan upload gambar)
   @Post()
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
@@ -69,20 +72,22 @@ export class ProgressReportsController {
     if (!file) {
       throw new BadRequestException('Progress image is required');
     }
-    const imagePath = `/uploads/progress/${file.filename}`;
     return this.service.create(createProgressReportDto, req.user.id, file);
   }
 
+  // GET ALL
   @Get()
   findAll(@Query('project_id') projectId?: string) {
     return this.service.findAll(projectId ? parseInt(projectId, 10) : undefined);
   }
 
+  // GET MY TASKS
   @Get('my-tasks')
   getMyTasks(@Req() req: RequestWithUser) {
     return this.service.getMyTasks(req.user.id);
   }
 
+  // GET QUEUE (hanya admin)
   @Get('queue')
   getQueue(@Req() req: RequestWithUser) {
     if (req.user.role_id !== 1) {
@@ -91,21 +96,30 @@ export class ProgressReportsController {
     return this.service.getQueue();
   }
 
+  // GET ONE
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
+  // UPDATE (dengan upload gambar opsional)
   @Patch(':id')
-  update(
+  @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProgressReportDto,
+    @UploadedFile() file: Express.Multer.File,
     @Req() req: RequestWithUser,
   ) {
     const isAdmin = req.user.role_id === 1;
-    return this.service.update(id, dto, req.user.id, isAdmin);
+    let imagePath: string | undefined = undefined;
+    if (file) {
+      imagePath = `/uploads/progress/${file.filename}`;
+    }
+    return this.service.update(id, dto, req.user.id, isAdmin, imagePath);
   }
 
+  // DELETE
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const isAdmin = req.user.role_id === 1;

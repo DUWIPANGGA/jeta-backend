@@ -127,8 +127,8 @@ model User {
   production_logs    ProductionLog[]
   salary_logs        SalaryLog[]
   work_logs          WorkLog[]
-  // progressReports dihapus karena tidak ada kunci asing langsung
   staffs             Staff[]
+  salaryPayments     SalaryPayment[]  // 🔥 TAMBAHAN (relasi ke SalaryPayment sebagai finance)
 
   role               Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -348,6 +348,7 @@ model Project {
   members         ProjectMember[]
   progressReports ProgressReport[]
   salaryProjects  SalaryProjects[]
+  salaryPaymentDetails SalaryPaymentDetail[]  // 🔥 TAMBAHAN (relasi ke SalaryPaymentDetail)
 
   @@map("projects")
 }
@@ -524,7 +525,8 @@ model Staff {
   user            User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   staffStages     StaffStage[]
   salaryProjects  SalaryProjects[]
-  progressReports ProgressReport[]  // ← relasi balik ke ProgressReport
+  progressReports ProgressReport[]
+  salaryPayments  SalaryPayment[]  // 🔥 TAMBAHAN (relasi ke SalaryPayment)
 
   @@map("staffs")
 }
@@ -640,7 +642,7 @@ model WorkLog {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROGRESS REPORT (diperbaiki dengan relasi ke Staff dan Stage)
+// PROGRESS REPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
 model ProgressReport {
@@ -656,10 +658,45 @@ model ProgressReport {
   created_at        DateTime        @default(now())
   updated_at        DateTime        @updatedAt
 
-  // Relasi
   staff       Staff         @relation(fields: [staff_id], references: [id], onDelete: Cascade)
   project     Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
   stage       Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
 
   @@map("progress_reports")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SALARY PAYMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SalaryPayment {
+  id            Int       @id @default(autoincrement())
+  staff_id      Int
+  paid_by       Int
+  total_amount  Int?
+  payment_date  DateTime  @default(now())
+  proof         String?
+  notes         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  staff         Staff     @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  finance       User      @relation(fields: [paid_by], references: [id], onDelete: Cascade)
+  details       SalaryPaymentDetail[]
+
+  @@map("salary_payments")
+}
+
+model SalaryPaymentDetail {
+  id                Int       @id @default(autoincrement())
+  salary_payment_id Int
+  project_id        Int
+  amount            Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  salaryPayment     SalaryPayment @relation(fields: [salary_payment_id], references: [id], onDelete: Cascade)
+  project           Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("salary_payment_details")
 }

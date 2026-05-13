@@ -8,6 +8,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProgressReportDto } from './dto/create-progress-report.dto';
 import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
+import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class ProgressReportsService {
@@ -41,7 +43,7 @@ export class ProgressReportsService {
     return !!member;
   }
 
-  // ---------- CREATE (mirip dengan product) ----------
+  // ---------- CREATE ----------
   async create(
     createDto: CreateProgressReportDto,
     userIdFromToken: number,
@@ -64,6 +66,7 @@ export class ProgressReportsService {
     }
     const staffId = staff.id;
 
+    // Opsional: cek member (bisa diaktifkan nanti)
     // const isMember = await this.isStaffMemberOfProject(staffId, projectId);
     // if (!isMember) throw new ForbiddenException('You are not a member of this project');
 
@@ -119,52 +122,81 @@ export class ProgressReportsService {
     return report;
   }
 
-  // ---------- UPDATE ----------
+  // ---------- UPDATE (dengan penanganan file gambar) ----------
   async update(
     id: number,
     updateDto: UpdateProgressReportDto,
     userIdFromToken: number,
     isAdmin: boolean,
+    imagePath?: string,
   ) {
     const report = await this.findOne(id);
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
     });
     const staffId = staff?.id;
-    if (!isAdmin && (!staff || report.staff_id !== staffId)) {
-      throw new ForbiddenException('You can only update your own reports');
+
+    // ==================== ADMIN ====================
+    if (isAdmin) {
+      const allowedFields = ['approval_status'];
+      const forbiddenFields = Object.keys(updateDto).filter(key => !allowedFields.includes(key));
+      if (forbiddenFields.length > 0) {
+        throw new ForbiddenException(`Admin hanya bisa mengupdate approval_status, tidak boleh: ${forbiddenFields.join(', ')}`);
+      }
+      if (updateDto.approval_status === undefined) {
+        throw new BadRequestException('Approval status harus diisi untuk update admin');
+      }
+      return this.prisma.progressReport.update({
+        where: { id },
+        data: { approval_status: updateDto.approval_status },
+        include: {
+          staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+          project: { include: { custom_order: true } },
+          stage: true,
+        },
+      });
     }
 
+    // ==================== STAFF ====================
+    if (!staff || report.staff_id !== staffId) {
+      throw new ForbiddenException('Anda hanya bisa mengupdate laporan milik sendiri');
+    }
+    if (report.approval_status === true) {
+      throw new ForbiddenException('Tidak bisa mengupdate laporan yang sudah disetujui admin');
+    }
+
+    // Staff hanya boleh update status, catatan, quantity, dan gambar (jika ada)
     let quantity: number | undefined = undefined;
     if (updateDto.quantity !== undefined) {
       quantity = Number(updateDto.quantity);
-      if (isNaN(quantity)) throw new BadRequestException('Quantity must be a number');
+      if (isNaN(quantity)) throw new BadRequestException('Quantity harus berupa angka');
     }
-    if (quantity !== undefined) await this.validateQuantity(report.project_id, quantity);
+    if (quantity !== undefined) {
+      await this.validateQuantity(report.project_id, quantity);
+    }
 
     const commonData: any = {};
     if (updateDto.status !== undefined) commonData.status = updateDto.status;
     if (updateDto.catatan !== undefined) commonData.catatan = updateDto.catatan;
     if (quantity !== undefined) commonData.quantity = quantity;
-
-    let adminData: any = {};
-    if (updateDto.approval_status !== undefined) {
-      if (!isAdmin) throw new ForbiddenException('Only admin can update approval status');
-      adminData.approval_status = updateDto.approval_status;
-    }
-    if (updateDto.stage_id !== undefined) {
-      if (!isAdmin) throw new ForbiddenException('Only admin can change stage');
-      const newStageId = Number(updateDto.stage_id);
-      if (isNaN(newStageId)) throw new BadRequestException('Stage ID must be a number');
-      const stageExists = await this.prisma.stage.findUnique({ where: { id: newStageId } });
-      if (!stageExists) throw new BadRequestException(`Stage with ID ${newStageId} not found`);
-      adminData.stage_id = newStageId;
+    if (imagePath !== undefined) {
+      // Hapus file lama jika ada
+      if (report.image) {
+        const oldFilePath = path.join(process.cwd(), report.image);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+      commonData.image = imagePath;
     }
 
-    const updateData = { ...commonData, ...adminData };
+    if (Object.keys(commonData).length === 0) {
+      throw new BadRequestException('Tidak ada field yang valid untuk diupdate (status, catatan, quantity, atau gambar)');
+    }
+
     return this.prisma.progressReport.update({
       where: { id },
-      data: updateData,
+      data: commonData,
       include: {
         staff: { include: { user: { select: { id: true, name: true, email: true } } } },
         project: { include: { custom_order: true } },
@@ -181,7 +213,14 @@ export class ProgressReportsService {
     });
     const staffId = staff?.id;
     if (!isAdmin && (!staff || report.staff_id !== staffId)) {
-      throw new ForbiddenException('You can only delete your own reports');
+      throw new ForbiddenException('Anda hanya bisa menghapus laporan milik sendiri');
+    }
+    // Hapus file gambar jika ada
+    if (report.image) {
+      const filePath = path.join(process.cwd(), report.image);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     await this.prisma.progressReport.delete({ where: { id } });
     return { message: `Progress report ${id} deleted successfully` };

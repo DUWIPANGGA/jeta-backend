@@ -7,24 +7,13 @@ async function main() {
 
     const hashedPassword = await bcrypt.hash('admin123', 10);
 
-    // Cari roles
-    const superadminRole = await prisma.role.findFirst({
-        where: { name: 'superadmin' }
-    });
+    const superadminRole = await prisma.role.findFirst({ where: { name: 'superadmin' } });
+    const adminRole = await prisma.role.findFirst({ where: { name: 'admin' } });
+    const staffRole = await prisma.role.findFirst({ where: { name: 'staff' } });
+    const userRole = await prisma.role.findFirst({ where: { name: 'user' } });
+    const financeRole = await prisma.role.findFirst({ where: { name: 'finance' } }); // 🔥 TAMBAHAN
 
-    const adminRole = await prisma.role.findFirst({
-        where: { name: 'admin' }
-    });
-
-    const staffRole = await prisma.role.findFirst({
-        where: { name: 'staff' }
-    });
-
-    const userRole = await prisma.role.findFirst({
-        where: { name: 'user' }
-    });
-
-    if (!superadminRole || !adminRole || !staffRole || !userRole) {
+    if (!superadminRole || !adminRole || !staffRole || !userRole || !financeRole) {
         console.log('⚠️  Roles not found. Please run role seeder first.');
         return;
     }
@@ -46,7 +35,16 @@ async function main() {
             role_id: adminRole.id,
             email_verified_at: new Date(),
         },
-        // Staff Users (ditambah lebih banyak)
+        // 🔥 TAMBAH USER FINANCE
+        {
+            name: 'Finance User',
+            email: 'finance@jeta.com',
+            password: hashedPassword,
+            address: 'Jl. Finance No. 1',
+            role_id: financeRole.id,
+            email_verified_at: new Date(),
+        },
+        // Staff Users
         {
             name: 'Staff User 1',
             email: 'staff1@jeta.com',
@@ -125,11 +123,9 @@ async function main() {
             skippedCount++;
             console.log(`⏭️  User already exists: ${user.email}`);
         } else {
-            await prisma.user.create({
-                data: user
-            });
+            await prisma.user.create({ data: user });
             createdCount++;
-            console.log(`✅ Created user: ${user.email} (Password: admin123, Role: ${user.role_id === superadminRole.id ? 'superadmin' : user.role_id === adminRole.id ? 'admin' : user.role_id === staffRole.id ? 'staff' : 'user'})`);
+            console.log(`✅ Created user: ${user.email} (Password: admin123, Role: ${user.role_id === superadminRole.id ? 'superadmin' : user.role_id === adminRole.id ? 'admin' : user.role_id === staffRole.id ? 'staff' : user.role_id === financeRole.id ? 'finance' : 'user'})`);
         }
     }
 
@@ -137,7 +133,6 @@ async function main() {
     console.log(`✅ Created: ${createdCount} new users`);
     console.log(`⏭️  Skipped: ${skippedCount} existing users`);
 
-    // Tampilkan daftar user
     const allUsers = await prisma.user.findMany({
         include: { role: true },
         orderBy: { id: 'asc' }
@@ -151,13 +146,13 @@ async function main() {
 
 async function down() {
     console.log('🗑️ Rolling back users...');
-
     await prisma.user.deleteMany({
         where: {
             email: {
                 in: [
                     'superadmin@jeta.com',
                     'admin@jeta.com',
+                    'finance@jeta.com', // 🔥 TAMBAH
                     'staff1@jeta.com',
                     'staff2@jeta.com',
                     'staff3@jeta.com',
@@ -170,7 +165,6 @@ async function down() {
             }
         }
     });
-
     console.log(`↩️ Rollback completed`);
 }
 

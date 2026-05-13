@@ -42,6 +42,7 @@ import { ProgressReportsModule } from './progress-reports/progress-reports.modul
 import { StaffsModule } from './staffs/staffs.module';
 import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
 import { SubCategoriesModule } from './sub-categories/sub-categories.module';
+import { FinanceModule } from './finance/finance.module';
 
 @Module({
   imports: [
@@ -49,6 +50,11 @@ import { SubCategoriesModule } from './sub-categories/sub-categories.module';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client', 'dist'),
+      serveRoot: '/',
+      exclude: ['/api/(.*)', '/uploads/(.*)'], // regex pattern
     }),
     MailerModule.forRoot({
       transport: {
@@ -96,6 +102,7 @@ import { SubCategoriesModule } from './sub-categories/sub-categories.module';
     StaffsModule,
     SalaryProjectsModule,
     SubCategoriesModule,
+    FinanceModule,
   ],
   controllers: [AppController],
   providers: [
