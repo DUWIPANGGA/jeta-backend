@@ -1,50 +1,56 @@
-// create-custom-order.dto.ts
-import {
-    IsString,
-    IsEmail,
-    IsNotEmpty,
-    IsOptional,
-    IsInt,
-    Min,
-    MaxLength,
-    Matches,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+// src/custom-orders/dto/create-custom-order.dto.ts
+import { IsString, IsEmail, IsNotEmpty, IsOptional, IsArray, IsInt, Min } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateCustomOrderDto {
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(255)
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(20)
-    phone: string;
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 
-    @IsEmail()
-    @IsNotEmpty()
-    email: string;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(255)
-    jenis_produk: string;
+  @Type(() => Date)
+  @IsNotEmpty()
+  deadline: Date;
 
-    @IsInt()
-    @IsNotEmpty()
-    @Min(1)
-    jumlah: number;
+  @IsString()
+  @IsOptional()
+  catatan_tambahan?: string;
 
-    @Type(() => Date)
-    @IsNotEmpty()
-    deadline: Date;
+  @Transform(({ value }) => {
+    // Parse JSON string dari FormData
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed;
+      } catch (e) {
+        return value;
+      }
+    }
+    return value;
+  })
+  @IsArray()
+  @IsNotEmpty()
+  items: Array<{
+    sub_category_id: number;
+    quantity: number;
+  }>;
 
-    @IsString()
-    @IsNotEmpty()
-    upload_referensi: string;
+  @IsInt()
+  @IsOptional()
+  dp_amount?: number;
 
-    @IsString()
-    @IsOptional()
-    catatan_tambahan?: string;
+  @IsInt()
+  @IsOptional()
+  remaining_amount?: number;
+
+  @IsInt()
+  @IsOptional()
+  total_amount?: number;
 }

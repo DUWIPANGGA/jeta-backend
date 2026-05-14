@@ -10,37 +10,27 @@ export class FinanceService {
 
   // ==================== STAFF RANKING ====================
   async getStaffRanking() {
-    // Ambil semua staff beserta laporan progress yang sudah di-ACC
     const staffs = await this.prisma.staff.findMany({
       include: {
         user: { select: { id: true, name: true, email: true } },
         progressReports: {
-          where: {
-            approval_status: true, // hanya laporan yang sudah disetujui admin
-          },
-          select: {
-            quantity: true,
-            project_id: true,
-          },
+          where: { approval_status: true },
+          select: { quantity: true, project_id: true },
         },
-        salaryProjects: true, // adjustment per proyek
+        salaryProjects: true,
       },
     });
 
     const ranking = staffs.map((staff) => {
-      // Hitung total quantity dan total gaji
       let totalQuantity = 0;
       let totalAmount = 0;
 
       for (const report of staff.progressReports) {
         const quantity = report.quantity ?? 0;
         totalQuantity += quantity;
-
-        // Cari adjustment untuk proyek ini
         const adjustment = staff.salaryProjects.find(
           (sp) => sp.project_id === report.project_id,
         );
-        // Harga per unit = gaji pokok staff + adjustment (jika ada)
         const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
         totalAmount += quantity * ratePerUnit;
       }
@@ -67,10 +57,7 @@ export class FinanceService {
         salaryProjects: true,
         progressReports: {
           where: { approval_status: true },
-          select: {
-            project_id: true,
-            quantity: true,
-          },
+          select: { project_id: true, quantity: true },
         },
       },
     });
@@ -79,19 +66,29 @@ export class FinanceService {
       throw new NotFoundException(`Staff with ID ${staffId} not found`);
     }
 
-    // Ambil semua proyek staff dari ProjectMember
+    // Ambil semua proyek staff dari ProjectMember dengan include custom_order dan items
     const projectMembers = await this.prisma.projectMember.findMany({
       where: { user_id: staff.user_id },
       include: {
         project: {
           include: {
-            custom_order: true,
+            custom_order: {
+              include: {
+                items: {
+                  include: {
+                    sub_category: {
+                      include: { category: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
-    // Dapatkan daftar proyek yang sudah dibayar (dari SalaryPaymentDetail)
+    // Dapatkan daftar proyek yang sudah dibayar
     const paidProjectDetails = await this.prisma.salaryPaymentDetail.findMany({
       where: {
         project_id: { in: projectMembers.map((pm) => pm.project_id) },
@@ -117,10 +114,24 @@ export class FinanceService {
       const amount = quantity * ratePerUnit;
       const isPaid = paidProjectIds.has(pm.project_id);
 
+      // 🔥 PERBAIKAN: Buat deskripsi produk dari items custom order
+      let deskripsiProduk = '-';
+      if (pm.project.custom_order?.items && pm.project.custom_order.items.length > 0) {
+        deskripsiProduk = pm.project.custom_order.items
+          .map(item => {
+            const catName = item.sub_category?.category?.name || '';
+            const subCatName = item.sub_category?.name || '';
+            return `${catName} ${subCatName}`.trim();
+          })
+          .filter(str => str !== '')
+          .join(', ');
+      }
+      if (deskripsiProduk === '') deskripsiProduk = 'Produk Custom';
+
       return {
         project_id: pm.project_id,
         project_name: pm.project.custom_order?.name || `Project ${pm.project_id}`,
-        jenis_produk: pm.project.custom_order?.jenis_produk || '-',
+        jenis_produk: deskripsiProduk,
         quantity,
         rate_per_unit: ratePerUnit,
         amount,
@@ -139,7 +150,6 @@ export class FinanceService {
   ) {
     const { staff_id, project_ids, notes } = createDto;
 
-    // 1. Cek staff
     const staff = await this.prisma.staff.findUnique({
       where: { id: staff_id },
       include: {
@@ -147,10 +157,7 @@ export class FinanceService {
         salaryProjects: true,
         progressReports: {
           where: { approval_status: true },
-          select: {
-            project_id: true,
-            quantity: true,
-          },
+          select: { project_id: true, quantity: true },
         },
       },
     });
@@ -158,7 +165,6 @@ export class FinanceService {
       throw new NotFoundException(`Staff with ID ${staff_id} not found`);
     }
 
-    // 2. Cek finance user (role_id = 2 untuk finance)
     const finance = await this.prisma.user.findUnique({
       where: { id: financeUserId },
     });
@@ -166,23 +172,17 @@ export class FinanceService {
       throw new ForbiddenException('Only finance can make payments');
     }
 
-    // 3. Validasi proyek dan hitung total amount
     const projectDetails: { projectId: number; amount: number; quantity: number; rate: number }[] = [];
     let totalAmount = 0;
 
     for (const projectId of project_ids) {
-      // Cek apakah staff mengerjakan proyek ini
       const isMember = await this.prisma.projectMember.findFirst({
-        where: {
-          project_id: projectId,
-          user_id: staff.user_id,
-        },
+        where: { project_id: projectId, user_id: staff.user_id },
       });
       if (!isMember) {
         throw new BadRequestException(`Staff tidak mengerjakan project ID ${projectId}`);
       }
 
-      // Cek apakah proyek sudah pernah dibayar
       const existingPayment = await this.prisma.salaryPaymentDetail.findFirst({
         where: { project_id: projectId },
       });
@@ -190,7 +190,6 @@ export class FinanceService {
         throw new BadRequestException(`Project ID ${projectId} sudah pernah dibayar`);
       }
 
-      // Hitung total quantity untuk proyek ini dari semua progress report
       const totalQuantity = staff.progressReports
         .filter((r) => r.project_id === projectId)
         .reduce((sum, r) => sum + (r.quantity ?? 0), 0);
@@ -199,7 +198,6 @@ export class FinanceService {
         throw new BadRequestException(`Tidak ada progress report untuk project ID ${projectId}`);
       }
 
-      // Hitung rate per unit (gaji pokok + adjustment)
       const adjustment = staff.salaryProjects.find(
         (sp) => sp.project_id === projectId,
       );
@@ -207,15 +205,9 @@ export class FinanceService {
       const amount = totalQuantity * ratePerUnit;
 
       totalAmount += amount;
-      projectDetails.push({
-        projectId,
-        amount,
-        quantity: totalQuantity,
-        rate: ratePerUnit,
-      });
+      projectDetails.push({ projectId, amount, quantity: totalQuantity, rate: ratePerUnit });
     }
 
-    // 4. Simpan bukti pembayaran
     let proofPath: string | null = null;
     if (proofFile) {
       proofPath = `/uploads/payments/${proofFile.filename}`;
@@ -225,7 +217,6 @@ export class FinanceService {
       }
     }
 
-    // 5. Buat transaksi pembayaran
     const payment = await this.prisma.$transaction(async (tx) => {
       const salaryPayment = await tx.salaryPayment.create({
         data: {

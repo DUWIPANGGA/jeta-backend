@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+// src/work-logs/work-logs.service.ts
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -18,9 +19,13 @@ export class WorkLogsService {
 
     let totalQuantity = 0;
     if (orderType === 'CUSTOM') {
-      const order = await this.prisma.customOrder.findUnique({ where: { id: Number(orderId) } });
+      const order = await this.prisma.customOrder.findUnique({
+        where: { id: Number(orderId) },
+        include: { items: true },  // ← tambahkan include items
+      });
       if (!order) throw new BadRequestException('Custom order not found');
-      totalQuantity = order.jumlah ?? 0;
+      // Hitung total quantity dari items
+      totalQuantity = order.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
     } else if (orderType === 'SPORT') {
       const order = await this.prisma.order.findUnique({
         where: { id: Number(orderId) },
@@ -54,6 +59,20 @@ export class WorkLogsService {
         custom_order_id: orderType === 'CUSTOM' ? Number(orderId) : null,
         sport_order_id: orderType === 'SPORT' ? Number(orderId) : null,
         quantity: Number(quantity),
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        stage: true,
+        custom_order: {
+          include: {
+            items: {
+              include: {
+                sub_category: { include: { category: true } }
+              }
+            }
+          }
+        },
+        sport_order: true,
       }
     });
   }
@@ -63,18 +82,30 @@ export class WorkLogsService {
       include: { 
         user: { select: { id: true, name: true, email: true } }, 
         stage: true, 
-        custom_order: true, 
+        custom_order: {
+          include: {
+            items: {
+              include: {
+                sub_category: { include: { category: true } }
+              }
+            }
+          }
+        },
         sport_order: true 
-      }
+      },
+      orderBy: { created_at: 'desc' },
     });
   }
 
   async getOrderProgress(orderType: string, orderId: number) {
     let totalQuantity = 0;
     if (orderType === 'CUSTOM') {
-      const order = await this.prisma.customOrder.findUnique({ where: { id: orderId } });
+      const order = await this.prisma.customOrder.findUnique({
+        where: { id: orderId },
+        include: { items: true },  // ← tambahkan include items
+      });
       if (!order) throw new BadRequestException('Custom order not found');
-      totalQuantity = order.jumlah ?? 0;
+      totalQuantity = order.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
     } else if (orderType === 'SPORT') {
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },
@@ -119,12 +150,30 @@ export class WorkLogsService {
   }
 
   async findOne(id: number) {
-    return this.prisma.workLog.findUnique({
+    const workLog = await this.prisma.workLog.findUnique({
       where: { id },
       include: { 
         user: { select: { id: true, name: true, email: true } }, 
-        stage: true 
+        stage: true,
+        custom_order: {
+          include: {
+            items: {
+              include: {
+                sub_category: { include: { category: true } }
+              }
+            }
+          }
+        },
+        sport_order: true,
       }
     });
+    if (!workLog) throw new NotFoundException(`Work log with ID ${id} not found`);
+    return workLog;
+  }
+
+  async remove(id: number) {
+    const workLog = await this.findOne(id);
+    await this.prisma.workLog.delete({ where: { id } });
+    return { message: `Work log with ID ${id} deleted successfully` };
   }
 }

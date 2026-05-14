@@ -42,7 +42,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true, // Strip properties that don't have decorators
       transform: true, // Automatically transform payload to DTO
-      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties exist
+      forbidNonWhitelisted: false, // Throw error if non-whitelisted properties exist
       transformOptions: {
         enableImplicitConversion: true, // Enable implicit type conversion
       },

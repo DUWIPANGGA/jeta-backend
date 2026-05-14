@@ -11,7 +11,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateProjectDto, currentUserId: number) {
     try {
@@ -61,7 +61,6 @@ export class ProjectsService {
         }
         const projectId = project.id;
 
-        // 🔧 PERBAIKAN: Jika field team disertakan (meskipun kosong), hapus semua member
         if (createDto.team !== undefined) {
           await tx.projectMember.deleteMany({ where: { project_id: projectId } });
           if (teamList.length > 0) {
@@ -78,7 +77,21 @@ export class ProjectsService {
           where: { id: projectId },
           include: {
             user: { select: { id: true, name: true, email: true } },
-            custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
+            custom_order: {
+              select: {
+                id: true,
+                name: true,
+                accept_status: true,
+                deadline: true,
+                items: {
+                  include: {
+                    sub_category: {
+                      include: { category: true },
+                    },
+                  },
+                },
+              },
+            },
             members: { include: { user: { select: { id: true, name: true, email: true } } } },
           },
         });
@@ -97,7 +110,21 @@ export class ProjectsService {
       orderBy: { created_at: 'desc' },
       include: {
         user: { select: { id: true, name: true, email: true } },
-        custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
+            accept_status: true,
+            deadline: true,
+            items: {
+              include: {
+                sub_category: {
+                  include: { category: true },
+                },
+              },
+            },
+          },
+        },
         members: { include: { user: { select: { id: true, name: true, email: true } } } },
       },
     });
@@ -110,13 +137,27 @@ export class ProjectsService {
         project: {
           include: {
             user: { select: { id: true, name: true, email: true } },
-            custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true, jumlah: true, deadline: true } },
+            custom_order: {
+              select: {
+                id: true,
+                name: true,
+                accept_status: true,
+                deadline: true,
+                items: {
+                  include: {
+                    sub_category: {
+                      include: { category: true },
+                    },
+                  },
+                },
+              },
+            },
             members: { include: { user: { select: { id: true, name: true, email: true } } } },
           },
         },
       },
     });
-    return memberships.map((m) => m.project);
+    return memberships.map((membership) => membership.project);
   }
 
   async getQueue(isAdmin: boolean) {
@@ -126,7 +167,21 @@ export class ProjectsService {
       orderBy: { created_at: 'asc' },
       include: {
         user: { select: { id: true, name: true, email: true } },
-        custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
+            accept_status: true,
+            deadline: true,
+            items: {
+              include: {
+                sub_category: {
+                  include: { category: true },
+                },
+              },
+            },
+          },
+        },
         members: { include: { user: { select: { id: true, name: true, email: true } } } },
       },
     });
@@ -137,7 +192,21 @@ export class ProjectsService {
       where: { id },
       include: {
         user: { select: { id: true, name: true, email: true } },
-        custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
+            accept_status: true,
+            deadline: true,
+            items: {
+              include: {
+                sub_category: {
+                  include: { category: true },
+                },
+              },
+            },
+          },
+        },
         members: { include: { user: { select: { id: true, name: true, email: true } } } },
       },
     });
@@ -186,7 +255,21 @@ export class ProjectsService {
           where: { id },
           include: {
             user: { select: { id: true, name: true, email: true } },
-            custom_order: { select: { id: true, name: true, jenis_produk: true, accept_status: true } },
+            custom_order: {
+              select: {
+                id: true,
+                name: true,
+                accept_status: true,
+                deadline: true,
+                items: {
+                  include: {
+                    sub_category: {
+                      include: { category: true },
+                    },
+                  },
+                },
+              },
+            },
             members: { include: { user: { select: { id: true, name: true, email: true } } } },
           },
         });

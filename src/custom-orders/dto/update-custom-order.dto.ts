@@ -1,28 +1,64 @@
-// update-custom-order.dto.ts
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateCustomOrderDto } from './create-custom-order.dto';
-import { IsBoolean, IsOptional, IsString, IsInt, Matches } from 'class-validator';
+// src/custom-orders/dto/update-custom-order.dto.ts
+import { IsOptional, IsString, IsEmail, IsArray, ValidateNested, IsInt, Min, IsBoolean, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class UpdateCustomOrderDto extends PartialType(CreateCustomOrderDto) {
-    // Field finansial – hanya boleh diupdate oleh admin
-    @IsInt()
-    @IsOptional()
-    dp_amount?: number;
+class UpdateCustomOrderItemDto {
+  @IsInt()
+  @IsOptional()
+  sub_category_id?: number;
 
-    @IsInt()
-    @IsOptional()
-    remaining_amount?: number;
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  quantity?: number;
+}
 
-    @IsInt()
-    @IsOptional()
-    total_amount?: number;
+export class UpdateCustomOrderDto {
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  name?: string;
 
-    // Field status – hanya untuk admin
-    @IsBoolean()
-    @IsOptional()
-    accept_status?: boolean;
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  phone?: string;
 
-    @IsBoolean()
-    @IsOptional()
-    payment_status?: boolean;
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @Type(() => Date)
+  @IsOptional()
+  deadline?: Date;
+
+  @IsString()
+  @IsOptional()
+  catatan_tambahan?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateCustomOrderItemDto)
+  items?: UpdateCustomOrderItemDto[];
+
+  @IsInt()
+  @IsOptional()
+  dp_amount?: number;
+
+  @IsInt()
+  @IsOptional()
+  remaining_amount?: number;
+
+  @IsInt()
+  @IsOptional()
+  total_amount?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  accept_status?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  payment_status?: boolean;
 }

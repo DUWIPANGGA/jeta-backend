@@ -214,11 +214,9 @@ CREATE TABLE "custom_orders" (
     "name" TEXT,
     "phone" TEXT,
     "email" TEXT,
-    "jenis_produk" TEXT,
-    "jumlah" INTEGER,
     "deadline" TIMESTAMP(3),
-    "upload_referensi" TEXT,
     "catatan_tambahan" TEXT,
+    "images" TEXT,
     "dp_amount" INTEGER,
     "remaining_amount" INTEGER,
     "total_amount" INTEGER,
@@ -228,6 +226,18 @@ CREATE TABLE "custom_orders" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "custom_orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "custom_order_items" (
+    "id" SERIAL NOT NULL,
+    "custom_order_id" INTEGER NOT NULL,
+    "sub_category_id" INTEGER NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "custom_order_items_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -612,6 +622,12 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_id_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "custom_order_items" ADD CONSTRAINT "custom_order_items_custom_order_id_fkey" FOREIGN KEY ("custom_order_id") REFERENCES "custom_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "custom_order_items" ADD CONSTRAINT "custom_order_items_sub_category_id_fkey" FOREIGN KEY ("sub_category_id") REFERENCES "subcategories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

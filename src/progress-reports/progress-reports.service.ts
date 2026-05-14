@@ -16,19 +16,29 @@ export class ProgressReportsService {
   constructor(private readonly prisma: PrismaService) { }
 
   // ---------- Helper: validasi quantity ----------
-  private async validateQuantity(projectId: number, quantity: number | undefined) {
-    if (quantity === undefined) return;
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-      include: { custom_order: true },
-    });
-    if (!project) throw new BadRequestException('Project not found');
-    if (!project.custom_order) throw new BadRequestException('Project tidak memiliki custom order');
-    const maxQuantity = project.custom_order.jumlah ?? 0;
-    if (quantity > maxQuantity) {
-      throw new BadRequestException(`Quantity tidak boleh melebihi ${maxQuantity}`);
-    }
+  // src/progress-reports/progress-reports.service.ts
+// Ganti method validateQuantity dengan ini:
+
+private async validateQuantity(projectId: number, quantity: number | undefined) {
+  if (quantity === undefined) return;
+  const project = await this.prisma.project.findUnique({
+    where: { id: projectId },
+    include: { 
+      custom_order: {
+        include: { items: true }  // ← tambahkan include items
+      } 
+    },
+  });
+  if (!project) throw new BadRequestException('Project not found');
+  if (!project.custom_order) throw new BadRequestException('Project tidak memiliki custom order');
+  
+  // Hitung total quantity dari semua items
+  const maxQuantity = project.custom_order.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  
+  if (quantity > maxQuantity) {
+    throw new BadRequestException(`Quantity tidak boleh melebihi ${maxQuantity}`);
   }
+}
 
   // ---------- Helper: cek member (opsional) ----------
   private async isStaffMemberOfProject(staffId: number, projectId: number): Promise<boolean> {

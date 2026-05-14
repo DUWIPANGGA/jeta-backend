@@ -128,7 +128,7 @@ model User {
   salary_logs        SalaryLog[]
   work_logs          WorkLog[]
   staffs             Staff[]
-  salaryPayments     SalaryPayment[]  // 🔥 TAMBAHAN (relasi ke SalaryPayment sebagai finance)
+  salaryPayments     SalaryPayment[]
 
   role               Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -164,8 +164,8 @@ model Category {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  products   Product[]
-  subcategories SubCategory[]
+  products        Product[]
+  subcategories   SubCategory[]
 
   @@map("categories")
 }
@@ -179,7 +179,8 @@ model SubCategory {
   updated_at    DateTime  @updatedAt
 
   category    Category?  @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  
+  customOrderItems CustomOrderItem[]
+
   @@map("subcategories")
 }
 
@@ -306,31 +307,43 @@ model OrderItem {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model CustomOrder {
-  id               Int       @id @default(autoincrement())
+  id               Int              @id @default(autoincrement())
   user_id          Int
   name             String?
   phone            String?
   email            String?
-  jenis_produk     String?
-  jumlah           Int?
   deadline         DateTime?
-  upload_referensi String?
   catatan_tambahan String?
+  images           String?          // JSON string array of image paths
   dp_amount        Int?
   remaining_amount Int?
   total_amount     Int?
-  accept_status    Boolean   @default(false)
-  payment_status   Boolean   @default(false)
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
+  accept_status    Boolean          @default(false)
+  payment_status   Boolean          @default(false)
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
 
   user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  payment  Payment? 
-
+  payment  Payment?
+  items    CustomOrderItem[]
   projects Project[]
   work_logs WorkLog[]
 
   @@map("custom_orders")
+}
+
+model CustomOrderItem {
+  id               Int          @id @default(autoincrement())
+  custom_order_id  Int
+  sub_category_id  Int
+  quantity         Int          @default(0)
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  custom_order     CustomOrder   @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  sub_category     SubCategory   @relation(fields: [sub_category_id], references: [id], onDelete: Cascade)
+
+  @@map("custom_order_items")
 }
 
 model Project {
@@ -348,7 +361,7 @@ model Project {
   members         ProjectMember[]
   progressReports ProgressReport[]
   salaryProjects  SalaryProjects[]
-  salaryPaymentDetails SalaryPaymentDetail[]  // 🔥 TAMBAHAN (relasi ke SalaryPaymentDetail)
+  salaryPaymentDetails SalaryPaymentDetail[]
 
   @@map("projects")
 }
@@ -526,7 +539,7 @@ model Staff {
   staffStages     StaffStage[]
   salaryProjects  SalaryProjects[]
   progressReports ProgressReport[]
-  salaryPayments  SalaryPayment[]  // 🔥 TAMBAHAN (relasi ke SalaryPayment)
+  salaryPayments  SalaryPayment[]
 
   @@map("staffs")
 }
