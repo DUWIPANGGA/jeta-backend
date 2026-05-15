@@ -1,7 +1,10 @@
+// src/reports/reports.controller.ts
 import { Controller, Get, Query, UseGuards, Req, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from '../common/guard/access/access.guard';
+import { Access } from '../common/decorator/access/access.decorator';
 import { ProductSalesQueryDto } from './dto/product-sales-query.dto';
 
 interface RequestWithUser extends Request {
@@ -9,11 +12,12 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('reports')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(private readonly reportsService: ReportsService) { }
 
   @Get('product-sales')
+  @Access(24, 'read')
   async getProductSalesReport(
     @Query() query: ProductSalesQueryDto,
     @Req() req: RequestWithUser,
@@ -22,6 +26,7 @@ export class ReportsController {
   }
 
   @Get('product-sales/export')
+  @Access(24, 'read')
   async exportProductSalesReport(
     @Query() query: ProductSalesQueryDto,
     @Req() req: RequestWithUser,

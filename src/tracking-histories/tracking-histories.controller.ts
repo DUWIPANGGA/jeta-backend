@@ -1,45 +1,42 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+// src/tracking-histories/tracking-histories.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { TrackingHistoriesService } from './tracking-histories.service';
-import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Roles } from 'src/common/decorator/roles/roles.decorator';
-import { Role } from '@prisma/client';
-import { Access } from '../common/decorator/access/access.decorator';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
+import { Access } from 'src/common/decorator/access/access.decorator';
 
+@Controller('tracking-histories')
+@UseGuards(JwtAuthGuard, AccessGuard)
+export class TrackingHistoriesController {
+  constructor(private readonly trackingHistoriesService: TrackingHistoriesService) { }
 
-@Controller('tracking-historys')
-@UseGuards(JwtAuthGuard)
-export class TrackingHistoriesController
-
- {
-  constructor(private readonly TrackingHistoriesService: TrackingHistoriesService) { }
- @Access(21, 'create')
   @Post()
+  @Access(30, 'create')
   create(@Body() createDto: any) {
-    return this.TrackingHistoriesService.create(createDto);
+    return this.trackingHistoriesService.create(createDto);
   }
 
-  @Access(21, 'read')
   @Get()
+  @Access(30, 'read')
   findAll() {
-    return this.TrackingHistoriesService.findAll();
+    return this.trackingHistoriesService.findAll();
   }
 
-  @Access(21, 'read')
   @Get(':id')
+  @Access(30, 'read')
   findOne(@Param('id') id: string) {
-    return this.TrackingHistoriesService.findOne(+id);
+    return this.trackingHistoriesService.findOne(+id);
   }
 
-  @Access(21, 'update')
   @Patch(':id')
+  @Access(30, 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
-    return this.TrackingHistoriesService.update(+id, updateDto);
+    return this.trackingHistoriesService.update(+id, updateDto);
   }
 
-  @Access(21, 'delete')
   @Delete(':id')
+  @Access(30, 'delete')
   remove(@Param('id') id: string) {
-    return this.TrackingHistoriesService.remove(+id);
+    return this.trackingHistoriesService.remove(+id);
   }
 }

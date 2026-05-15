@@ -1,34 +1,47 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+// src/work-logs/work-logs.controller.ts
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { WorkLogsService } from './work-logs.service';
-import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
+import { Access } from 'src/common/decorator/access/access.decorator';
+
+interface RequestWithUser extends Request {
+  user: { id: number; role_id: number };
+}
 
 @Controller('work-logs')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class WorkLogsController {
-  constructor(private readonly workLogsService: WorkLogsService) {}
+  constructor(private readonly workLogsService: WorkLogsService) { }
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Request() req, @Body() createDto: any) {
-    // req.user might contain the authenticated user
-    const userId = req.user?.id || 1; // Fallback to 1 if not properly set (depending on auth strategy)
-    return this.workLogsService.create(userId, createDto);
+  @Access(33, 'create')
+  create(@Body() createDto: any, @Req() req: RequestWithUser) {
+    return this.workLogsService.create(req.user.id, createDto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
+  @Access(33, 'read')
   findAll() {
     return this.workLogsService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('progress/:orderType/:orderId')
-  getProgress(@Param('orderType') orderType: string, @Param('orderId') orderId: string) {
-    return this.workLogsService.getOrderProgress(orderType.toUpperCase(), +orderId);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
+  @Access(33, 'read')
   findOne(@Param('id') id: string) {
     return this.workLogsService.findOne(+id);
+  }
+
+  // Method UPDATE tidak ada di service, jadi hapus dulu atau komen
+  // @Patch(':id')
+  // @Access(33, 'update')
+  // update(@Param('id') id: string, @Body() updateDto: any) {
+  //   return this.workLogsService.update(+id, updateDto);
+  // }
+
+  @Delete(':id')
+  @Access(33, 'delete')
+  remove(@Param('id') id: string) {
+    return this.workLogsService.remove(+id);
   }
 }

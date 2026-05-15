@@ -1,3 +1,4 @@
+// src/payments/payments.controller.ts
 import {
   Controller,
   Get,
@@ -16,6 +17,7 @@ import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -36,36 +38,37 @@ const storage = diskStorage({
   },
 });
 
-@UseGuards(JwtAuthGuard)
 @Controller('payments')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(private readonly paymentsService: PaymentsService) { }
 
-  @Access(11, 'create')
   @Post()
+  @Access(19, 'create')
   create(@Body() createDto: CreatePaymentDto) {
     return this.paymentsService.create(createDto);
   }
 
-  @Access(11, 'read')
   @Get()
+  @Access(19, 'read')
   findAll() {
     return this.paymentsService.findAll();
   }
 
-  @Access(11, 'read')
   @Get('pending')
+  @Access(19, 'read')
   findPending() {
     return this.paymentsService.findPending();
   }
 
-  @Access(11, 'read')
   @Get(':id')
+  @Access(19, 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.findOne(id);
   }
 
   @Post(':id/upload-proof')
+  @Access(19, 'update')
   @UseInterceptors(
     FileInterceptor('file', {
       storage,
@@ -75,7 +78,7 @@ export class PaymentsController {
         }
         cb(null, true);
       },
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   uploadProof(@Param('id', ParseIntPipe) id: number, @UploadedFile() file: Express.Multer.File) {
@@ -86,8 +89,8 @@ export class PaymentsController {
     return this.paymentsService.uploadProof(id, filePath);
   }
 
-  @Access(11, 'update')
   @Patch(':id/verify')
+  @Access(19, 'update')
   verify(@Param('id', ParseIntPipe) id: number, @Body('status') status: 'completed' | 'failed') {
     if (!['completed', 'failed'].includes(status)) {
       throw new BadRequestException('Invalid status');
@@ -95,14 +98,14 @@ export class PaymentsController {
     return this.paymentsService.verifyPayment(id, status);
   }
 
-  @Access(11, 'update')
   @Patch(':id')
+  @Access(19, 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdatePaymentDto) {
     return this.paymentsService.update(id, updateDto);
   }
 
-  @Access(11, 'delete')
   @Delete(':id')
+  @Access(19, 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.remove(id);
   }

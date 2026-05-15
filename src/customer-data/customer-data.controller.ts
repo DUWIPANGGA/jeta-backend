@@ -1,6 +1,8 @@
 // src/customer-data/customer-data.controller.ts
 import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from '../common/guard/access/access.guard';
+import { Access } from '../common/decorator/access/access.decorator';
 import { CustomerDataService } from './customer-data.service';
 
 interface RequestWithUser extends Request {
@@ -8,11 +10,12 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('customer-data')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class CustomerDataController {
-  constructor(private readonly customerDataService: CustomerDataService) {}
+  constructor(private readonly customerDataService: CustomerDataService) { }
 
   @Get('me')
+  @Access(11, 'read')
   async getMyPurchases(@Req() req: RequestWithUser) {
     const userId = req.user.id;
     const data = await this.customerDataService.getCustomerPurchaseHistory(userId);
@@ -21,6 +24,4 @@ export class CustomerDataController {
       data,
     };
   }
-
-  // Jika admin ingin melihat data customer lain, bisa ditambahkan endpoint dengan guard admin
 }

@@ -1,43 +1,42 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+// src/guest/guest.controller.ts
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { GuestService } from './guest.service';
-import { CreateGuestDto } from './dto/create-guest.dto';
-import { UpdateGuestDto } from './dto/update-guest.dto';
-import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Access } from 'src/common/decorator/access/access.decorator';
-import { UseGuards } from '@nestjs/common';
 
-@UseGuards(JwtAuthGuard)
+// ❌ HAPUS semua guard dan decorator yang tidak perlu
+// @UseGuards(JwtAuthGuard, AccessGuard)
+// @Access(13, 'read')
+
 @Controller('guest')
 export class GuestController {
   constructor(private readonly guestService: GuestService) { }
 
-  @Access(8, 'create')
-  @Post()
-  create(@Body() createGuestDto: CreateGuestDto) {
-    return this.guestService.create(createGuestDto);
+  // Guest bisa lihat daftar produk
+  @Get('products')
+  async getAllProducts() {
+    return this.guestService.getAllProducts();
   }
 
-  @Access(8, 'read')
-  @Get()
-  findAll() {
-    return this.guestService.findAll();
+  // Guest bisa lihat detail produk
+  @Get('products/:id')
+  async getProductById(@Param('id') id: string) {
+    return this.guestService.getProductById(+id);
   }
 
-  @Access(8, 'read')
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.guestService.findOne(+id);
+  // Guest bisa lihat daftar kategori
+  @Get('categories')
+  async getAllCategories() {
+    return this.guestService.getAllCategories();
   }
 
-  @Access(8, 'update')
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGuestDto: UpdateGuestDto) {
-    return this.guestService.update(+id, updateGuestDto);
+  // Guest bisa lihat portofolio
+  @Get('portofolios')
+  async getAllPortofolios() {
+    return this.guestService.getAllPortofolios();
   }
 
-  @Access(8, 'delete')
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.guestService.remove(+id);
+  // Guest bisa lihat stages (opsional)
+  @Get('stages')
+  async getAllStages() {
+    return this.guestService.getAllStages();
   }
 }

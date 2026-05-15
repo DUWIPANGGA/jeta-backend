@@ -1,3 +1,4 @@
+// src/auth/auth.controller.ts
 import {
   Controller,
   Post,
@@ -14,10 +15,6 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-
-// Hindari konflik tipe dengan menggunakan any untuk Response sementara
-// Atau gunakan import type tetapi jika error, pakai any.
-import type { Request } from 'express';
 
 interface RequestWithUser extends Request {
   user: {
@@ -36,10 +33,11 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: any, // pakai any agar tidak bentrok tipe
+    @Res({ passthrough: true }) res: any,
   ) {
     const result = await this.authService.login(loginDto);
 
+    // HttpOnly cookie (bisa dikomentari jika pakai Bearer token)
     res.cookie('token', result.access_token, {
       httpOnly: true,
       secure: false,

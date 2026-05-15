@@ -49,6 +49,46 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  // ==================== GET USER PERMISSIONS (UNTUK FRONTEND) ====================
+  async getUserPermissions(userId: number) {
+    // 1. Ambil user dengan role
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 2. Ambil semua access untuk role user
+    const accesses = await this.prisma.access.findMany({
+      where: { role_id: user.role_id },
+      include: { page: true },
+      orderBy: { page: { nomor: 'asc' } },
+    });
+
+    // 3. Format response
+    const permissions = accesses.map(access => ({
+      page_id: access.page.id,
+      page_name: access.page.name,
+      nomor: access.page.nomor,
+      can_create: access.create,
+      can_read: access.read,
+      can_update: access.update,
+      can_delete: access.delete,
+    }));
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role.name,
+      },
+      permissions,
+    };
+  }
+
   // ==================== ENDPOINT UNTUK STAFF DENGAN DETAIL STAGE ====================
   async getStaffWithDetails() {
     const users = await this.prisma.user.findMany({

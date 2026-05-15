@@ -1,3 +1,4 @@
+// src/products/products.controller.ts
 import {
   Controller,
   Get,
@@ -15,7 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
-import { Roles } from '../common/decorator/roles/roles.decorator';
+import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -46,35 +47,31 @@ const fileFilter = (req, file, cb) => {
 };
 
 @Controller('products')
-// @UseGuards(JwtAuthGuard)
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
 
   constructor(private readonly productsService: ProductsService) { }
 
+  // ==================== ENDPOINT PUBLIK (GUEST BISA AKSES) ====================
   @Get()
-  // @Roles(1, 2, 3)
-  // @Access(12, 'read')
   findAll() {
     return this.productsService.findAll();
   }
 
   @Get('category/:category_id')
-  // @Roles(1, 2, 3)
-  // @Access(12, 'read')
   findByCategory(@Param('category_id') categoryId: string) {
     return this.productsService.findByCategory(+categoryId);
   }
 
   @Get(':id')
-  // @Roles(1, 2, 3)
-  // @Access(12, 'read')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);
   }
 
+  // ==================== ENDPOINT YANG BUTUH AUTH (HANYA ADMIN/STAFF) ====================
   @Post()
-  @Access(12, 'create')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access(5, 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createProductDto: CreateProductDto,
@@ -87,7 +84,8 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @Access(12, 'update')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access(5, 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id') id: string,
@@ -98,7 +96,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @Access(12, 'delete')
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access(5, 'delete')
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);
   }

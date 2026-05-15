@@ -16,33 +16,34 @@ import { LogisticsService } from './logistics.service';
 import { CreateLogisticDto } from './dto/create-logistic.dto';
 import { UpdateLogisticDto } from './dto/update-logistic.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
 
-@UseGuards(JwtAuthGuard)
 @Controller('logistics')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) { }
 
   @Post()
-  @Access(11, 'create')
+  @Access(14, 'create')
   create(@Body() createDto: CreateLogisticDto) {
     return this.logisticsService.create(createDto);
   }
 
   @Get()
-  @Access(11, 'read')
+  @Access(14, 'read')
   findAll() {
     return this.logisticsService.findAll();
   }
 
   @Get(':id')
-  @Access(11, 'read')
+  @Access(14, 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.logisticsService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(11, 'update')
+  @Access(14, 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateLogisticDto,
@@ -52,7 +53,7 @@ export class LogisticsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Access(11, 'delete')
+  @Access(14, 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.logisticsService.remove(id);
   }

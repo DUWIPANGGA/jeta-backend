@@ -1,46 +1,41 @@
+// src/product-variants/product-variants.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ProductVariantsService } from './product-variants.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Roles } from 'src/common/decorator/roles/roles.decorator';
-import { Role } from '@prisma/client';
-import { Access } from '../common/decorator/access/access.decorator';
-
+import { AccessGuard } from 'src/common/guard/access/access.guard';
+import { Access } from 'src/common/decorator/access/access.decorator';
 
 @Controller('product-variants')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class ProductVariantsController {
   constructor(private readonly productVariantsService: ProductVariantsService) { }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(13, 'create')
   @Post()
+  @Access(6, 'create')
   create(@Body() createDto: any) {
     return this.productVariantsService.create(createDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(13, 'read')
   @Get()
+  @Access(6, 'read')
   findAll() {
     return this.productVariantsService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(13, 'read')
   @Get(':id')
+  @Access(6, 'read')
   findOne(@Param('id') id: string) {
     return this.productVariantsService.findOne(+id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(13, 'update')
   @Patch(':id')
+  @Access(6, 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.productVariantsService.update(+id, updateDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(13, 'delete')
   @Delete(':id')
+  @Access(6, 'delete')
   remove(@Param('id') id: string) {
     return this.productVariantsService.remove(+id);
   }

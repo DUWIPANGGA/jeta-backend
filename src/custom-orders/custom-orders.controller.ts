@@ -26,6 +26,8 @@ import { CustomOrdersService } from './custom-orders.service';
 import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
+import { Access } from 'src/common/decorator/access/access.decorator';
 
 const uploadDir = './uploads/custom-orders';
 if (!fs.existsSync(uploadDir)) {
@@ -54,22 +56,20 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('custom-orders')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class CustomOrdersController {
   private readonly logger = new Logger(CustomOrdersController.name);
-  constructor(private readonly customOrdersService: CustomOrdersService) {}
+  constructor(private readonly customOrdersService: CustomOrdersService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Access(10, 'create')
   @UseInterceptors(FilesInterceptor('images', 10, { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createCustomOrderDto: CreateCustomOrderDto,
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: RequestWithUser,
   ) {
-    this.logger.log('Raw Body (after transform):', JSON.stringify(createCustomOrderDto, null, 2));
-    this.logger.log('Items:', createCustomOrderDto.items);
-    
     if (!createCustomOrderDto.items || createCustomOrderDto.items.length === 0) {
       throw new BadRequestException('At least one item is required');
     }
@@ -77,6 +77,7 @@ export class CustomOrdersController {
   }
 
   @Get()
+  @Access(10, 'read')
   async findAll(@Req() req: RequestWithUser) {
     if (req.user.role_id !== 1) {
       throw new ForbiddenException('You do not have permission to view all custom orders');
@@ -85,11 +86,13 @@ export class CustomOrdersController {
   }
 
   @Get('statistics')
+  @Access(10, 'read')
   getStatistics() {
     return this.customOrdersService.getStatistics();
   }
 
   @Get('user/:userId')
+  @Access(10, 'read')
   async findByUser(@Param('userId', ParseIntPipe) userId: number, @Req() req: RequestWithUser) {
     if (req.user.role_id !== 1 && req.user.id !== userId) {
       throw new ForbiddenException('You can only view your own custom orders');
@@ -98,6 +101,7 @@ export class CustomOrdersController {
   }
 
   @Get(':id')
+  @Access(10, 'read')
   async findOne(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const customOrder = await this.customOrdersService.findOne(id);
     if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {
@@ -107,6 +111,7 @@ export class CustomOrdersController {
   }
 
   @Patch(':id')
+  @Access(10, 'update')
   @UseInterceptors(FilesInterceptor('images', 10, { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -122,6 +127,7 @@ export class CustomOrdersController {
   }
 
   @Patch(':id/accept-status')
+  @Access(10, 'update')
   async updateAcceptStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body('accept_status') acceptStatus: boolean,
@@ -135,6 +141,7 @@ export class CustomOrdersController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Access(10, 'delete')
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const customOrder = await this.customOrdersService.findOne(id);
     if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {

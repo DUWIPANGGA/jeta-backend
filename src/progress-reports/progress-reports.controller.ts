@@ -25,14 +25,14 @@ import { ProgressReportsService } from './progress-reports.service';
 import { CreateProgressReportDto } from './dto/create-progress-report.dto';
 import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from '../common/guard/access/access.guard';
+import { Access } from '../common/decorator/access/access.decorator';
 
-// Buat folder upload jika belum ada
 const uploadDir = './uploads/progress';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Konfigurasi penyimpanan file
 const storage = diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -43,7 +43,6 @@ const storage = diskStorage({
   },
 });
 
-// Filter file (hanya gambar)
 const fileFilter = (req, file, cb) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     return cb(new BadRequestException('Only image files are allowed!'), false);
@@ -56,13 +55,13 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('progress-reports')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class ProgressReportsController {
   constructor(private readonly service: ProgressReportsService) { }
   private readonly logger = new Logger(ProgressReportsController.name);
 
-  // CREATE (dengan upload gambar)
   @Post()
+  @Access(22, 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createProgressReportDto: CreateProgressReportDto,
@@ -75,20 +74,20 @@ export class ProgressReportsController {
     return this.service.create(createProgressReportDto, req.user.id, file);
   }
 
-  // GET ALL
   @Get()
+  @Access(22, 'read')
   findAll(@Query('project_id') projectId?: string) {
     return this.service.findAll(projectId ? parseInt(projectId, 10) : undefined);
   }
 
-  // GET MY TASKS
   @Get('my-tasks')
+  @Access(22, 'read')
   getMyTasks(@Req() req: RequestWithUser) {
     return this.service.getMyTasks(req.user.id);
   }
 
-  // GET QUEUE (hanya admin)
   @Get('queue')
+  @Access(22, 'read')
   getQueue(@Req() req: RequestWithUser) {
     if (req.user.role_id !== 1) {
       throw new ForbiddenException('Only admin can access queue');
@@ -96,14 +95,14 @@ export class ProgressReportsController {
     return this.service.getQueue();
   }
 
-  // GET ONE
   @Get(':id')
+  @Access(22, 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
-  // UPDATE (dengan upload gambar opsional)
   @Patch(':id')
+  @Access(22, 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -119,8 +118,8 @@ export class ProgressReportsController {
     return this.service.update(id, dto, req.user.id, isAdmin, imagePath);
   }
 
-  // DELETE
   @Delete(':id')
+  @Access(22, 'delete')
   remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const isAdmin = req.user.role_id === 1;
     return this.service.remove(id, req.user.id, isAdmin);

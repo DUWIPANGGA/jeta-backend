@@ -1,46 +1,41 @@
+// src/production-logs/production-logs.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ProductionLogsService } from './production-logs.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
-import { Roles } from 'src/common/decorator/roles/roles.decorator';
-import { Role } from '@prisma/client';
-import { Access } from '../common/decorator/access/access.decorator';
-
+import { AccessGuard } from 'src/common/guard/access/access.guard';
+import { Access } from 'src/common/decorator/access/access.decorator';
 
 @Controller('production-logs')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class ProductionLogsController {
   constructor(private readonly productionLogsService: ProductionLogsService) { }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(14, 'create')
   @Post()
+  @Access(21, 'create')
   create(@Body() createDto: any) {
     return this.productionLogsService.create(createDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(14, 'read')
   @Get()
+  @Access(21, 'read')
   findAll() {
     return this.productionLogsService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(14, 'read')
   @Get(':id')
+  @Access(21, 'read')
   findOne(@Param('id') id: string) {
     return this.productionLogsService.findOne(+id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(14, 'update')
   @Patch(':id')
+  @Access(21, 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.productionLogsService.update(+id, updateDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Access(14, 'delete')
   @Delete(':id')
+  @Access(21, 'delete')
   remove(@Param('id') id: string) {
     return this.productionLogsService.remove(+id);
   }

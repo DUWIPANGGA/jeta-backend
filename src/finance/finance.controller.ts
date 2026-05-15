@@ -19,14 +19,14 @@ import * as fs from 'fs';
 import { FinanceService } from './finance.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from '../common/guard/access/access.guard';
+import { Access } from '../common/decorator/access/access.decorator';
 
-// Buat folder upload untuk bukti pembayaran jika belum ada
 const uploadDir = './uploads/payments';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Konfigurasi penyimpanan file
 const storage = diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -37,7 +37,6 @@ const storage = diskStorage({
   },
 });
 
-// Filter file (hanya gambar dan PDF)
 const fileFilter = (req, file, cb) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|pdf)$/i)) {
     return cb(new BadRequestException('Only image or PDF files are allowed!'), false);
@@ -50,38 +49,24 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('finance')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) { }
 
-  /**
-   * GET /finance/staff-ranking
-   * Mendapatkan daftar staff diurutkan berdasarkan total pendapatan (terbanyak ke tersedikit)
-   */
   @Get('staff-ranking')
+  @Access(12, 'read')
   async getStaffRanking() {
     return this.financeService.getStaffRanking();
   }
 
-  /**
-   * GET /finance/staff/:staffId/projects
-   * Mendapatkan daftar proyek yang dikerjakan oleh staff beserta nominal yang akan diterima
-   */
   @Get('staff/:staffId/projects')
+  @Access(12, 'read')
   async getStaffProjects(@Param('staffId', ParseIntPipe) staffId: number) {
     return this.financeService.getStaffProjects(staffId);
   }
 
-  /**
-   * POST /finance/payments
-   * Membuat pembayaran gaji untuk staff (upload bukti pembayaran)
-   * Body: multipart/form-data
-   *   - staff_id: number
-   *   - project_ids: number[] (array)
-   *   - notes: string (optional)
-   *   - proof: file (image/pdf)
-   */
   @Post('payments')
+  @Access(12, 'create')
   @UseInterceptors(FileInterceptor('proof', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async createPayment(
     @Body() createDto: CreatePaymentDto,

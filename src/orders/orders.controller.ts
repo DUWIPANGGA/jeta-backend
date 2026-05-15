@@ -1,45 +1,47 @@
+// src/orders/orders.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
 
-@UseGuards(JwtAuthGuard)
 @Controller('orders')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
-  @Access(10, 'create')
   @Post()
+  @Access(16, 'create')
   create(@Body() createDto: any) {
     return this.ordersService.create(createDto);
   }
 
-  @Access(10, 'read')
   @Get()
+  @Access(16, 'read')
   findAll() {
     return this.ordersService.findAll();
   }
 
-  @Access(10, 'read')
   @Get(':id')
+  @Access(16, 'read')
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(+id);
   }
 
-  @Access(10, 'update')
   @Patch(':id')
+  @Access(16, 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.ordersService.update(+id, updateDto);
   }
 
-  @Access(10, 'update')
   @Post(':id/tracking')
+  @Access(16, 'update')
   updateTracking(@Param('id') id: string, @Body('stage_name') stageName: string) {
     return this.ordersService.updateTracking(+id, stageName);
   }
 
-  @Access(10, 'delete')
   @Delete(':id')
+  @Access(16, 'delete')
   remove(@Param('id') id: string) {
     return this.ordersService.remove(+id);
   }

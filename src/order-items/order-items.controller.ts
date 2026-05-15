@@ -1,39 +1,41 @@
+// src/order-items/order-items.controller.ts
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { OrderItemsService } from './order-items.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
 
-@UseGuards(JwtAuthGuard)
 @Controller('order-items')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class OrderItemsController {
   constructor(private readonly orderItemsService: OrderItemsService) { }
 
-  @Access(9, 'create')
   @Post()
+  @Access(15, 'create')
   create(@Body() createDto: any) {
     return this.orderItemsService.create(createDto);
   }
 
-  @Access(9, 'read')
   @Get()
+  @Access(15, 'read')
   findAll() {
     return this.orderItemsService.findAll();
   }
 
-  @Access(9, 'read')
   @Get(':id')
+  @Access(15, 'read')
   findOne(@Param('id') id: string) {
     return this.orderItemsService.findOne(+id);
   }
 
-  @Access(9, 'update')
   @Patch(':id')
+  @Access(15, 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.orderItemsService.update(+id, updateDto);
   }
 
-  @Access(9, 'delete')
   @Delete(':id')
+  @Access(15, 'delete')
   remove(@Param('id') id: string) {
     return this.orderItemsService.remove(+id);
   }
