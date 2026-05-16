@@ -44,6 +44,7 @@ export class RoleController {
   @Post()
   @Access(25, 'create')
   async create(@Body() createRoleDto: CreateRoleDto) {
+    console.log('📦 Received body:', JSON.stringify(createRoleDto, null, 2));
     const role = await this.rolesService.create(createRoleDto);
     return {
       success: true,

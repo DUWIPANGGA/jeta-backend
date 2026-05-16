@@ -1,3 +1,4 @@
+// src/roles/dto/create-role.dto.ts
 import { IsString, IsInt, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -32,4 +33,6 @@ export class CreateRoleDto {
   @ValidateNested({ each: true })
   @Type(() => PageAccessDto)
   accesses: PageAccessDto[];
+
+  // ❌ JANGAN ADA field id di sini! Biarkan auto-increment
 }

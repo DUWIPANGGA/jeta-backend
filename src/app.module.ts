@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -14,6 +14,7 @@ import { CartsModule } from './carts/carts.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderItemsModule } from './order-items/order-items.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 import { TrackingsModule } from './trackings/trackings.module';
 import { TrackingHistoriesModule } from './tracking-histories/tracking-histories.module';
 import { ConsultationsModule } from './consultations/consultations.module';
@@ -29,13 +30,10 @@ import { EmailModule } from './email/email.module';
 import { PortofolioModule } from './portofolio/portofolio.module';
 import { RolesModule } from './roles/roles.module';
 import { PagesModule } from './pages/pages.module';
-import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 import { ProjectsModule } from './projects/projects.module';
 import { WorkLogsModule } from './work-logs/work-logs.module';
 import { CheckoutModule } from './checkout/checkout.module';
-// import { LogisticsModule } from './logistics/logistics.module';
 import { LogisticsModule } from './logistics/logistics.module';
-// import { CustomerDataModule } from './customer-data/customer-data.module';
 import { CustomerDataModule } from './customer-data/customer-data.module';
 import { ReportsModule } from './reports/reports.module';
 import { ProgressReportsModule } from './progress-reports/progress-reports.module';
@@ -43,6 +41,7 @@ import { StaffsModule } from './staffs/staffs.module';
 import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
 import { SubCategoriesModule } from './sub-categories/sub-categories.module';
 import { FinanceModule } from './finance/finance.module';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
   imports: [
@@ -54,7 +53,7 @@ import { FinanceModule } from './finance/finance.module';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client', 'dist'),
       serveRoot: '/',
-      exclude: ['/api/(.*)', '/uploads/(.*)'], // regex pattern
+      exclude: ['/api/(.*)', '/uploads/(.*)'],
     }),
     MailerModule.forRoot({
       transport: {
@@ -105,8 +104,10 @@ import { FinanceModule } from './finance/finance.module';
     FinanceModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService
-  ],
+  providers: [AppService],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}
