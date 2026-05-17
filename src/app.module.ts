@@ -2,8 +2,10 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -25,7 +27,6 @@ import { ProductionLogsModule } from './production-logs/production-logs.module';
 import { SalaryLogsModule } from './salary-logs/salary-logs.module';
 import { GuestModule } from './guest/guest.module';
 import { StagesModule } from './stages/stages.module';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from './email/email.module';
 import { PortofolioModule } from './portofolio/portofolio.module';
 import { RolesModule } from './roles/roles.module';
@@ -41,20 +42,31 @@ import { StaffsModule } from './staffs/staffs.module';
 import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
 import { SubCategoriesModule } from './sub-categories/sub-categories.module';
 import { FinanceModule } from './finance/finance.module';
+
+import { MailerModule } from '@nestjs-modules/mailer';
+
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+
+    // STATIC UPLOADS
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
     }),
+
+    // FRONTEND CLIENT
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client', 'dist'),
+      rootPath: join(process.cwd(), 'client', 'dist'),
       serveRoot: '/',
-      exclude: ['/api/(.*)', '/uploads/(.*)', '/uploads'],
+      exclude: ['/api*', '/uploads*'],
     }),
+
+    // MAILER
     MailerModule.forRoot({
       transport: {
         host: process.env.MAIL_HOST,
@@ -66,6 +78,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
         },
       },
     }),
+
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -103,7 +116,9 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     SubCategoriesModule,
     FinanceModule,
   ],
+
   controllers: [AppController],
+
   providers: [AppService],
 })
 export class AppModule implements NestModule {
