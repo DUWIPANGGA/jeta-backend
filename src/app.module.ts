@@ -53,7 +53,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client', 'dist'),
       serveRoot: '/',
-      exclude: ['/api/(.*)', '/uploads/(.*)'],
+      exclude: ['/api/(.*)', '/uploads/(.*)', '/uploads'],
     }),
     MailerModule.forRoot({
       transport: {

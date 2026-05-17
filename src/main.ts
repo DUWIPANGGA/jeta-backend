@@ -28,13 +28,13 @@ async function bootstrap() {
     next();
   });
 
-  // CORS configuration
   app.enableCors({
-    origin: true, // Allow all origins (for development)
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: [
+      'https://jetaindonesia.com',
+      'https://www.jetaindonesia.com',
+      'http://localhost:5173',
+    ],
     credentials: true,
-    exposedHeaders: 'Content-Range, X-Content-Range',
-    maxAge: 3600,
   });
 
   // Global validation pipe
