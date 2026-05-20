@@ -28,7 +28,7 @@ interface RequestWithUser extends Request {
 @Controller('projects')
 @UseGuards(JwtAuthGuard, AccessGuard)
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
   @Access(23, 'create')

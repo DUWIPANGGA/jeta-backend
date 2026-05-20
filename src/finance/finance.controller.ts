@@ -1,4 +1,3 @@
-// src/finance/finance.controller.ts
 import {
   Controller,
   Get,
@@ -51,22 +50,22 @@ interface RequestWithUser extends Request {
 @Controller('finance')
 @UseGuards(JwtAuthGuard, AccessGuard)
 export class FinanceController {
-  constructor(private readonly financeService: FinanceService) { }
+  constructor(private readonly financeService: FinanceService) {}
 
   @Get('staff-ranking')
-  @Access(12, 'read')
+  @Access(11, 'read')
   async getStaffRanking() {
     return this.financeService.getStaffRanking();
   }
 
   @Get('staff/:staffId/projects')
-  @Access(12, 'read')
+  @Access(11, 'read')
   async getStaffProjects(@Param('staffId', ParseIntPipe) staffId: number) {
     return this.financeService.getStaffProjects(staffId);
   }
 
   @Post('payments')
-  @Access(12, 'create')
+  @Access(11, 'create')
   @UseInterceptors(FileInterceptor('proof', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async createPayment(
     @Body() createDto: CreatePaymentDto,

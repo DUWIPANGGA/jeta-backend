@@ -21,6 +21,11 @@ export class CreateProductDto {
   @Type(() => Number)
   price: number;
 
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  material_id?: number; // ✅ tambah field ini
+
   @IsString()
   @IsOptional()
   image?: string;

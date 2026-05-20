@@ -1,18 +1,23 @@
-// src/guest/guest.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class GuestService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-  // Guest lihat semua produk
   async getAllProducts() {
     const products = await this.prisma.product.findMany({
-      where: { /* bisa ditambah filter, misal is_active: true */ },
       include: {
         category: true,
-        variants: true,
+        material: true, // ✅ material di product, bukan di variant
+        variants: {
+          include: {
+            size: true,
+            color: true,
+            // ❌ HAPUS attribute: true,
+            // ❌ HAPUS material: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
@@ -25,13 +30,20 @@ export class GuestService {
     };
   }
 
-  // Guest lihat detail produk
   async getProductById(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
         category: true,
-        variants: true,
+        material: true, // ✅ material di product
+        variants: {
+          include: {
+            size: true,
+            color: true,
+            // ❌ HAPUS attribute: true,
+            // ❌ HAPUS material: true,
+          },
+        },
       },
     });
 
@@ -46,11 +58,14 @@ export class GuestService {
     };
   }
 
-  // Guest lihat semua kategori
   async getAllCategories() {
     const categories = await this.prisma.category.findMany({
       include: {
-        subcategories: true,
+        products: {
+          include: {
+            material: true,
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });
@@ -62,7 +77,6 @@ export class GuestService {
     };
   }
 
-  // Guest lihat semua portofolio
   async getAllPortofolios() {
     const portofolios = await this.prisma.portofolio.findMany({
       orderBy: { order: 'asc' },
@@ -75,7 +89,6 @@ export class GuestService {
     };
   }
 
-  // Guest lihat semua stages (opsional)
   async getAllStages() {
     const stages = await this.prisma.stage.findMany({
       orderBy: { order_index: 'asc' },

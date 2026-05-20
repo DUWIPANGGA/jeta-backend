@@ -1,179 +1,252 @@
-// src/work-logs/work-logs.service.ts
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class WorkLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: number, dto: any) {
-    const { orderType, orderId, stageId, quantity } = dto;
-
-    if (!orderType || !orderId || !stageId || !quantity) {
-      throw new BadRequestException('orderType, orderId, stageId, and quantity are required');
-    }
-
-    if (quantity <= 0) {
-      throw new BadRequestException('Quantity must be greater than 0');
-    }
-
-    let totalQuantity = 0;
-    if (orderType === 'CUSTOM') {
-      const order = await this.prisma.customOrder.findUnique({
-        where: { id: Number(orderId) },
-        include: { items: true },  // ← tambahkan include items
-      });
-      if (!order) throw new BadRequestException('Custom order not found');
-      // Hitung total quantity dari items
-      totalQuantity = order.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-    } else if (orderType === 'SPORT') {
-      const order = await this.prisma.order.findUnique({
-        where: { id: Number(orderId) },
-        include: { order_items: true }
-      });
-      if (!order) throw new BadRequestException('Sport order not found');
-      totalQuantity = order.order_items.reduce((sum, item) => sum + item.quantity, 0);
-    } else {
-      throw new BadRequestException('Invalid order type, must be CUSTOM or SPORT');
-    }
-
-    const existingLogs = await this.prisma.workLog.findMany({
-      where: {
-        order_type: orderType,
-        ...(orderType === 'CUSTOM' ? { custom_order_id: Number(orderId) } : { sport_order_id: Number(orderId) }),
-        stage_id: Number(stageId)
-      }
+  async create(userId: number, data: {
+    stage_id: number;
+    order_type: string;
+    custom_order_id?: number;
+    sport_order_id?: number;
+    quantity: number;
+    earned_amount?: number;
+  }) {
+    // Validasi user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
-    
-    const completedQuantity = existingLogs.reduce((sum, log) => sum + log.quantity, 0);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
 
-    if (completedQuantity + quantity > totalQuantity) {
-      throw new BadRequestException(`Cannot log ${quantity} items. Only ${totalQuantity - completedQuantity} remaining for this stage.`);
+    // Validasi stage
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: data.stage_id },
+    });
+    if (!stage) {
+      throw new NotFoundException(`Stage with ID ${data.stage_id} not found`);
     }
 
     return this.prisma.workLog.create({
       data: {
         user_id: userId,
-        stage_id: Number(stageId),
-        order_type: orderType,
-        custom_order_id: orderType === 'CUSTOM' ? Number(orderId) : null,
-        sport_order_id: orderType === 'SPORT' ? Number(orderId) : null,
-        quantity: Number(quantity),
+        stage_id: data.stage_id,
+        order_type: data.order_type,
+        custom_order_id: data.custom_order_id,
+        sport_order_id: data.sport_order_id,
+        quantity: data.quantity,
+        earned_amount: data.earned_amount,
       },
       include: {
-        user: { select: { id: true, name: true, email: true } },
         stage: true,
         custom_order: {
           include: {
             items: {
               include: {
-                sub_category: { include: { category: true } }
-              }
-            }
-          }
+                selected_options: {        // ← PERUBAHAN: variant_option → selected_options
+                  include: {
+                    variant_option: {
+                      include: {
+                        custom_variant: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         sport_order: true,
-      }
+      },
     });
   }
 
-  findAll() {
+  async findAll() {
     return this.prisma.workLog.findMany({
-      include: { 
-        user: { select: { id: true, name: true, email: true } }, 
-        stage: true, 
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        stage: true,
         custom_order: {
           include: {
             items: {
               include: {
-                sub_category: { include: { category: true } }
-              }
-            }
-          }
+                selected_options: {        // ← PERUBAHAN: variant_option → selected_options
+                  include: {
+                    variant_option: {
+                      include: {
+                        custom_variant: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
-        sport_order: true 
+        sport_order: true,
       },
       orderBy: { created_at: 'desc' },
     });
   }
 
-  async getOrderProgress(orderType: string, orderId: number) {
-    let totalQuantity = 0;
-    if (orderType === 'CUSTOM') {
-      const order = await this.prisma.customOrder.findUnique({
-        where: { id: orderId },
-        include: { items: true },  // ← tambahkan include items
-      });
-      if (!order) throw new BadRequestException('Custom order not found');
-      totalQuantity = order.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-    } else if (orderType === 'SPORT') {
-      const order = await this.prisma.order.findUnique({
-        where: { id: orderId },
-        include: { order_items: true }
-      });
-      if (!order) throw new BadRequestException('Sport order not found');
-      totalQuantity = order.order_items.reduce((sum, item) => sum + item.quantity, 0);
-    } else {
-      throw new BadRequestException('Invalid order type, must be CUSTOM or SPORT');
-    }
-
-    const stages = await this.prisma.stage.findMany({
-      orderBy: { order_index: 'asc' }
-    });
-
-    const workLogs = await this.prisma.workLog.findMany({
-      where: {
-        order_type: orderType,
-        ...(orderType === 'CUSTOM' ? { custom_order_id: orderId } : { sport_order_id: orderId })
-      }
-    });
-
-    const progress = stages.map(stage => {
-      const completed = workLogs
-        .filter(log => log.stage_id === stage.id)
-        .reduce((sum, log) => sum + log.quantity, 0);
-      return {
-        stageId: stage.id,
-        stageName: stage.stage_name,
-        completedQuantity: completed,
-        totalQuantity: totalQuantity,
-        percentage: totalQuantity > 0 ? Math.round((completed / totalQuantity) * 100) : 0
-      };
-    });
-
-    return {
-      orderType,
-      orderId,
-      totalQuantity,
-      progress
-    };
-  }
-
   async findOne(id: number) {
     const workLog = await this.prisma.workLog.findUnique({
       where: { id },
-      include: { 
-        user: { select: { id: true, name: true, email: true } }, 
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         stage: true,
         custom_order: {
           include: {
             items: {
               include: {
-                sub_category: { include: { category: true } }
-              }
-            }
-          }
+                selected_options: {        // ← PERUBAHAN: variant_option → selected_options
+                  include: {
+                    variant_option: {
+                      include: {
+                        custom_variant: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         sport_order: true,
-      }
+      },
     });
-    if (!workLog) throw new NotFoundException(`Work log with ID ${id} not found`);
+    if (!workLog) {
+      throw new NotFoundException(`Work log with ID ${id} not found`);
+    }
     return workLog;
   }
 
+  async findByUser(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return this.prisma.workLog.findMany({
+      where: { user_id: userId },
+      include: {
+        stage: true,
+        custom_order: {
+          include: {
+            items: {
+              include: {
+                selected_options: {        // ← PERUBAHAN: variant_option → selected_options
+                  include: {
+                    variant_option: {
+                      include: {
+                        custom_variant: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        sport_order: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async findByProject(customOrderId: number) {
+    return this.prisma.workLog.findMany({
+      where: { custom_order_id: customOrderId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        stage: true,
+        custom_order: {
+          include: {
+            items: {
+              include: {
+                selected_options: {        // ← PERUBAHAN: variant_option → selected_options
+                  include: {
+                    variant_option: {
+                      include: {
+                        custom_variant: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async update(id: number, data: {
+    stage_id?: number;
+    quantity?: number;
+    earned_amount?: number;
+  }) {
+    await this.findOne(id);
+    return this.prisma.workLog.update({
+      where: { id },
+      data,
+      include: {
+        stage: true,
+        custom_order: true,
+      },
+    });
+  }
+
   async remove(id: number) {
-    const workLog = await this.findOne(id);
-    await this.prisma.workLog.delete({ where: { id } });
-    return { message: `Work log with ID ${id} deleted successfully` };
+    await this.findOne(id);
+    return this.prisma.workLog.delete({
+      where: { id },
+    });
+  }
+
+  async getTotalEarnedByUser(userId: number, startDate?: Date, endDate?: Date) {
+    const where: any = { user_id: userId };
+    
+    if (startDate && endDate) {
+      where.created_at = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
+
+    const result = await this.prisma.workLog.aggregate({
+      where,
+      _sum: {
+        earned_amount: true,
+      },
+    });
+
+    return {
+      user_id: userId,
+      total_earned: result._sum.earned_amount || 0,
+    };
   }
 }

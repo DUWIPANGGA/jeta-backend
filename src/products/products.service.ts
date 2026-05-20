@@ -19,16 +19,28 @@ export class ProductsService {
       throw new NotFoundException(`Category with ID ${createProductDto.category_id} not found`);
     }
 
+    // ✅ Tambahkan validasi material jika ada
+    if (createProductDto.material_id) {
+      const material = await this.prisma.material.findUnique({
+        where: { id: createProductDto.material_id },
+      });
+      if (!material) {
+        throw new NotFoundException(`Material with ID ${createProductDto.material_id} not found`);
+      }
+    }
+
     const product = await this.prisma.product.create({
       data: {
         category_id: createProductDto.category_id,
         name: createProductDto.name,
         description: createProductDto.description || '',
         price: createProductDto.price,
+        material_id: createProductDto.material_id || null, // ✅ tambah material_id
         image: imageUrl,
       },
       include: {
         category: true,
+        material: true, // ✅ include material
         variants: true,
       },
     });
@@ -44,7 +56,13 @@ export class ProductsService {
     const products = await this.prisma.product.findMany({
       include: {
         category: true,
-        variants: true,
+        material: true, // ✅ include material
+        variants: {
+          include: {
+            size: true,
+            color: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
@@ -62,18 +80,13 @@ export class ProductsService {
       where: { id },
       include: {
         category: true,
-        variants: true,
-        // production_stages: {
-        //   include: {
-        //     stage: true,
-        //     order: {
-        //       select: {
-        //         id: true,
-        //         order_number: true,
-        //       },
-        //     },
-        //   },
-        // },
+        material: true, // ✅ include material
+        variants: {
+          include: {
+            size: true,
+            color: true,
+          },
+        },
       },
     });
 
@@ -93,7 +106,13 @@ export class ProductsService {
       where: { category_id: categoryId },
       include: {
         category: true,
-        variants: true,
+        material: true,
+        variants: {
+          include: {
+            size: true,
+            color: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
@@ -124,13 +143,25 @@ export class ProductsService {
       }
     }
 
+    // ✅ Validasi material jika ada
+    if (updateProductDto.material_id) {
+      const material = await this.prisma.material.findUnique({
+        where: { id: updateProductDto.material_id },
+      });
+      if (!material) {
+        throw new NotFoundException(`Material with ID ${updateProductDto.material_id} not found`);
+      }
+    }
+
     const updateData: any = { ...updateProductDto };
 
     if (file) {
-      const oldImagePath = path.join(process.cwd(), 'uploads', 'products',
-        path.basename(existingProduct.image));
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
+      if (existingProduct.image) {
+        const oldImagePath = path.join(process.cwd(), 'uploads', 'products',
+          path.basename(existingProduct.image));
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
       }
       updateData.image = `/uploads/products/${file.filename}`;
     }
@@ -140,7 +171,13 @@ export class ProductsService {
       data: updateData,
       include: {
         category: true,
-        variants: true,
+        material: true,
+        variants: {
+          include: {
+            size: true,
+            color: true,
+          },
+        },
       },
     });
 
@@ -160,10 +197,12 @@ export class ProductsService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    const imagePath = path.join(process.cwd(), 'uploads', 'products',
-      path.basename(existingProduct.image));
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+    if (existingProduct.image) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'products',
+        path.basename(existingProduct.image));
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
     }
 
     await this.prisma.product.delete({

@@ -1,4 +1,3 @@
-// src/customer-data/customer-data.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -17,34 +16,47 @@ export class CustomerDataService {
         order_items: {
           include: {
             product: true,
-            variant: true,
+            variant: {
+              include: {
+                size: true,
+                color: true,
+              },
+            },
           },
         },
       },
       orderBy: { created_at: 'desc' },
     });
 
-    // Mapping ke format umum
+    // Mapping ke format umum (produk katalog)
     const productHistory = orders.flatMap(order =>
-      order.order_items.map(item => ({
-        type: 'product' as const,
-        order_id: order.id,
-        order_number: order.order_number,
-        product_id: item.product_id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        price: item.price || item.product.price,
-        total: (item.price || item.product.price) * item.quantity,
-        status: order.status,
-        created_at: order.created_at,
-        image: item.product.image,
-        variant: item.variant
-          ? [item.variant.size, item.variant.color].filter(Boolean).join(' ')
-          : null,
-      }))
+      order.order_items.map(item => {
+        const price = item.price ?? item.product.price ?? 0;
+        const total = price * item.quantity;
+
+        return {
+          type: 'product' as const,
+          order_id: order.id,
+          order_number: order.order_number,
+          product_id: item.product_id,
+          product_name: item.product.name,
+          quantity: item.quantity,
+          price: price,
+          total: total,
+          status: order.status,
+          created_at: order.created_at,
+          image: item.product.image,
+          variant: item.variant
+            ? [item.variant.size?.name, item.variant.color?.name]
+                .filter(Boolean)
+                .join(' ')
+            : null,
+        };
+      })
     );
 
     // 2. Ambil custom order yang sudah di-ACC
+    // PERBAIKAN: gunakan selected_options, bukan variant_option
     const customOrders = await this.prisma.customOrder.findMany({
       where: {
         user_id: userId,
@@ -53,8 +65,14 @@ export class CustomerDataService {
       include: {
         items: {
           include: {
-            sub_category: {
-              include: { category: true },
+            selected_options: {        // ← PERUBAHAN: selected_options
+              include: {
+                variant_option: {      // ← tetap, karena selected_options punya variant_option
+                  include: {
+                    custom_variant: true,
+                  },
+                },
+              },
             },
           },
         },
@@ -63,25 +81,27 @@ export class CustomerDataService {
     });
 
     // Mapping custom order ke format umum
+    // PERBAIKAN: akses selected_options, bukan variant_option langsung
     const customHistory = customOrders.map(co => {
-      // Buat deskripsi dari items
       const itemsDesc = co.items
-        ?.map(item => {
-          const subCatName = item.sub_category?.name || '';
-          const catName = item.sub_category?.category?.name || '';
-          return `${catName} ${subCatName}`.trim() || 'Produk Custom';
-        })
+        ?.flatMap(item => 
+          item.selected_options?.map(opt => {
+            const variantName = opt.variant_option?.name || '';
+            const customVariantName = opt.variant_option?.custom_variant?.name || '';
+            return `${customVariantName} ${variantName}`.trim();
+          }) || []
+        )
+        .filter(Boolean)
         .join(', ') || 'Produk Custom';
 
-      // Hitung total quantity dari semua items
       const totalQuantity = co.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
       return {
         type: 'custom_order' as const,
         id: co.id,
         name: co.name,
-        deskripsi_produk: itemsDesc,  // ganti jenis_produk dengan deskripsi_produk
-        jumlah: totalQuantity,        // total dari items
+        deskripsi_produk: itemsDesc,
+        jumlah: totalQuantity,
         deadline: co.deadline,
         total_amount: co.total_amount,
         dp_amount: co.dp_amount,

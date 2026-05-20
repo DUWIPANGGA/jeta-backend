@@ -116,7 +116,6 @@ model User {
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
 
-  // Relationships
   carts              Cart[]
   cart_items         CartItem[]
   orders             Order[]
@@ -155,46 +154,111 @@ model PasswordResetToken {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRODUCT CATALOG
+// CUSTOM ORDER CATALOG (untuk Custom Order)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CustomVariant {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    Boolean  @default(true) 
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  options   VariantOption[]
+
+  @@map("custom_variants")
+}
+
+model VariantOption {
+  id                Int      @id @default(autoincrement())
+  custom_variant_id Int
+  name              String?
+  status            Boolean  @default(true) 
+  description       String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  custom_variant    CustomVariant @relation(fields: [custom_variant_id], references: [id], onDelete: Cascade)
+  customOrderItemOptions CustomOrderItemOption[]
+
+  @@map("variant_options")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRODUCT CATALOG (untuk Produk Reguler)
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Category {
-  id         Int       @id @default(autoincrement())
-  name       String?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  status    Boolean   @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  products        Product[]
-  subcategories   SubCategory[]
+  products  Product[]
 
   @@map("categories")
 }
 
-model SubCategory {
-  id            Int       @id @default(autoincrement())
-  category_id   Int
-  name          String?
-  description   String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+model Size {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  category    Category?  @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  customOrderItems CustomOrderItem[]
+  variants  ProductVariant[]
 
-  @@map("subcategories")
+  @@map("sizes")
+}
+
+model Color {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  hex_code  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  variants  ProductVariant[]
+
+  @@map("colors")
+}
+
+model Attribute {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("attributes")
+}
+
+model Material {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  products    Product[]
+
+  @@map("materials")
 }
 
 model Product {
-  id          Int              @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   category_id Int
-  name        String
-  description String
-  price       Int
-  image       String
-  created_at  DateTime         @default(now())
-  updated_at  DateTime         @updatedAt
+  name        String?
+  material_id Int?
+  description String?
+  price       Int?
+  image       String?
+  status      Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   category    Category         @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  material    Material?        @relation(fields: [material_id], references: [id], onDelete: SetNull)
   variants    ProductVariant[]
   carts       Cart[]
   cart_items  CartItem[]
@@ -204,28 +268,30 @@ model Product {
 }
 
 model ProductVariant {
-  id               Int         @id @default(autoincrement())
+  id               Int    @id @default(autoincrement())
   product_id       Int
-  size             String?
-  color            String?
-  atribute         String?
+  size_id          Int?
+  color_id         Int?
   image            String?
   description      String?
   stock            Int
-  price_adjustment Int
-  created_at       DateTime    @default(now())
-  updated_at       DateTime    @updatedAt
+  price_adjustment Int    @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  product          Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  carts            Cart[]
-  cart_items       CartItem[]
-  order_items      OrderItem[]
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  size    Size?   @relation(fields: [size_id], references: [id], onDelete: SetNull)
+  color   Color?  @relation(fields: [color_id], references: [id], onDelete: SetNull)
+
+  carts        Cart[]
+  cart_items   CartItem[]
+  order_items  OrderItem[]
 
   @@map("product_variants")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TRANSACTIONAL (CART & ORDERS)
+// TRANSACTIONAL (CART & ORDERS) - untuk Produk Reguler
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Cart {
@@ -333,17 +399,29 @@ model CustomOrder {
 }
 
 model CustomOrderItem {
-  id               Int          @id @default(autoincrement())
-  custom_order_id  Int
-  sub_category_id  Int
-  quantity         Int          @default(0)
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
+  id                Int      @id @default(autoincrement())
+  custom_order_id   Int
+  quantity          Int      @default(0)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 
-  custom_order     CustomOrder   @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
-  sub_category     SubCategory   @relation(fields: [sub_category_id], references: [id], onDelete: Cascade)
+  custom_order      CustomOrder @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  selected_options  CustomOrderItemOption[]
 
   @@map("custom_order_items")
+}
+
+model CustomOrderItemOption {
+  id                   Int      @id @default(autoincrement())
+  custom_order_item_id Int
+  variant_option_id    Int
+  created_at           DateTime @default(now())
+
+  custom_order_item CustomOrderItem @relation(fields: [custom_order_item_id], references: [id], onDelete: Cascade)
+  variant_option    VariantOption   @relation(fields: [variant_option_id], references: [id], onDelete: Cascade)
+
+  @@unique([custom_order_item_id, variant_option_id])
+  @@map("custom_order_item_options")
 }
 
 model Project {

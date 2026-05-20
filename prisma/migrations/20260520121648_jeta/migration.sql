@@ -97,9 +97,34 @@ CREATE TABLE "password_reset_tokens" (
 );
 
 -- CreateTable
+CREATE TABLE "custom_variants" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "status" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "custom_variants_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "variant_options" (
+    "id" SERIAL NOT NULL,
+    "custom_variant_id" INTEGER NOT NULL,
+    "name" TEXT,
+    "status" BOOLEAN NOT NULL DEFAULT true,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "variant_options_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "categories" (
     "id" SERIAL NOT NULL,
-    "name" TEXT,
+    "name" TEXT NOT NULL,
+    "status" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -107,25 +132,58 @@ CREATE TABLE "categories" (
 );
 
 -- CreateTable
-CREATE TABLE "subcategories" (
+CREATE TABLE "sizes" (
     "id" SERIAL NOT NULL,
-    "category_id" INTEGER NOT NULL,
-    "name" TEXT,
+    "name" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "sizes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "colors" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "hex_code" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "colors_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "attributes" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
     "description" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "subcategories_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "attributes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "materials" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "materials_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "products" (
     "id" SERIAL NOT NULL,
     "category_id" INTEGER NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "price" INTEGER NOT NULL,
-    "image" TEXT NOT NULL,
+    "name" TEXT,
+    "material_id" INTEGER,
+    "description" TEXT,
+    "price" INTEGER,
+    "image" TEXT,
+    "status" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -136,13 +194,12 @@ CREATE TABLE "products" (
 CREATE TABLE "product_variants" (
     "id" SERIAL NOT NULL,
     "product_id" INTEGER NOT NULL,
-    "size" TEXT,
-    "color" TEXT,
-    "atribute" TEXT,
+    "size_id" INTEGER,
+    "color_id" INTEGER,
     "image" TEXT,
     "description" TEXT,
     "stock" INTEGER NOT NULL,
-    "price_adjustment" INTEGER NOT NULL,
+    "price_adjustment" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -232,12 +289,21 @@ CREATE TABLE "custom_orders" (
 CREATE TABLE "custom_order_items" (
     "id" SERIAL NOT NULL,
     "custom_order_id" INTEGER NOT NULL,
-    "sub_category_id" INTEGER NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "custom_order_items_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "custom_order_item_options" (
+    "id" SERIAL NOT NULL,
+    "custom_order_item_id" INTEGER NOT NULL,
+    "variant_option_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "custom_order_item_options_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -540,7 +606,28 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "users_verification_token_key" ON "users"("verification_token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "custom_variants_name_key" ON "custom_variants"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sizes_name_key" ON "sizes"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "colors_name_key" ON "colors"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "attributes_name_key" ON "attributes"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "materials_name_key" ON "materials"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "custom_order_item_options_custom_order_item_id_variant_opti_key" ON "custom_order_item_options"("custom_order_item_id", "variant_option_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "projects_custom_order_id_key" ON "projects"("custom_order_id");
@@ -582,13 +669,22 @@ ALTER TABLE "accesses" ADD CONSTRAINT "accesses_page_id_fkey" FOREIGN KEY ("page
 ALTER TABLE "users" ADD CONSTRAINT "users_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "subcategories" ADD CONSTRAINT "subcategories_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "variant_options" ADD CONSTRAINT "variant_options_custom_variant_id_fkey" FOREIGN KEY ("custom_variant_id") REFERENCES "custom_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_material_id_fkey" FOREIGN KEY ("material_id") REFERENCES "materials"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_size_id_fkey" FOREIGN KEY ("size_id") REFERENCES "sizes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_color_id_fkey" FOREIGN KEY ("color_id") REFERENCES "colors"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "carts" ADD CONSTRAINT "carts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -627,7 +723,10 @@ ALTER TABLE "custom_orders" ADD CONSTRAINT "custom_orders_user_id_fkey" FOREIGN 
 ALTER TABLE "custom_order_items" ADD CONSTRAINT "custom_order_items_custom_order_id_fkey" FOREIGN KEY ("custom_order_id") REFERENCES "custom_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "custom_order_items" ADD CONSTRAINT "custom_order_items_sub_category_id_fkey" FOREIGN KEY ("sub_category_id") REFERENCES "subcategories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "custom_order_item_options" ADD CONSTRAINT "custom_order_item_options_custom_order_item_id_fkey" FOREIGN KEY ("custom_order_item_id") REFERENCES "custom_order_items"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "custom_order_item_options" ADD CONSTRAINT "custom_order_item_options_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

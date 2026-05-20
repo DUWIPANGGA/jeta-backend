@@ -12,43 +12,41 @@ const accessConfig = {
         delete: true,
     }),
 
-    // Admin (ID: 2) - Full access semua page, kecuali yang dilarang
+    // Admin (ID: 2) - Full access semua page
     2: (pageId) => {
-        // Admin bisa akses SEMUA page dari 1-33
-        // Kecuali page_id 25 (Roles) tidak bisa delete
         return {
             create: true,
             read: true,
             update: true,
-            delete: pageId === 25 ? false : true,
+            delete: pageId === 24 ? false : true, // Roles (ID:24) tidak bisa delete
         };
     },
 
     // Staff (ID: 3) - Akses terbatas untuk operasional harian
     3: (pageId) => {
-        // Staff bisa akses: Dashboard(1), Products(5), CustomOrders(10), 
-        // ProgressReports(22), Projects(23), Staffs(28), Stages(29), WorkLogs(33)
-        const staffPages = [1, 5, 10, 22, 23, 28, 29, 33];
+        // Dashboard(1), Products(4), CustomOrders(9), ProgressReports(21), 
+        // Projects(22), Staffs(27), Stages(28), WorkLogs(32)
+        const staffPages = [1, 4, 9, 21, 22, 27, 28, 32];
         if (staffPages.includes(pageId)) {
-            if (pageId === 22) { // ProgressReports
+            if (pageId === 21) { // ProgressReports
                 return { create: true, read: true, update: true, delete: false };
             }
-            if (pageId === 5) { // Products
+            if (pageId === 4) { // Products
                 return { create: false, read: true, update: false, delete: false };
             }
-            if (pageId === 10) { // CustomOrders
+            if (pageId === 9) { // CustomOrders
                 return { create: false, read: true, update: false, delete: false };
             }
-            if (pageId === 23) { // Projects
+            if (pageId === 22) { // Projects
                 return { create: false, read: true, update: true, delete: false };
             }
-            if (pageId === 28) { // Staffs
+            if (pageId === 27) { // Staffs
                 return { create: false, read: true, update: false, delete: false };
             }
-            if (pageId === 29) { // Stages
+            if (pageId === 28) { // Stages
                 return { create: false, read: true, update: false, delete: false };
             }
-            if (pageId === 33) { // WorkLogs
+            if (pageId === 32) { // WorkLogs
                 return { create: true, read: true, update: true, delete: false };
             }
             return { create: false, read: true, update: false, delete: false };
@@ -58,15 +56,15 @@ const accessConfig = {
 
     // User (ID: 4) - Akses customer
     4: (pageId) => {
-        // User bisa akses: Dashboard(1), Carts(2), Categories(3), SubCategories(4), 
-        // Products(5), CustomOrders(10), CustomerData(11), Guest(13)
-        const userPages = [1, 2, 3, 4, 5, 10, 11, 13];
+        // Dashboard(1), Carts(2), Categories(3), Products(4), 
+        // CustomOrders(9), CustomerData(10), Guest(12)
+        const userPages = [1, 2, 3, 4, 9, 10, 12];
         if (userPages.includes(pageId)) {
             return {
-                create: pageId === 2 || pageId === 10 ? true : false,  // Create cart & custom order
+                create: pageId === 2 || pageId === 9 ? true : false,
                 read: true,
-                update: pageId === 2 ? true : false,                   // Update cart only
-                delete: pageId === 2 ? true : false,                   // Delete cart only
+                update: pageId === 2 ? true : false,
+                delete: pageId === 2 ? true : false,
             };
         }
         return { create: false, read: false, update: false, delete: false };
@@ -74,12 +72,14 @@ const accessConfig = {
 
     // Finance (ID: 5) - Akses keuangan
     5: (pageId) => {
-        const financePages = [1, 12, 26, 27, 28, 30, 33];
+        // Dashboard(1), Finance(11), SalaryLogs(25), SalaryProjects(26), 
+        // Staffs(27), Reports(23), WorkLogs(32)
+        const financePages = [1, 11, 25, 26, 27, 23, 32];
         if (financePages.includes(pageId)) {
             return {
-                create: pageId === 27 ? true : false,
+                create: pageId === 26 ? true : false,
                 read: true,
-                update: pageId === 27 ? true : false,
+                update: pageId === 26 ? true : false,
                 delete: false,
             };
         }

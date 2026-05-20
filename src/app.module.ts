@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -40,10 +41,15 @@ import { ReportsModule } from './reports/reports.module';
 import { ProgressReportsModule } from './progress-reports/progress-reports.module';
 import { StaffsModule } from './staffs/staffs.module';
 import { SalaryProjectsModule } from './salary-projects/salary-projects.module';
-import { SubCategoriesModule } from './sub-categories/sub-categories.module';
 import { FinanceModule } from './finance/finance.module';
 
-import { MailerModule } from '@nestjs-modules/mailer';
+// Module baru untuk master data
+import { SizesModule } from './sizes/sizes.module';
+import { ColorsModule } from './colors/colors.module';
+import { AttributesModule } from './attributes/attributes.module';
+import { MaterialsModule } from './materials/materials.module';
+import { CustomVariantsModule } from './custom-variants/custom-variants.module';
+import { VariantOptionsModule } from './variant-options/variant-options.module';
 
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
@@ -79,6 +85,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
       },
     }),
 
+    // CORE MODULES
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -113,12 +120,18 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     ProgressReportsModule,
     StaffsModule,
     SalaryProjectsModule,
-    SubCategoriesModule,
     FinanceModule,
+
+    // MASTER DATA MODULES (baru)
+    SizesModule,
+    ColorsModule,
+    AttributesModule,
+    MaterialsModule,
+    CustomVariantsModule,
+    VariantOptionsModule,
   ],
 
   controllers: [AppController],
-
   providers: [AppService],
 })
 export class AppModule implements NestModule {

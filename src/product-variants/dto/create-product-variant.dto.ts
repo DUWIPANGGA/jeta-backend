@@ -1,18 +1,38 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min, IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateProductVariantDto {
-  @IsString()
-  size: string;
-
-  @IsString()
-  color: string;
-
   @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
   product_id: number;
 
+  @IsOptional()
   @IsNumber()
-  stock: number;
+  @Type(() => Number)
+  size_id?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  color_id?: number;
 
   @IsNumber()
-  price_adjustment: number;
+  @Min(0)
+  @IsNotEmpty()
+  @Type(() => Number)
+  stock: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  price_adjustment?: number;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

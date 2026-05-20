@@ -1,14 +1,52 @@
-// src/custom-orders/dto/create-custom-order.dto.ts
-import { IsString, IsEmail, IsNotEmpty, IsOptional, IsArray, IsInt, Min } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  IsArray,
+  ValidateNested,
+  Min,
+  ArrayMinSize,
+  MaxLength,
+  IsDate,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+
+// EXPORT class ini
+export class CustomOrderItemDto {
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsInt({ each: true })
+  @IsNotEmpty()
+  variant_option_ids: number[];
+
+  @Transform(({ value }) => parseInt(value, 10))
+  @IsInt()
+  @Min(1)
+  @IsNotEmpty()
+  quantity: number;
+}
 
 export class CreateCustomOrderDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   name: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
   phone: string;
 
   @IsEmail()
@@ -16,6 +54,7 @@ export class CreateCustomOrderDto {
   email: string;
 
   @Type(() => Date)
+  @IsDate()
   @IsNotEmpty()
   deadline: Date;
 
@@ -24,23 +63,20 @@ export class CreateCustomOrderDto {
   catatan_tambahan?: string;
 
   @Transform(({ value }) => {
-    // Parse JSON string dari FormData
     if (typeof value === 'string') {
       try {
-        const parsed = JSON.parse(value);
-        return parsed;
-      } catch (e) {
+        return JSON.parse(value);
+      } catch {
         return value;
       }
     }
     return value;
   })
   @IsArray()
-  @IsNotEmpty()
-  items: Array<{
-    sub_category_id: number;
-    quantity: number;
-  }>;
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CustomOrderItemDto)
+  items: CustomOrderItemDto[];
 
   @IsInt()
   @IsOptional()

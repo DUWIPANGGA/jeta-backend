@@ -1,4 +1,3 @@
-// src/finance/finance.service.ts
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -6,7 +5,7 @@ import * as fs from 'fs';
 
 @Injectable()
 export class FinanceService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // ==================== STAFF RANKING ====================
   async getStaffRanking() {
@@ -66,7 +65,6 @@ export class FinanceService {
       throw new NotFoundException(`Staff with ID ${staffId} not found`);
     }
 
-    // Ambil semua proyek staff dari ProjectMember dengan include custom_order dan items
     const projectMembers = await this.prisma.projectMember.findMany({
       where: { user_id: staff.user_id },
       include: {
@@ -76,8 +74,14 @@ export class FinanceService {
               include: {
                 items: {
                   include: {
-                    sub_category: {
-                      include: { category: true },
+                    selected_options: {
+                      include: {
+                        variant_option: {
+                          include: {
+                            custom_variant: true,
+                          },
+                        },
+                      },
                     },
                   },
                 },
@@ -88,7 +92,6 @@ export class FinanceService {
       },
     });
 
-    // Dapatkan daftar proyek yang sudah dibayar
     const paidProjectDetails = await this.prisma.salaryPaymentDetail.findMany({
       where: {
         project_id: { in: projectMembers.map((pm) => pm.project_id) },
@@ -97,14 +100,12 @@ export class FinanceService {
     });
     const paidProjectIds = new Set(paidProjectDetails.map((p) => p.project_id));
 
-    // Akumulasi quantity per proyek dari progress reports
     const quantityMap = new Map<number, number>();
     for (const report of staff.progressReports) {
       const current = quantityMap.get(report.project_id) ?? 0;
       quantityMap.set(report.project_id, current + (report.quantity ?? 0));
     }
 
-    // Format response
     const projects = projectMembers.map((pm) => {
       const adjustment = staff.salaryProjects.find(
         (sp) => sp.project_id === pm.project_id,
@@ -114,15 +115,15 @@ export class FinanceService {
       const amount = quantity * ratePerUnit;
       const isPaid = paidProjectIds.has(pm.project_id);
 
-      // 🔥 PERBAIKAN: Buat deskripsi produk dari items custom order
       let deskripsiProduk = '-';
-      if (pm.project.custom_order?.items && pm.project.custom_order.items.length > 0) {
-        deskripsiProduk = pm.project.custom_order.items
-          .map(item => {
-            const catName = item.sub_category?.category?.name || '';
-            const subCatName = item.sub_category?.name || '';
-            return `${catName} ${subCatName}`.trim();
-          })
+      const customOrder = pm.project?.custom_order;
+      if (customOrder?.items && customOrder.items.length > 0) {
+        deskripsiProduk = customOrder.items
+          .flatMap(item => 
+            item.selected_options?.map(opt => 
+              `${opt.variant_option?.custom_variant?.name || ''} ${opt.variant_option?.name || ''}`.trim()
+            ) || []
+          )
           .filter(str => str !== '')
           .join(', ');
       }
@@ -130,7 +131,7 @@ export class FinanceService {
 
       return {
         project_id: pm.project_id,
-        project_name: pm.project.custom_order?.name || `Project ${pm.project_id}`,
+        project_name: customOrder?.name || `Project ${pm.project_id}`,
         jenis_produk: deskripsiProduk,
         quantity,
         rate_per_unit: ratePerUnit,

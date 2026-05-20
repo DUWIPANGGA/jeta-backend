@@ -1,11 +1,22 @@
 // src/custom-orders/dto/update-custom-order.dto.ts
 import { IsOptional, IsString, IsEmail, IsArray, ValidateNested, IsInt, Min, IsBoolean, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
-class UpdateCustomOrderItemDto {
-  @IsInt()
+export class UpdateCustomOrderItemDto {
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
+  @IsArray()
   @IsOptional()
-  sub_category_id?: number;
+  @IsInt({ each: true })
+  variant_option_ids?: number[];  // ← array of IDs, bukan single sub_category_id
 
   @IsInt()
   @Min(1)
@@ -36,6 +47,16 @@ export class UpdateCustomOrderDto {
   @IsOptional()
   catatan_tambahan?: string;
 
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })

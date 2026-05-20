@@ -1,8 +1,8 @@
-// src/custom-orders/custom-orders.service.ts
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
+import { AcceptCustomOrderDto } from './dto/accept-custom-order.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -17,7 +17,6 @@ export class CustomOrdersService {
     return deadlineDate >= today;
   }
 
-  // Helper untuk parse images dari JSON string ke array
   private parseImages(images: string | null): string[] | null {
     if (!images) return null;
     try {
@@ -49,7 +48,6 @@ export class CustomOrdersService {
       throw new BadRequestException('Deadline cannot be in the past');
     }
 
-    // Konversi manual items
     let items = createCustomOrderDto.items;
     
     if (typeof items === 'string') {
@@ -65,34 +63,53 @@ export class CustomOrdersService {
     }
 
     interface ValidatedItem {
-      sub_category_id: number;
+      variant_option_ids: number[];
       quantity: number;
     }
     
     const validatedItems: ValidatedItem[] = [];
     
     for (const item of items) {
-      const sub_category_id = Number(item.sub_category_id);
+      let variantOptionIds = item.variant_option_ids;
       const quantity = Number(item.quantity);
       
-      if (isNaN(sub_category_id) || sub_category_id <= 0) {
-        throw new BadRequestException('Invalid sub_category_id');
+      if (typeof variantOptionIds === 'string') {
+        try {
+          variantOptionIds = JSON.parse(variantOptionIds);
+        } catch (e) {
+          throw new BadRequestException('Invalid variant_option_ids format');
+        }
       }
+      
+      if (!Array.isArray(variantOptionIds) || variantOptionIds.length === 0) {
+        throw new BadRequestException('variant_option_ids must be a non-empty array');
+      }
+      
       if (isNaN(quantity) || quantity <= 0) {
         throw new BadRequestException('Invalid quantity');
       }
       
-      const subCategory = await this.prisma.subCategory.findUnique({
-        where: { id: sub_category_id },
-      });
-      if (!subCategory) {
-        throw new BadRequestException(`SubCategory with ID ${sub_category_id} not found`);
+      for (const optionId of variantOptionIds) {
+        const numericId = Number(optionId);
+        if (isNaN(numericId) || numericId <= 0) {
+          throw new BadRequestException(`Invalid variant_option_id: ${optionId}`);
+        }
+        
+        const variantOption = await this.prisma.variantOption.findUnique({
+          where: { id: numericId },
+          include: { custom_variant: true },
+        });
+        if (!variantOption) {
+          throw new BadRequestException(`Variant option with ID ${numericId} not found`);
+        }
       }
       
-      validatedItems.push({ sub_category_id, quantity });
+      validatedItems.push({ 
+        variant_option_ids: variantOptionIds.map(id => Number(id)), 
+        quantity 
+      });
     }
 
-    // Proses multiple images
     let imagePaths: string | null = null;
     if (files && files.length > 0) {
       imagePaths = JSON.stringify(files.map(file => `/uploads/custom-orders/${file.filename}`));
@@ -122,13 +139,21 @@ export class CustomOrdersService {
         const order = await tx.customOrder.create({ data });
 
         for (const item of validatedItems) {
-          await tx.customOrderItem.create({
+          const orderItem = await tx.customOrderItem.create({
             data: {
               custom_order_id: order.id,
-              sub_category_id: item.sub_category_id,
               quantity: item.quantity,
             },
           });
+          
+          for (const optionId of item.variant_option_ids) {
+            await tx.customOrderItemOption.create({
+              data: {
+                custom_order_item_id: orderItem.id,
+                variant_option_id: optionId,
+              },
+            });
+          }
         }
 
         const result = await tx.customOrder.findUnique({
@@ -138,8 +163,12 @@ export class CustomOrdersService {
             payment: true,
             items: {
               include: {
-                sub_category: {
-                  include: { category: true },
+                selected_options: {
+                  include: {
+                    variant_option: {
+                      include: { custom_variant: true },
+                    },
+                  },
                 },
               },
             },
@@ -169,13 +198,17 @@ export class CustomOrdersService {
     const customOrders = await this.prisma.customOrder.findMany({
       orderBy: { created_at: 'desc' },
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
         payment: true,
         projects: { include: { members: true } },
         items: {
           include: {
-            sub_category: {
-              include: { category: true },
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
             },
           },
         },
@@ -198,8 +231,12 @@ export class CustomOrdersService {
         projects: { include: { members: true } },
         items: {
           include: {
-            sub_category: {
-              include: { category: true },
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
             },
           },
         },
@@ -227,8 +264,12 @@ export class CustomOrdersService {
         payment: true,
         items: {
           include: {
-            sub_category: {
-              include: { category: true },
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
             },
           },
         },
@@ -290,12 +331,21 @@ export class CustomOrdersService {
         data: updateData,
       });
 
-      // Update items jika disertakan
       if (updateCustomOrderDto.items !== undefined) {
-        // Hapus semua items lama
-        await tx.customOrderItem.deleteMany({ where: { custom_order_id: id } });
+        const oldItems = await tx.customOrderItem.findMany({
+          where: { custom_order_id: id },
+          include: { selected_options: true },
+        });
+        
+        for (const oldItem of oldItems) {
+          await tx.customOrderItemOption.deleteMany({
+            where: { custom_order_item_id: oldItem.id },
+          });
+          await tx.customOrderItem.delete({
+            where: { id: oldItem.id },
+          });
+        }
 
-        // Konversi dan validasi items baru
         let newItems = updateCustomOrderDto.items;
         if (typeof newItems === 'string') {
           try {
@@ -307,30 +357,54 @@ export class CustomOrdersService {
 
         if (Array.isArray(newItems) && newItems.length > 0) {
           for (const item of newItems) {
-            const sub_category_id = Number(item.sub_category_id);
+            let variantOptionIds = item.variant_option_ids;
             const quantity = Number(item.quantity);
             
-            if (isNaN(sub_category_id) || sub_category_id <= 0) {
-              throw new BadRequestException('Invalid sub_category_id');
+            if (typeof variantOptionIds === 'string') {
+              try {
+                variantOptionIds = JSON.parse(variantOptionIds);
+              } catch (e) {
+                throw new BadRequestException('Invalid variant_option_ids format');
+              }
             }
+            
+            if (!Array.isArray(variantOptionIds) || variantOptionIds.length === 0) {
+              throw new BadRequestException('variant_option_ids must be a non-empty array');
+            }
+            
             if (isNaN(quantity) || quantity <= 0) {
               throw new BadRequestException('Invalid quantity');
             }
             
-            const subCategory = await tx.subCategory.findUnique({
-              where: { id: sub_category_id },
-            });
-            if (!subCategory) {
-              throw new BadRequestException(`SubCategory with ID ${sub_category_id} not found`);
+            for (const optionId of variantOptionIds) {
+              const numericId = Number(optionId);
+              if (isNaN(numericId) || numericId <= 0) {
+                throw new BadRequestException(`Invalid variant_option_id: ${optionId}`);
+              }
+              
+              const variantOption = await tx.variantOption.findUnique({
+                where: { id: numericId },
+              });
+              if (!variantOption) {
+                throw new BadRequestException(`Variant option with ID ${numericId} not found`);
+              }
             }
             
-            await tx.customOrderItem.create({
+            const orderItem = await tx.customOrderItem.create({
               data: {
                 custom_order_id: id,
-                sub_category_id,
-                quantity,
+                quantity: quantity,
               },
             });
+            
+            for (const optionId of variantOptionIds) {
+              await tx.customOrderItemOption.create({
+                data: {
+                  custom_order_item_id: orderItem.id,
+                  variant_option_id: Number(optionId),
+                },
+              });
+            }
           }
         }
       }
@@ -338,12 +412,16 @@ export class CustomOrdersService {
       const result = await tx.customOrder.findUnique({
         where: { id },
         include: {
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, name: true, email: true, phone: true } },
           payment: true,
           items: {
             include: {
-              sub_category: {
-                include: { category: true },
+              selected_options: {
+                include: {
+                  variant_option: {
+                    include: { custom_variant: true },
+                  },
+                },
               },
             },
           },
@@ -362,13 +440,28 @@ export class CustomOrdersService {
   }
 
   // ==================== UPDATE ACCEPT STATUS ====================
-  async updateAcceptStatus(id: number, acceptStatus: boolean) {
+  async updateAcceptStatus(id: number, acceptStatus: boolean, acceptData?: AcceptCustomOrderDto) {
     const customOrder = await this.findOne(id);
 
     if (acceptStatus === true) {
+      let totalAmount = customOrder.total_amount;
+      let dpAmount = customOrder.dp_amount;
+      let remainingAmount = customOrder.remaining_amount;
+
+      if (acceptData) {
+        if (acceptData.total_amount) totalAmount = acceptData.total_amount;
+        if (acceptData.dp_amount) dpAmount = acceptData.dp_amount;
+        if (acceptData.remaining_amount) {
+          remainingAmount = acceptData.remaining_amount;
+        } else if (totalAmount && dpAmount) {
+          remainingAmount = totalAmount - dpAmount;
+        }
+      }
+
       const existingPayment = await this.prisma.payment.findUnique({
         where: { custom_order_id: id },
       });
+      
       if (!existingPayment) {
         const defaultPaymentMethod = await this.prisma.paymentMethod.findFirst({
           where: { status_method: true },
@@ -379,7 +472,7 @@ export class CustomOrdersService {
             order_type: 'custom_order',
             payment_status: 'pending',
             payment_method_id: defaultPaymentMethod?.id ?? null,
-            amount: null,
+            amount: dpAmount,
             paid_at: null,
             payment_proof: null,
           },
@@ -389,6 +482,7 @@ export class CustomOrdersService {
       let project = await this.prisma.project.findFirst({
         where: { custom_order_id: id },
       });
+      
       if (!project) {
         project = await this.prisma.project.create({
           data: {
@@ -401,18 +495,27 @@ export class CustomOrdersService {
 
       const result = await this.prisma.customOrder.update({
         where: { id },
-        data: { accept_status: true },
+        data: { 
+          accept_status: true,
+          total_amount: totalAmount,
+          dp_amount: dpAmount,
+          remaining_amount: remainingAmount,
+        },
         include: {
           payment: true,
           projects: { include: { members: true } },
           items: {
             include: {
-              sub_category: {
-                include: { category: true },
+              selected_options: {
+                include: {
+                  variant_option: {
+                    include: { custom_variant: true },
+                  },
+                },
               },
             },
           },
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, name: true, email: true, phone: true } },
         },
       });
 
@@ -424,6 +527,19 @@ export class CustomOrdersService {
       const result = await this.prisma.customOrder.update({
         where: { id },
         data: { accept_status: false },
+        include: {
+          items: {
+            include: {
+              selected_options: {
+                include: {
+                  variant_option: {
+                    include: { custom_variant: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
       return {
         ...result,
@@ -435,6 +551,21 @@ export class CustomOrdersService {
   // ==================== REMOVE ====================
   async remove(id: number) {
     await this.findOne(id);
+    
+    const items = await this.prisma.customOrderItem.findMany({
+      where: { custom_order_id: id },
+      include: { selected_options: true },
+    });
+
+    for (const item of items) {
+      await this.prisma.customOrderItemOption.deleteMany({
+        where: { custom_order_item_id: item.id },
+      });
+      await this.prisma.customOrderItem.delete({
+        where: { id: item.id },
+      });
+    }
+    
     await this.prisma.customOrder.delete({ where: { id } });
     return { message: `Custom order with ID ${id} deleted successfully` };
   }
@@ -453,9 +584,7 @@ export class CustomOrdersService {
       select: { dp_amount: true, remaining_amount: true, total_amount: true },
     });
 
-    let totalDp = 0,
-      totalRemaining = 0,
-      totalAmountSum = 0;
+    let totalDp = 0, totalRemaining = 0, totalAmountSum = 0;
     for (const order of all) {
       totalDp += order.dp_amount ?? 0;
       totalRemaining += order.remaining_amount ?? 0;
@@ -470,5 +599,19 @@ export class CustomOrdersService {
       total_remaining_amount: totalRemaining,
       total_amount: totalAmountSum,
     };
+  }
+
+  // ==================== GET TOTAL QUANTITY ====================
+  async getTotalQuantityForProject(customOrderId: number): Promise<number> {
+    const customOrder = await this.prisma.customOrder.findUnique({
+      where: { id: customOrderId },
+      include: {
+        items: true,
+      },
+    });
+    
+    if (!customOrder) return 0;
+    
+    return customOrder.items.reduce((sum, item) => sum + item.quantity, 0);
   }
 }
