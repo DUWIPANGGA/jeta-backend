@@ -13,28 +13,36 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
-// EXPORT class ini
 export class CustomOrderItemDto {
   @Transform(({ value }) => {
+    // Handle jika value berupa string JSON
     if (typeof value === 'string') {
       try {
-        return JSON.parse(value);
+        const parsed = JSON.parse(value);
+        // Pastikan setiap item adalah number
+        return parsed.map((id: any) => typeof id === 'string' ? parseInt(id, 10) : id);
       } catch {
         return value;
       }
     }
+    // Jika sudah array, pastikan semua item number
+    if (Array.isArray(value)) {
+      return value.map((id: any) => typeof id === 'string' ? parseInt(id, 10) : id);
+    }
     return value;
   })
-  @IsArray()
-  @ArrayMinSize(1)
-  @IsInt({ each: true })
-  @IsNotEmpty()
+  @IsArray({ message: 'variant_option_ids must be an array' })
+  @ArrayMinSize(1, { message: 'variant_option_ids must have at least 1 item' })
+  @IsInt({ each: true, message: 'each value in variant_option_ids must be an integer number' })
   variant_option_ids: number[];
 
-  @Transform(({ value }) => parseInt(value, 10))
-  @IsInt()
-  @Min(1)
-  @IsNotEmpty()
+  @Transform(({ value }) => {
+    const num = typeof value === 'string' ? parseInt(value, 10) : value;
+    return isNaN(num) ? value : num;
+  })
+  @IsInt({ message: 'quantity must be an integer number' })
+  @Min(1, { message: 'quantity must be at least 1' })
+  @IsNotEmpty({ message: 'quantity is required' })
   quantity: number;
 }
 
@@ -72,8 +80,8 @@ export class CreateCustomOrderDto {
     }
     return value;
   })
-  @IsArray()
-  @ArrayMinSize(1)
+  @IsArray({ message: 'items must be an array' })
+  @ArrayMinSize(1, { message: 'At least one item is required' })
   @ValidateNested({ each: true })
   @Type(() => CustomOrderItemDto)
   items: CustomOrderItemDto[];

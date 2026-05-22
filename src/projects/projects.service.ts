@@ -16,16 +16,61 @@ export class ProjectsService {
       throw new NotFoundException(`Custom order with ID ${createDto.custom_order_id} not found`);
     }
 
-    return this.prisma.project.create({
+    // Cek apakah project sudah ada
+    const existingProject = await this.prisma.project.findFirst({
+      where: { custom_order_id: createDto.custom_order_id },
+      include: { members: true },
+    });
+
+    if (existingProject) {
+      // Jika sudah ada, update team jika ada team baru
+      if (createDto.team && createDto.team.length > 0) {
+        await this.prisma.projectMember.deleteMany({
+          where: { project_id: existingProject.id },
+        });
+        
+        for (const member of createDto.team) {
+          await this.prisma.projectMember.create({
+            data: {
+              project_id: existingProject.id,
+              user_id: member.user_id,
+            },
+          });
+        }
+      }
+      
+      // Return project dengan members
+      return this.prisma.project.findFirst({
+        where: { id: existingProject.id },
+        include: { members: true },
+      });
+    }
+
+    // Buat project baru
+    const newProject = await this.prisma.project.create({
       data: {
         custom_order_id: createDto.custom_order_id,
         user_id: userId,
-        status: true,
+        status: createDto.status ?? true,
       },
-      include: {
-        custom_order: true,
-        members: true,
-      },
+    });
+
+    // Assign team jika ada
+    if (createDto.team && createDto.team.length > 0) {
+      for (const member of createDto.team) {
+        await this.prisma.projectMember.create({
+          data: {
+            project_id: newProject.id,
+            user_id: member.user_id,
+          },
+        });
+      }
+    }
+
+    // Return project dengan members
+    return this.prisma.project.findFirst({
+      where: { id: newProject.id },
+      include: { members: true },
     });
   }
 

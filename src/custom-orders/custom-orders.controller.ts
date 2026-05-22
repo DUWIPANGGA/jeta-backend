@@ -46,11 +46,22 @@ const storage = diskStorage({
 });
 
 // File filter for images only
+// File filter for images and PDF
 const fileFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-    return cb(new BadRequestException('Only image files are allowed!'), false);
+  const allowedMimes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf'
+  ];
+  
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException('Only image files (JPEG, PNG, GIF, WEBP) and PDF are allowed!'), false);
   }
-  cb(null, true);
 };
 
 interface RequestWithUser extends Request {

@@ -37,10 +37,13 @@ const storage = diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|pdf)$/i)) {
-    return cb(new BadRequestException('Only image or PDF files are allowed!'), false);
+  const allowedExtensions = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
+  
+  if (allowedExtensions.test(file.originalname)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException('Only image files (JPG, JPEG, PNG, GIF, WEBP) and PDF are allowed!'), false);
   }
-  cb(null, true);
 };
 
 interface RequestWithUser extends Request {
