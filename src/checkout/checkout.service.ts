@@ -29,6 +29,29 @@ export class CheckoutService {
     const orderNumber = `ORD-${Date.now()}-${randomBytes(2).toString('hex').toUpperCase()}`;
 
     return this.prisma.$transaction(async (prisma) => {
+      // Validasi ketersediaan stok dan potong stok untuk setiap item
+      for (const item of items) {
+        const variant = await prisma.productVariant.findUnique({
+          where: { id: Number(item.variantId) }
+        });
+
+        if (!variant) {
+          throw new BadRequestException(`Varian produk dengan ID ${item.variantId} tidak ditemukan`);
+        }
+
+        if (variant.stock < Number(item.quantity)) {
+          throw new BadRequestException(
+            `Stok tidak mencukupi untuk varian produk ID ${item.variantId}. Tersedia: ${variant.stock}, diminta: ${item.quantity}`
+          );
+        }
+
+        // Kurangi stok varian produk secara dinamis
+        await prisma.productVariant.update({
+          where: { id: Number(item.variantId) },
+          data: { stock: { decrement: Number(item.quantity) } }
+        });
+      }
+
       const order = await prisma.order.create({
         data: {
           user_id: userId,

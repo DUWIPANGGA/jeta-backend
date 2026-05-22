@@ -155,14 +155,26 @@ export class PaymentsService {
             data: { status: 'processing' },
           });
 
-          // Create Project for Standard Order
-          await prisma.project.create({
-            data: {
-              order_id: payment.order_id,
-              user_id: payment.order?.user_id || 1, // Fallback to 1 if not found
-              status: true,
-            }
+          // Inisialisasi pelacakan logistik (Tracking) untuk Standard Order
+          const existingTracking = await prisma.tracking.findFirst({
+            where: { order_id: payment.order_id }
           });
+          if (!existingTracking) {
+            const tracking = await prisma.tracking.create({
+              data: {
+                order_id: payment.order_id,
+                current_stage: 'Pembayaran Diterima',
+                progress_percentage: 10,
+                estimated_completion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Estimasi default 3 hari kirim
+              }
+            });
+            await prisma.trackingHistory.create({
+              data: {
+                tracking_id: tracking.id,
+                status: 'Pembayaran terverifikasi oleh Admin. Pesanan sedang dipersiapkan.'
+              }
+            });
+          }
         }
         if (payment.custom_order_id) {
           if (payment.payment_stage === 'down_payment') {

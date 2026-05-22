@@ -8,7 +8,7 @@ import { enrichCustomOrderItemsWithStages } from '../common/utils/remaining-quan
 
 @Injectable()
 export class CustomOrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private async getStageIdForUser(userId?: number): Promise<number | undefined> {
     if (!userId) return undefined;
@@ -61,7 +61,7 @@ export class CustomOrdersService {
     }
 
     let items = createCustomOrderDto.items;
-    
+
     if (typeof items === 'string') {
       try {
         items = JSON.parse(items);
@@ -69,7 +69,7 @@ export class CustomOrdersService {
         throw new BadRequestException('Invalid items format');
       }
     }
-    
+
     if (!Array.isArray(items)) {
       throw new BadRequestException('Items must be an array');
     }
@@ -78,13 +78,13 @@ export class CustomOrdersService {
       variant_option_ids: number[];
       quantity: number;
     }
-    
+
     const validatedItems: ValidatedItem[] = [];
-    
+
     for (const item of items) {
       let variantOptionIds = item.variant_option_ids;
       const quantity = Number(item.quantity);
-      
+
       if (typeof variantOptionIds === 'string') {
         try {
           variantOptionIds = JSON.parse(variantOptionIds);
@@ -92,21 +92,21 @@ export class CustomOrdersService {
           throw new BadRequestException('Invalid variant_option_ids format');
         }
       }
-      
+
       if (!Array.isArray(variantOptionIds) || variantOptionIds.length === 0) {
         throw new BadRequestException('variant_option_ids must be a non-empty array');
       }
-      
+
       if (isNaN(quantity) || quantity <= 0) {
         throw new BadRequestException('Invalid quantity');
       }
-      
+
       for (const optionId of variantOptionIds) {
         const numericId = Number(optionId);
         if (isNaN(numericId) || numericId <= 0) {
           throw new BadRequestException(`Invalid variant_option_id: ${optionId}`);
         }
-        
+
         const variantOption = await this.prisma.variantOption.findUnique({
           where: { id: numericId },
           include: { custom_variant: true },
@@ -115,10 +115,10 @@ export class CustomOrdersService {
           throw new BadRequestException(`Variant option with ID ${numericId} not found`);
         }
       }
-      
-      validatedItems.push({ 
-        variant_option_ids: variantOptionIds.map(id => Number(id)), 
-        quantity 
+
+      validatedItems.push({
+        variant_option_ids: variantOptionIds.map(id => Number(id)),
+        quantity
       });
     }
 
@@ -158,7 +158,7 @@ export class CustomOrdersService {
               remaining_quantity: item.quantity,
             },
           });
-          
+
           for (const optionId of item.variant_option_ids) {
             await tx.customOrderItemOption.create({
               data: {
@@ -362,7 +362,7 @@ export class CustomOrdersService {
           where: { custom_order_id: id },
           include: { selected_options: true },
         });
-        
+
         for (const oldItem of oldItems) {
           await tx.customOrderItemOption.deleteMany({
             where: { custom_order_item_id: oldItem.id },
@@ -385,7 +385,7 @@ export class CustomOrdersService {
           for (const item of newItems) {
             let variantOptionIds = item.variant_option_ids;
             const quantity = Number(item.quantity);
-            
+
             if (typeof variantOptionIds === 'string') {
               try {
                 variantOptionIds = JSON.parse(variantOptionIds);
@@ -393,21 +393,21 @@ export class CustomOrdersService {
                 throw new BadRequestException('Invalid variant_option_ids format');
               }
             }
-            
+
             if (!Array.isArray(variantOptionIds) || variantOptionIds.length === 0) {
               throw new BadRequestException('variant_option_ids must be a non-empty array');
             }
-            
+
             if (isNaN(quantity) || quantity <= 0) {
               throw new BadRequestException('Invalid quantity');
             }
-            
+
             for (const optionId of variantOptionIds) {
               const numericId = Number(optionId);
               if (isNaN(numericId) || numericId <= 0) {
                 throw new BadRequestException(`Invalid variant_option_id: ${optionId}`);
               }
-              
+
               const variantOption = await tx.variantOption.findUnique({
                 where: { id: numericId },
               });
@@ -415,7 +415,7 @@ export class CustomOrdersService {
                 throw new BadRequestException(`Variant option with ID ${numericId} not found`);
               }
             }
-            
+
             const orderItem = await tx.customOrderItem.create({
               data: {
                 custom_order_id: id,
@@ -423,7 +423,7 @@ export class CustomOrdersService {
                 remaining_quantity: quantity,
               },
             });
-            
+
             for (const optionId of variantOptionIds) {
               await tx.customOrderItemOption.create({
                 data: {
@@ -491,7 +491,7 @@ export class CustomOrdersService {
       const existingPayment = await this.prisma.payment.findFirst({
         where: { custom_order_id: id },
       });
-      
+
       if (!existingPayment) {
         const defaultPaymentMethod = await this.prisma.paymentMethod.findFirst({
           where: { status_method: true },
@@ -501,18 +501,18 @@ export class CustomOrdersService {
             custom_order_id: id,
             order_type: 'custom_order',
             payment_status: 'pending',
-            payment_stage: 'down_payment',
             payment_method_id: defaultPaymentMethod?.id ?? null,
             amount: dpAmount,
             paid_at: null,
             payment_proof: null,
+            payment_stage: 'down_payment',
           },
         });
       }
 
       const result = await this.prisma.customOrder.update({
         where: { id },
-        data: { 
+        data: {
           accept_status: true,
           total_amount: totalAmount,
           dp_amount: dpAmount,
@@ -568,7 +568,7 @@ export class CustomOrdersService {
   // ==================== REMOVE ====================
   async remove(id: number) {
     await this.findOne(id);
-    
+
     const items = await this.prisma.customOrderItem.findMany({
       where: { custom_order_id: id },
       include: { selected_options: true },
@@ -582,7 +582,7 @@ export class CustomOrdersService {
         where: { id: item.id },
       });
     }
-    
+
     await this.prisma.customOrder.delete({ where: { id } });
     return { message: `Custom order with ID ${id} deleted successfully` };
   }
@@ -626,9 +626,9 @@ export class CustomOrdersService {
         items: true,
       },
     });
-    
+
     if (!customOrder) return 0;
-    
+
     return customOrder.items.reduce((sum, item) => sum + item.quantity, 0);
   }
 }
