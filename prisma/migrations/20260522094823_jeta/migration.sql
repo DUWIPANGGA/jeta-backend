@@ -290,6 +290,7 @@ CREATE TABLE "custom_order_items" (
     "id" SERIAL NOT NULL,
     "custom_order_id" INTEGER NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 0,
+    "remaining_quantity" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -560,6 +561,7 @@ CREATE TABLE "progress_reports" (
     "id" SERIAL NOT NULL,
     "staff_id" INTEGER NOT NULL,
     "project_id" INTEGER NOT NULL,
+    "custom_order_item_id" INTEGER,
     "stage_id" INTEGER NOT NULL,
     "status" "ProgressStatus" NOT NULL DEFAULT 'pending',
     "quantity" INTEGER,
@@ -811,6 +813,9 @@ ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_staff_id_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_custom_order_item_id_fkey" FOREIGN KEY ("custom_order_item_id") REFERENCES "custom_order_items"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -402,11 +402,13 @@ model CustomOrderItem {
   id                Int      @id @default(autoincrement())
   custom_order_id   Int
   quantity          Int      @default(0)
+  remaining_quantity Int     @default(0)  // ✅ TAMBAH: sisa yang belum dikerjakan
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
   custom_order      CustomOrder @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
   selected_options  CustomOrderItemOption[]
+  progressReports   ProgressReport[]  // ✅ TAMBAH: relasi ke ProgressReport
 
   @@map("custom_order_items")
 }
@@ -740,6 +742,7 @@ model ProgressReport {
   id                Int             @id @default(autoincrement())
   staff_id          Int
   project_id        Int
+  custom_order_item_id Int?         // ✅ TAMBAH: relasi ke CustomOrderItem
   stage_id          Int
   status            ProgressStatus  @default(pending)
   quantity          Int?
@@ -749,9 +752,10 @@ model ProgressReport {
   created_at        DateTime        @default(now())
   updated_at        DateTime        @updatedAt
 
-  staff       Staff         @relation(fields: [staff_id], references: [id], onDelete: Cascade)
-  project     Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  stage       Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  staff             Staff         @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  project           Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  custom_order_item CustomOrderItem? @relation(fields: [custom_order_item_id], references: [id], onDelete: Cascade)  // ✅ TAMBAH
+  stage             Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
 
   @@map("progress_reports")
 }

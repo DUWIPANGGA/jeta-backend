@@ -1,4 +1,3 @@
-// src/progress-reports/progress-reports.controller.ts
 import {
   Controller,
   Get,
@@ -61,48 +60,54 @@ export class ProgressReportsController {
   private readonly logger = new Logger(ProgressReportsController.name);
 
   @Post()
-  @Access(22, 'create')
+  @Access(21, 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
-    @Body() createProgressReportDto: CreateProgressReportDto,
+    @Body() createDto: CreateProgressReportDto,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: RequestWithUser,
   ) {
     if (!file) {
-      throw new BadRequestException('Progress image is required');
+      throw new BadRequestException('Foto bukti (image) wajib diupload');
     }
-    return this.service.create(createProgressReportDto, req.user.id, file);
+    return this.service.create(createDto, req.user.id, file);
   }
 
   @Get()
-  @Access(22, 'read')
+  @Access(21, 'read')
   findAll(@Query('project_id') projectId?: string) {
     return this.service.findAll(projectId ? parseInt(projectId, 10) : undefined);
   }
 
   @Get('my-tasks')
-  @Access(22, 'read')
+  @Access(21, 'read')
   getMyTasks(@Req() req: RequestWithUser) {
     return this.service.getMyTasks(req.user.id);
   }
 
   @Get('queue')
-  @Access(22, 'read')
+  @Access(21, 'read')
   getQueue(@Req() req: RequestWithUser) {
-    if (req.user.role_id !== 1) {
+    if (req.user.role_id !== 1 && req.user.role_id !== 2) {
       throw new ForbiddenException('Only admin can access queue');
     }
     return this.service.getQueue();
   }
 
+  @Get('remaining/:customOrderItemId')
+  @Access(21, 'read')
+  getRemainingQuantity(@Param('customOrderItemId', ParseIntPipe) customOrderItemId: number) {
+    return this.service.getRemainingQuantity(customOrderItemId);
+  }
+
   @Get(':id')
-  @Access(22, 'read')
+  @Access(21, 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   @Patch(':id')
-  @Access(22, 'update')
+  @Access(21, 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -110,7 +115,7 @@ export class ProgressReportsController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: RequestWithUser,
   ) {
-    const isAdmin = req.user.role_id === 1;
+    const isAdmin = req.user.role_id === 1 || req.user.role_id === 2;
     let imagePath: string | undefined = undefined;
     if (file) {
       imagePath = `/uploads/progress/${file.filename}`;
@@ -119,9 +124,9 @@ export class ProgressReportsController {
   }
 
   @Delete(':id')
-  @Access(22, 'delete')
+  @Access(21, 'delete')
   remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
-    const isAdmin = req.user.role_id === 1;
+    const isAdmin = req.user.role_id === 1 || req.user.role_id === 2;
     return this.service.remove(id, req.user.id, isAdmin);
   }
 }

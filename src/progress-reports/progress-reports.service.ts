@@ -1,4 +1,3 @@
-// src/progress-reports/progress-reports.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -15,32 +14,31 @@ import * as fs from 'fs';
 export class ProgressReportsService {
   constructor(private readonly prisma: PrismaService) { }
 
-  // ---------- Helper: validasi quantity ----------
-  // src/progress-reports/progress-reports.service.ts
-// Ganti method validateQuantity dengan ini:
+  // ==================== HELPER: VALIDASI SISA QUANTITY ====================
+  private async validateRemainingQuantity(customOrderItemId: number, requestedQuantity: number) {
+    const item = await this.prisma.customOrderItem.findUnique({
+      where: { id: customOrderItemId },
+      select: { 
+        remaining_quantity: true, 
+        quantity: true,
+        custom_order_id: true  // ✅ TAMBAHKAN
+      },
+    });
 
-private async validateQuantity(projectId: number, quantity: number | undefined) {
-  if (quantity === undefined) return;
-  const project = await this.prisma.project.findUnique({
-    where: { id: projectId },
-    include: { 
-      custom_order: {
-        include: { items: true }  // ← tambahkan include items
-      } 
-    },
-  });
-  if (!project) throw new BadRequestException('Project not found');
-  if (!project.custom_order) throw new BadRequestException('Project tidak memiliki custom order');
-  
-  // Hitung total quantity dari semua items
-  const maxQuantity = project.custom_order.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-  
-  if (quantity > maxQuantity) {
-    throw new BadRequestException(`Quantity tidak boleh melebihi ${maxQuantity}`);
+    if (!item) {
+      throw new BadRequestException('Custom order item not found');
+    }
+
+    if (requestedQuantity > item.remaining_quantity) {
+      throw new BadRequestException(
+        `Sisa yang bisa dilaporkan hanya ${item.remaining_quantity} pcs. Anda mencoba melaporkan ${requestedQuantity} pcs.`
+      );
+    }
+
+    return item;
   }
-}
 
-  // ---------- Helper: cek member (opsional) ----------
+  // ==================== HELPER: CEK STAFF MEMBER PROJECT ====================
   private async isStaffMemberOfProject(staffId: number, projectId: number): Promise<boolean> {
     const staff = await this.prisma.staff.findUnique({
       where: { id: staffId },
@@ -53,20 +51,30 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
     return !!member;
   }
 
-  // ---------- CREATE ----------
+  // ==================== HELPER: CEK DUPLIKAT REPORT ====================
+  private async checkDuplicateReport(staffId: number, customOrderItemId: number, stageId: number) {
+    const existing = await this.prisma.progressReport.findFirst({
+      where: {
+        staff_id: staffId,
+        custom_order_item_id: customOrderItemId,
+        stage_id: stageId,
+        approval_status: false,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Anda sudah memiliki laporan pending untuk stage dan item ini');
+    }
+  }
+
+  // ==================== CREATE ====================
   async create(
     createDto: CreateProgressReportDto,
     userIdFromToken: number,
     file: Express.Multer.File,
   ) {
     const imagePath = `/uploads/progress/${file.filename}`;
-    const projectId = Number(createDto.project_id);
-    const stageId = Number(createDto.stage_id);
-    const quantity = createDto.quantity ? Number(createDto.quantity) : undefined;
-
-    if (isNaN(projectId) || isNaN(stageId)) {
-      throw new BadRequestException('project_id and stage_id must be valid numbers');
-    }
+    const { project_id, custom_order_item_id, stage_id, quantity, catatan, status } = createDto;
 
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
@@ -74,37 +82,77 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
     if (!staff) {
       throw new BadRequestException('User tidak memiliki data staff. Hubungi admin.');
     }
-    const staffId = staff.id;
 
-    // Opsional: cek member (bisa diaktifkan nanti)
-    // const isMember = await this.isStaffMemberOfProject(staffId, projectId);
-    // if (!isMember) throw new ForbiddenException('You are not a member of this project');
+    const isMember = await this.isStaffMemberOfProject(staff.id, project_id);
+    if (!isMember) {
+      throw new ForbiddenException('Anda tidak terdaftar sebagai anggota project ini');
+    }
 
-    const stage = await this.prisma.stage.findUnique({ where: { id: stageId } });
-    if (!stage) throw new NotFoundException(`Stage with ID ${stageId} not found`);
+    const stage = await this.prisma.stage.findUnique({ where: { id: stage_id } });
+    if (!stage) {
+      throw new NotFoundException(`Stage with ID ${stage_id} not found`);
+    }
 
-    await this.validateQuantity(projectId, quantity);
+    const item = await this.validateRemainingQuantity(custom_order_item_id, quantity);
 
-    return this.prisma.progressReport.create({
-      data: {
-        staff_id: staffId,
-        project_id: projectId,
-        stage_id: stageId,
-        status: createDto.status ?? 'pending',
-        quantity: quantity ?? null,
-        catatan: createDto.catatan,
-        image: imagePath,
-        approval_status: false,
+    const customOrder = await this.prisma.customOrder.findFirst({
+      where: {
+        id: item.custom_order_id,
+        projects: { some: { id: project_id } },
       },
-      include: {
-        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
-        project: { include: { custom_order: true } },
-        stage: true,
-      },
+    });
+
+    if (!customOrder) {
+      throw new BadRequestException('Custom order item tidak terkait dengan project ini');
+    }
+
+    await this.checkDuplicateReport(staff.id, custom_order_item_id, stage_id);
+
+    return this.prisma.$transaction(async (tx) => {
+      const report = await tx.progressReport.create({
+        data: {
+          staff_id: staff.id,
+          project_id: project_id,
+          custom_order_item_id: custom_order_item_id,
+          stage_id: stage_id,
+          quantity: quantity,
+          catatan: catatan,
+          image: imagePath,
+          status: status ?? 'proses',
+          approval_status: false,
+        },
+        include: {
+          staff: { include: { user: { select: { id: true, name: true, email: true } } } },
+          project: { include: { custom_order: true } },
+          stage: true,
+          custom_order_item: {
+            include: {
+              selected_options: {
+                include: {
+                  variant_option: {
+                    include: { custom_variant: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      await tx.customOrderItem.update({
+        where: { id: custom_order_item_id },
+        data: {
+          remaining_quantity: {
+            decrement: quantity,
+          },
+        },
+      });
+
+      return report;
     });
   }
 
-  // ---------- FIND ALL ----------
+  // ==================== FIND ALL ====================
   async findAll(projectId?: number) {
     const where = projectId ? { project_id: projectId } : {};
     return this.prisma.progressReport.findMany({
@@ -114,11 +162,22 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
         staff: { include: { user: { select: { id: true, name: true, email: true } } } },
         project: { include: { custom_order: true } },
         stage: true,
+        custom_order_item: {
+          include: {
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
 
-  // ---------- FIND ONE ----------
+  // ==================== FIND ONE ====================
   async findOne(id: number) {
     const report = await this.prisma.progressReport.findUnique({
       where: { id },
@@ -126,13 +185,24 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
         staff: { include: { user: { select: { id: true, name: true, email: true } } } },
         project: { include: { custom_order: true } },
         stage: true,
+        custom_order_item: {
+          include: {
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
     if (!report) throw new NotFoundException(`Progress report #${id} not found`);
     return report;
   }
 
-  // ---------- UPDATE (dengan penanganan file gambar) ----------
+  // ==================== UPDATE ====================
   async update(
     id: number,
     updateDto: UpdateProgressReportDto,
@@ -144,104 +214,199 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
     });
-    const staffId = staff?.id;
 
-    // ==================== ADMIN ====================
+    // ==================== ADMIN: APPROVE / REJECT ====================
     if (isAdmin) {
-      const allowedFields = ['approval_status'];
-      const forbiddenFields = Object.keys(updateDto).filter(key => !allowedFields.includes(key));
-      if (forbiddenFields.length > 0) {
-        throw new ForbiddenException(`Admin hanya bisa mengupdate approval_status, tidak boleh: ${forbiddenFields.join(', ')}`);
-      }
       if (updateDto.approval_status === undefined) {
-        throw new BadRequestException('Approval status harus diisi untuk update admin');
+        throw new BadRequestException('Admin hanya bisa mengupdate approval_status');
       }
-      return this.prisma.progressReport.update({
+
+      const otherFields = Object.keys(updateDto).filter(k => k !== 'approval_status');
+      if (otherFields.length > 0) {
+        throw new ForbiddenException(`Admin tidak boleh mengupdate field: ${otherFields.join(', ')}`);
+      }
+
+      // REJECT
+      if (updateDto.approval_status === false && report.approval_status !== true) {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.progressReport.update({
+            where: { id },
+            data: { approval_status: false },
+          });
+
+          if (report.custom_order_item_id && report.quantity) {
+            await tx.customOrderItem.update({
+              where: { id: report.custom_order_item_id },
+              data: {
+                remaining_quantity: {
+                  increment: report.quantity,
+                },
+              },
+            });
+          }
+        });
+        return this.findOne(id);
+      }
+
+      // APPROVE
+      if (updateDto.approval_status === true && report.approval_status !== true) {
+        return this.prisma.$transaction(async (tx) => {
+          const updated = await tx.progressReport.update({
+            where: { id },
+            data: { approval_status: true, status: 'selesai' },
+          });
+
+          if (report.custom_order_item_id && report.quantity) {
+            const customOrderItem = await tx.customOrderItem.findUnique({
+              where: { id: report.custom_order_item_id },
+              select: { custom_order_id: true },
+            });
+
+            await tx.workLog.create({
+              data: {
+                user_id: report.staff_id,
+                stage_id: report.stage_id,
+                order_type: 'custom_order',
+                custom_order_id: customOrderItem?.custom_order_id,
+                quantity: report.quantity,
+                earned_amount: 0,
+              },
+            });
+          }
+
+          return updated;
+        });
+      }
+
+      return this.findOne(id);
+    }
+
+    // ==================== STAFF: EDIT REPORT ====================
+    if (!staff || report.staff_id !== staff.id) {
+      throw new ForbiddenException('Anda hanya bisa mengupdate laporan milik sendiri');
+    }
+
+    if (report.approval_status === true) {
+      throw new ForbiddenException('Tidak bisa mengupdate laporan yang sudah disetujui');
+    }
+
+    const updateData: any = {};
+    let newQuantity: number | undefined = undefined;
+
+    if (updateDto.quantity !== undefined) {
+      newQuantity = updateDto.quantity;
+      if (isNaN(newQuantity)) throw new BadRequestException('Quantity harus berupa angka');
+      
+      const item = await this.prisma.customOrderItem.findUnique({
+        where: { id: report.custom_order_item_id! },
+        select: { remaining_quantity: true },
+      });
+
+      const oldQuantity = report.quantity || 0;
+      const selisih = newQuantity - oldQuantity;
+
+      if (selisih > 0 && selisih > (item?.remaining_quantity || 0)) {
+        throw new BadRequestException(
+          `Sisa yang bisa ditambahkan hanya ${item?.remaining_quantity} pcs`
+        );
+      }
+
+      updateData.quantity = newQuantity;
+    }
+
+    if (updateDto.catatan !== undefined) updateData.catatan = updateDto.catatan;
+    if (imagePath !== undefined) {
+      if (report.image) {
+        const oldFilePath = path.join(process.cwd(), report.image);
+        if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
+      }
+      updateData.image = imagePath;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('Tidak ada field yang valid untuk diupdate');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (newQuantity !== undefined && newQuantity !== report.quantity) {
+        const selisih = newQuantity - (report.quantity || 0);
+        await tx.customOrderItem.update({
+          where: { id: report.custom_order_item_id! },
+          data: {
+            remaining_quantity: {
+              decrement: selisih,
+            },
+          },
+        });
+      }
+
+      return tx.progressReport.update({
         where: { id },
-        data: { approval_status: updateDto.approval_status },
+        data: updateData,
         include: {
           staff: { include: { user: { select: { id: true, name: true, email: true } } } },
           project: { include: { custom_order: true } },
           stage: true,
+          custom_order_item: {
+            include: {
+              selected_options: {
+                include: {
+                  variant_option: {
+                    include: { custom_variant: true },
+                  },
+                },
+              },
+            },
+          },
         },
       });
-    }
-
-    // ==================== STAFF ====================
-    if (!staff || report.staff_id !== staffId) {
-      throw new ForbiddenException('Anda hanya bisa mengupdate laporan milik sendiri');
-    }
-    if (report.approval_status === true) {
-      throw new ForbiddenException('Tidak bisa mengupdate laporan yang sudah disetujui admin');
-    }
-
-    // Staff hanya boleh update status, catatan, quantity, dan gambar (jika ada)
-    let quantity: number | undefined = undefined;
-    if (updateDto.quantity !== undefined) {
-      quantity = Number(updateDto.quantity);
-      if (isNaN(quantity)) throw new BadRequestException('Quantity harus berupa angka');
-    }
-    if (quantity !== undefined) {
-      await this.validateQuantity(report.project_id, quantity);
-    }
-
-    const commonData: any = {};
-    if (updateDto.status !== undefined) commonData.status = updateDto.status;
-    if (updateDto.catatan !== undefined) commonData.catatan = updateDto.catatan;
-    if (quantity !== undefined) commonData.quantity = quantity;
-    if (imagePath !== undefined) {
-      // Hapus file lama jika ada
-      if (report.image) {
-        const oldFilePath = path.join(process.cwd(), report.image);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-      }
-      commonData.image = imagePath;
-    }
-
-    if (Object.keys(commonData).length === 0) {
-      throw new BadRequestException('Tidak ada field yang valid untuk diupdate (status, catatan, quantity, atau gambar)');
-    }
-
-    return this.prisma.progressReport.update({
-      where: { id },
-      data: commonData,
-      include: {
-        staff: { include: { user: { select: { id: true, name: true, email: true } } } },
-        project: { include: { custom_order: true } },
-        stage: true,
-      },
     });
   }
 
-  // ---------- DELETE ----------
+  // ==================== DELETE ====================
   async remove(id: number, userIdFromToken: number, isAdmin: boolean) {
     const report = await this.findOne(id);
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
     });
-    const staffId = staff?.id;
-    if (!isAdmin && (!staff || report.staff_id !== staffId)) {
+
+    if (!isAdmin && (!staff || report.staff_id !== staff.id)) {
       throw new ForbiddenException('Anda hanya bisa menghapus laporan milik sendiri');
     }
-    // Hapus file gambar jika ada
-    if (report.image) {
-      const filePath = path.join(process.cwd(), report.image);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+
+    if (report.approval_status === true && !isAdmin) {
+      throw new ForbiddenException('Tidak bisa menghapus laporan yang sudah disetujui');
     }
-    await this.prisma.progressReport.delete({ where: { id } });
-    return { message: `Progress report ${id} deleted successfully` };
+
+    return this.prisma.$transaction(async (tx) => {
+      if (report.custom_order_item_id && report.quantity) {
+        await tx.customOrderItem.update({
+          where: { id: report.custom_order_item_id },
+          data: {
+            remaining_quantity: {
+              increment: report.quantity,
+            },
+          },
+        });
+      }
+
+      if (report.image) {
+        const filePath = path.join(process.cwd(), report.image);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+
+      await tx.progressReport.delete({ where: { id } });
+      return { message: `Progress report ${id} deleted successfully` };
+    });
   }
 
-  // ---------- GET MY TASKS ----------
+  // ==================== GET MY TASKS ====================
   async getMyTasks(userIdFromToken: number) {
     const staff = await this.prisma.staff.findUnique({
       where: { user_id: userIdFromToken },
     });
     if (!staff) return [];
+    
     return this.prisma.progressReport.findMany({
       where: { staff_id: staff.id },
       orderBy: { created_at: 'desc' },
@@ -249,11 +414,22 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
         staff: { include: { user: { select: { id: true, name: true, email: true } } } },
         project: { include: { custom_order: true } },
         stage: true,
+        custom_order_item: {
+          include: {
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
 
-  // ---------- GET QUEUE ----------
+  // ==================== GET QUEUE ====================
   async getQueue() {
     return this.prisma.progressReport.findMany({
       where: { approval_status: false },
@@ -262,7 +438,52 @@ private async validateQuantity(projectId: number, quantity: number | undefined) 
         staff: { include: { user: { select: { id: true, name: true, email: true } } } },
         project: { include: { custom_order: true } },
         stage: true,
+        custom_order_item: {
+          include: {
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
+  }
+
+  // ==================== GET REMAINING QUANTITY ====================
+  async getRemainingQuantity(customOrderItemId: number) {
+    const item = await this.prisma.customOrderItem.findUnique({
+      where: { id: customOrderItemId },
+      select: {
+        quantity: true,
+        remaining_quantity: true,
+        selected_options: {
+          include: {
+            variant_option: {
+              include: { custom_variant: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!item) {
+      throw new NotFoundException(`Custom order item with ID ${customOrderItemId} not found`);
+    }
+
+    const completed = item.quantity - item.remaining_quantity;
+
+    return {
+      total: item.quantity,
+      completed: completed,
+      remaining: item.remaining_quantity,
+      product_description: item.selected_options
+        .map(opt => `${opt.variant_option?.custom_variant?.name || ''} ${opt.variant_option?.name || ''}`.trim())
+        .filter(Boolean)
+        .join(', '),
+    };
   }
 }
