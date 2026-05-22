@@ -402,7 +402,7 @@ model CustomOrderItem {
   id                Int      @id @default(autoincrement())
   custom_order_id   Int
   quantity          Int      @default(0)
-  remaining_quantity Int     @default(0)  // ✅ TAMBAH: sisa yang belum dikerjakan
+  remaining_quantity Int     
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
