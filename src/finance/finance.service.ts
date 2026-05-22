@@ -95,6 +95,7 @@ export class FinanceService {
     const paidProjectDetails = await this.prisma.salaryPaymentDetail.findMany({
       where: {
         project_id: { in: projectMembers.map((pm) => pm.project_id) },
+        salaryPayment: { staff_id: staff.id },
       },
       select: { project_id: true },
     });
@@ -190,10 +191,13 @@ export class FinanceService {
       }
 
       const existingPayment = await this.prisma.salaryPaymentDetail.findFirst({
-        where: { project_id: projectId },
+        where: { 
+          project_id: projectId,
+          salaryPayment: { staff_id: staff.id },
+        },
       });
       if (existingPayment) {
-        throw new BadRequestException(`Project ID ${projectId} sudah pernah dibayar`);
+        throw new BadRequestException(`Project ID ${projectId} sudah pernah dibayar untuk staff ini`);
       }
 
       const totalQuantity = staff.progressReports

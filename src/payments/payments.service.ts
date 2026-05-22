@@ -164,14 +164,17 @@ export class PaymentsService {
             data: { payment_status: true },
           });
 
-          // Create Project for Custom Order
+          // Pembuatan project custom order sudah ditangani di custom-orders.service.ts
+          // untuk mencegah error unique constraint P2002.
+          /*
           await prisma.project.create({
             data: {
               custom_order_id: payment.custom_order_id,
-              user_id: payment.custom_order?.user_id || 1, // Fallback to 1 if not found
+              user_id: payment.custom_order?.user_id || 1,
               status: true,
             }
           });
+          */
         }
       }
 
