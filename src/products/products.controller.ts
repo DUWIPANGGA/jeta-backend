@@ -71,7 +71,7 @@ export class ProductsController {
   // ==================== ENDPOINT YANG BUTUH AUTH (HANYA ADMIN/STAFF) ====================
   @Post()
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @Access(5, 'create')
+  @Access('Products', 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createProductDto: CreateProductDto,
@@ -85,7 +85,7 @@ export class ProductsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @Access(5, 'update')
+  @Access('Products', 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id') id: string,
@@ -97,7 +97,7 @@ export class ProductsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @Access(5, 'delete')
+  @Access('Products', 'delete')
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);
   }

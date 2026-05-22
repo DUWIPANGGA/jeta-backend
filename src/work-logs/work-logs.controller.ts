@@ -15,32 +15,32 @@ export class WorkLogsController {
   constructor(private readonly workLogsService: WorkLogsService) { }
 
   @Post()
-  @Access(33, 'create')
+  @Access('WorkLogs', 'create')
   create(@Body() createDto: any, @Req() req: RequestWithUser) {
     return this.workLogsService.create(req.user.id, createDto);
   }
 
   @Get()
-  @Access(33, 'read')
+  @Access('WorkLogs', 'read')
   findAll() {
     return this.workLogsService.findAll();
   }
 
   @Get(':id')
-  @Access(33, 'read')
+  @Access('WorkLogs', 'read')
   findOne(@Param('id') id: string) {
     return this.workLogsService.findOne(+id);
   }
 
   // Method UPDATE tidak ada di service, jadi hapus dulu atau komen
   // @Patch(':id')
-  // @Access(33, 'update')
+  // @Access('WorkLogs', 'update')
   // update(@Param('id') id: string, @Body() updateDto: any) {
   //   return this.workLogsService.update(+id, updateDto);
   // }
 
   @Delete(':id')
-  @Access(33, 'delete')
+  @Access('WorkLogs', 'delete')
   remove(@Param('id') id: string) {
     return this.workLogsService.remove(+id);
   }

@@ -22,7 +22,7 @@ export class RoleController {
   constructor(private readonly rolesService: RolesService) { }
 
   @Get('pages')
-  @Access(25, 'read')
+  @Access('Roles', 'read')
   async getPages() {
     const pages = await this.rolesService.getPagesWithAccess();
     return {
@@ -32,7 +32,7 @@ export class RoleController {
   }
 
   @Get('pages-with-access/:roleId')
-  @Access(25, 'read')
+  @Access('Roles', 'read')
   async getPagesWithAccess(@Param('roleId') roleId: string) {
     const pages = await this.rolesService.getPagesWithAccess(parseInt(roleId));
     return {
@@ -42,7 +42,7 @@ export class RoleController {
   }
 
   @Post()
-  @Access(25, 'create')
+  @Access('Roles', 'create')
   async create(@Body() createRoleDto: CreateRoleDto) {
     console.log('📦 Received body:', JSON.stringify(createRoleDto, null, 2));
     const role = await this.rolesService.create(createRoleDto);
@@ -54,7 +54,7 @@ export class RoleController {
   }
 
   @Get()
-  @Access(25, 'read')
+  @Access('Roles', 'read')
   async findAll() {
     const roles = await this.rolesService.findAll();
     return {
@@ -64,7 +64,7 @@ export class RoleController {
   }
 
   @Get(':id')
-  @Access(25, 'read')
+  @Access('Roles', 'read')
   async findOne(@Param('id') id: string) {
     const role = await this.rolesService.findOne(parseInt(id));
     return {
@@ -74,7 +74,7 @@ export class RoleController {
   }
 
   @Patch(':id')
-  @Access(25, 'update')
+  @Access('Roles', 'update')
   async update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     const role = await this.rolesService.update(parseInt(id), updateRoleDto);
     return {
@@ -85,7 +85,7 @@ export class RoleController {
   }
 
   @Delete(':id')
-  @Access(25, 'delete')
+  @Access('Roles', 'delete')
   async remove(@Param('id') id: string) {
     await this.rolesService.remove(parseInt(id));
     return {

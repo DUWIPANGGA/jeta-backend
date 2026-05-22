@@ -17,7 +17,7 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
   @Get('product-sales')
-  @Access(24, 'read')
+  @Access('Reports', 'read')
   async getProductSalesReport(
     @Query() query: ProductSalesQueryDto,
     @Req() req: RequestWithUser,
@@ -26,7 +26,7 @@ export class ReportsController {
   }
 
   @Get('product-sales/export')
-  @Access(24, 'read')
+  @Access('Reports', 'read')
   async exportProductSalesReport(
     @Query() query: ProductSalesQueryDto,
     @Req() req: RequestWithUser,

@@ -15,7 +15,7 @@ export class CustomerDataController {
   constructor(private readonly customerDataService: CustomerDataService) { }
 
   @Get('me')
-  @Access(11, 'read')
+  @Access('CustomerData', 'read')
   async getMyPurchases(@Req() req: RequestWithUser) {
     const userId = req.user.id;
     const data = await this.customerDataService.getCustomerPurchaseHistory(userId);

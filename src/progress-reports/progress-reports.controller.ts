@@ -26,6 +26,7 @@ import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 
 const uploadDir = './uploads/progress';
 if (!fs.existsSync(uploadDir)) {
@@ -56,11 +57,14 @@ interface RequestWithUser extends Request {
 @Controller('progress-reports')
 @UseGuards(JwtAuthGuard, AccessGuard)
 export class ProgressReportsController {
-  constructor(private readonly service: ProgressReportsService) { }
+  constructor(
+    private readonly service: ProgressReportsService,
+    private readonly prisma: PrismaService,
+  ) { }
   private readonly logger = new Logger(ProgressReportsController.name);
 
   @Post()
-  @Access(21, 'create')
+  @Access('ProgressReports', 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createDto: CreateProgressReportDto,
@@ -74,40 +78,45 @@ export class ProgressReportsController {
   }
 
   @Get()
-  @Access(21, 'read')
+  @Access('ProgressReports', 'read')
   findAll(@Query('project_id') projectId?: string) {
     return this.service.findAll(projectId ? parseInt(projectId, 10) : undefined);
   }
 
   @Get('my-tasks')
-  @Access(21, 'read')
+  @Access('ProgressReports', 'read')
   getMyTasks(@Req() req: RequestWithUser) {
     return this.service.getMyTasks(req.user.id);
   }
 
   @Get('queue')
-  @Access(21, 'read')
-  getQueue(@Req() req: RequestWithUser) {
-    if (req.user.role_id !== 1 && req.user.role_id !== 2) {
+  @Access('ProgressReports', 'read')
+  async getQueue(@Req() req: RequestWithUser) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin) {
       throw new ForbiddenException('Only admin can access queue');
     }
     return this.service.getQueue();
   }
 
   @Get('remaining/:customOrderItemId')
-  @Access(21, 'read')
+  @Access('ProgressReports', 'read')
   getRemainingQuantity(@Param('customOrderItemId', ParseIntPipe) customOrderItemId: number) {
     return this.service.getRemainingQuantity(customOrderItemId);
   }
 
   @Get(':id')
-  @Access(21, 'read')
+  @Access('ProgressReports', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   @Patch(':id')
-  @Access(21, 'update')
+  @Access('ProgressReports', 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -115,7 +124,11 @@ export class ProgressReportsController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: RequestWithUser,
   ) {
-    const isAdmin = req.user.role_id === 1 || req.user.role_id === 2;
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     let imagePath: string | undefined = undefined;
     if (file) {
       imagePath = `/uploads/progress/${file.filename}`;
@@ -124,9 +137,13 @@ export class ProgressReportsController {
   }
 
   @Delete(':id')
-  @Access(21, 'delete')
-  remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
-    const isAdmin = req.user.role_id === 1 || req.user.role_id === 2;
+  @Access('ProgressReports', 'delete')
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     return this.service.remove(id, req.user.id, isAdmin);
   }
 }

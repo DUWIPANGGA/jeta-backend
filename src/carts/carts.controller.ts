@@ -11,31 +11,31 @@ export class CartsController {
   constructor(private readonly cartsService: CartsService) { }
 
   @Post()
-  @Access(2, 'create')
+  @Access('Carts', 'create')
   create(@Body() createDto: any) {
     return this.cartsService.create(createDto);
   }
 
   @Get()
-  @Access(2, 'read')
+  @Access('Carts', 'read')
   findAll() {
     return this.cartsService.findAll();
   }
 
   @Get(':id')
-  @Access(2, 'read')
+  @Access('Carts', 'read')
   findOne(@Param('id') id: string) {
     return this.cartsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(2, 'update')
+  @Access('Carts', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.cartsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(2, 'delete')
+  @Access('Carts', 'delete')
   remove(@Param('id') id: string) {
     return this.cartsService.remove(+id);
   }

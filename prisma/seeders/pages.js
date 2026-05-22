@@ -52,22 +52,34 @@ async function main() {
 
   let createdCount = 0;
   let updatedCount = 0;
+  let skippedCount = 0;
 
   for (const page of pages) {
-    const existingPage = await prisma.page.findUnique({
-      where: { id: page.id }
+    const existingPage = await prisma.page.findFirst({
+      where: {
+        OR: [{ id: page.id }, { name: page.name }],
+      },
     });
 
     if (existingPage) {
-      if (existingPage.name !== page.name || existingPage.nomor !== page.nomor) {
+      const updateData = {};
+      if (existingPage.name !== page.name) updateData.name = page.name;
+      if (existingPage.nomor !== page.nomor) updateData.nomor = page.nomor;
+
+      if (Object.keys(updateData).length > 0) {
         await prisma.page.update({
-          where: { id: page.id },
-          data: { name: page.name, nomor: page.nomor }
+          where: { id: existingPage.id },
+          data: updateData,
         });
         updatedCount++;
-        console.log(`🔄 Updated page: ${page.name} (ID: ${page.id}, nomor: ${page.nomor})`);
+        console.log(`🔄 Updated page: ${page.name} (DB ID: ${existingPage.id}, nomor: ${page.nomor})`);
       } else {
-        console.log(`⏭️  Page already exists: ${page.name} (ID: ${page.id})`);
+        skippedCount++;
+        console.log(`⏭️  Page already exists: ${page.name} (DB ID: ${existingPage.id})`);
+      }
+
+      if (existingPage.id !== page.id) {
+        console.log(`⚠️  Warning: "${page.name}" already exists with a different ID (${existingPage.id}). Skipping creation of duplicate row.`);
       }
     } else {
       await prisma.page.create({ data: page });
@@ -79,6 +91,7 @@ async function main() {
   console.log(`\n📊 Summary:`);
   console.log(`✅ Created: ${createdCount} new pages`);
   console.log(`🔄 Updated: ${updatedCount} existing pages`);
+  console.log(`⏭️  Skipped: ${skippedCount} unchanged pages`);
 
   const allPages = await prisma.page.findMany({ orderBy: { nomor: 'asc' } });
   console.log(`\n📄 All pages in database (${allPages.length} total):`);

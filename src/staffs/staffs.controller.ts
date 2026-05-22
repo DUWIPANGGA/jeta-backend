@@ -23,13 +23,13 @@ export class StaffController {
   constructor(private readonly staffService: StaffService) { }
 
   @Post()
-  @Access(28, 'create')
+  @Access('Staffs', 'create')
   create(@Body() createDto: CreateStaffDto) {
     return this.staffService.create(createDto);
   }
 
   @Patch('user/:userId')
-  @Access(28, 'update')
+  @Access('Staffs', 'update')
   async updateOrCreateByUserId(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() updateDto: UpdateStaffDto,
@@ -38,19 +38,19 @@ export class StaffController {
   }
 
   @Get()
-  @Access(28, 'read')
+  @Access('Staffs', 'read')
   findAll() {
     return this.staffService.findAll();
   }
 
   @Get(':id')
-  @Access(28, 'read')
+  @Access('Staffs', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.staffService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(28, 'update')
+  @Access('Staffs', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateStaffDto,
@@ -59,7 +59,7 @@ export class StaffController {
   }
 
   @Delete(':id')
-  @Access(28, 'delete')
+  @Access('Staffs', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.staffService.remove(id);
   }

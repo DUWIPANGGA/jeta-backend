@@ -22,25 +22,25 @@ export class SizesController {
   constructor(private readonly sizesService: SizesService) {}
 
   @Post()
-  @Access(34, 'create')
+  @Access('Sizes', 'create')
   create(@Body() createDto: CreateSizeDto) {
     return this.sizesService.create(createDto);
   }
 
   @Get()
-  @Access(34, 'read')
+  @Access('Sizes', 'read')
   findAll() {
     return this.sizesService.findAll();
   }
 
   @Get(':id')
-  @Access(34, 'read')
+  @Access('Sizes', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.sizesService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(34, 'update')
+  @Access('Sizes', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateSizeDto,
@@ -49,7 +49,7 @@ export class SizesController {
   }
 
   @Delete(':id')
-  @Access(34, 'delete')
+  @Access('Sizes', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.sizesService.remove(id);
   }

@@ -34,49 +34,49 @@ export class UsersController {
 
   // ==================== GET ALL USERS ====================
   @Get()
-  @Access(32, 'read')
+  @Access('Users', 'read')
   findAll() {
     return this.usersService.findAll();
   }
 
   // ==================== GET STAFF WITH DETAILS ====================
   @Get('staff')
-  @Access(32, 'read')
+  @Access('Users', 'read')
   async getStaffWithDetails() {
     return this.usersService.getStaffWithDetails();
   }
 
   // ==================== GET CUSTOMER DETAIL WITH ORDER HISTORY ====================
   @Get('customers/:id')
-  @Access(32, 'read')
+  @Access('Users', 'read')
   async getCustomerDetail(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.getCustomerDetail(id);
   }
 
   // ==================== GET USER BY ID ====================
   @Get(':id')
-  @Access(32, 'read')
+  @Access('Users', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
   }
 
   // ==================== CREATE USER ====================
   @Post()
-  @Access(32, 'create')
+  @Access('Users', 'create')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   // ==================== UPDATE USER ====================
   @Patch(':id')
-  @Access(32, 'update')
+  @Access('Users', 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
   // ==================== DELETE USER ====================
   @Delete(':id')
-  @Access(32, 'delete')
+  @Access('Users', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }

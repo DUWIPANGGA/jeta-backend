@@ -11,31 +11,31 @@ export class ProductVariantsController {
   constructor(private readonly productVariantsService: ProductVariantsService) { }
 
   @Post()
-  @Access(6, 'create')
+  @Access('ProductVariants', 'create')
   create(@Body() createDto: any) {
     return this.productVariantsService.create(createDto);
   }
 
   @Get()
-  @Access(6, 'read')
+  @Access('ProductVariants', 'read')
   findAll() {
     return this.productVariantsService.findAll();
   }
 
   @Get(':id')
-  @Access(6, 'read')
+  @Access('ProductVariants', 'read')
   findOne(@Param('id') id: string) {
     return this.productVariantsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(6, 'update')
+  @Access('ProductVariants', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.productVariantsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(6, 'delete')
+  @Access('ProductVariants', 'delete')
   remove(@Param('id') id: string) {
     return this.productVariantsService.remove(+id);
   }

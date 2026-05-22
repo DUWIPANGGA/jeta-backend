@@ -29,9 +29,11 @@ export class CustomOrdersService {
 
   // ==================== CREATE ====================
   async create(createCustomOrderDto: CreateCustomOrderDto, user: any, files?: Express.Multer.File[]) {
-    if (!user) throw new NotFoundException('User not found');
-
-    const isAdmin = user.role_id === 1;
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { role: true },
+    });
+    const isAdmin = dbUser?.role?.name === 'superadmin' || dbUser?.role?.name === 'admin';
 
     if (!isAdmin) {
       if (
@@ -281,10 +283,13 @@ export class CustomOrdersService {
     }));
   }
 
-  // ==================== UPDATE ====================
   async update(id: number, updateCustomOrderDto: UpdateCustomOrderDto, currentUser: any, files?: Express.Multer.File[]) {
     await this.findOne(id);
-    const isAdmin = currentUser.role_id === 1;
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: currentUser.id },
+      include: { role: true },
+    });
+    const isAdmin = dbUser?.role?.name === 'superadmin' || dbUser?.role?.name === 'admin';
 
     const protectedFields = ['dp_amount', 'remaining_amount', 'total_amount', 'accept_status', 'payment_status'];
 

@@ -24,20 +24,20 @@ export class VariantOptionsController {
   constructor(private readonly variantOptionsService: VariantOptionsService) {}
 
   @Post()
-  @Access(38, 'create')
+  @Access('VariantOptions', 'create')
   create(@Body() createDto: CreateVariantOptionDto) {
     return this.variantOptionsService.create(createDto);
   }
 
   @Get()
-  @Access(38, 'read')
+  @Access('VariantOptions', 'read')
   findAll(@Query('include_inactive') includeInactive?: string) {
     const includeInactiveBool = includeInactive === 'false' ? false : true;
     return this.variantOptionsService.findAll(includeInactiveBool);
   }
 
   @Get('by-custom-variant/:customVariantId')
-  @Access(38, 'read')
+  @Access('VariantOptions', 'read')
   findByCustomVariant(
     @Param('customVariantId', ParseIntPipe) customVariantId: number,
     @Query('include_inactive') includeInactive?: string,
@@ -47,13 +47,13 @@ export class VariantOptionsController {
   }
 
   @Get(':id')
-  @Access(38, 'read')
+  @Access('VariantOptions', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.variantOptionsService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(38, 'update')
+  @Access('VariantOptions', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateVariantOptionDto,
@@ -62,7 +62,7 @@ export class VariantOptionsController {
   }
 
   @Delete(':id')
-  @Access(38, 'delete')
+  @Access('VariantOptions', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.variantOptionsService.remove(id);
   }

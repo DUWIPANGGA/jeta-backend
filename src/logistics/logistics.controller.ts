@@ -25,25 +25,25 @@ export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) { }
 
   @Post()
-  @Access(14, 'create')
+  @Access('Logistics', 'create')
   create(@Body() createDto: CreateLogisticDto) {
     return this.logisticsService.create(createDto);
   }
 
   @Get()
-  @Access(14, 'read')
+  @Access('Logistics', 'read')
   findAll() {
     return this.logisticsService.findAll();
   }
 
   @Get(':id')
-  @Access(14, 'read')
+  @Access('Logistics', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.logisticsService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(14, 'update')
+  @Access('Logistics', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateLogisticDto,
@@ -53,7 +53,7 @@ export class LogisticsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Access(14, 'delete')
+  @Access('Logistics', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.logisticsService.remove(id);
   }

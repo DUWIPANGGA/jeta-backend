@@ -23,13 +23,13 @@ export class CustomVariantsController {
   constructor(private readonly customVariantsService: CustomVariantsService) {}
 
   @Post()
-  @Access(37, 'create')
+  @Access('CustomVariants', 'create')
   create(@Body() createDto: CreateCustomVariantDto) {
     return this.customVariantsService.create(createDto);
   }
 
   @Get()
-  @Access(37, 'read')
+  @Access('CustomVariants', 'read')
   findAll(@Query('include_inactive') includeInactive?: string) {
     // 🔥 PERUBAHAN: default true jika tidak dikirim
     const includeInactiveBool = includeInactive === 'false' ? false : true;
@@ -37,13 +37,13 @@ export class CustomVariantsController {
   }
 
   @Get(':id')
-  @Access(37, 'read')
+  @Access('CustomVariants', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.customVariantsService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(37, 'update')
+  @Access('CustomVariants', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateCustomVariantDto,
@@ -52,7 +52,7 @@ export class CustomVariantsController {
   }
 
   @Delete(':id')
-  @Access(37, 'delete')
+  @Access('CustomVariants', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.customVariantsService.remove(id);
   }

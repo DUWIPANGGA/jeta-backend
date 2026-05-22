@@ -22,25 +22,25 @@ export class MaterialsController {
   constructor(private readonly materialsService: MaterialsService) {}
 
   @Post()
-  @Access(37, 'create')
+  @Access('Materials', 'create')
   create(@Body() createDto: CreateMaterialDto) {
     return this.materialsService.create(createDto);
   }
 
   @Get()
-  @Access(37, 'read')
+  @Access('Materials', 'read')
   findAll() {
     return this.materialsService.findAll();
   }
 
   @Get(':id')
-  @Access(37, 'read')
+  @Access('Materials', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.materialsService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(37, 'update')
+  @Access('Materials', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateMaterialDto,
@@ -49,7 +49,7 @@ export class MaterialsController {
   }
 
   @Delete(':id')
-  @Access(37, 'delete')
+  @Access('Materials', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.materialsService.remove(id);
   }

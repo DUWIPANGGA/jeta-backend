@@ -22,31 +22,31 @@ export class PagesController {
   constructor(private readonly pagesService: PagesService) { }
 
   @Post()
-  @Access(17, 'create')
+  @Access('Pages', 'create')
   create(@Body() createPageDto: CreatePageDto) {
     return this.pagesService.create(createPageDto);
   }
 
   @Get()
-  @Access(17, 'read')
+  @Access('Pages', 'read')
   findAll() {
     return this.pagesService.findAll();
   }
 
   @Get(':id')
-  @Access(17, 'read')
+  @Access('Pages', 'read')
   findOne(@Param('id') id: string) {
     return this.pagesService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(17, 'update')
+  @Access('Pages', 'update')
   update(@Param('id') id: string, @Body() updatePageDto: UpdatePageDto) {
     return this.pagesService.update(+id, updatePageDto);
   }
 
   @Delete(':id')
-  @Access(17, 'delete')
+  @Access('Pages', 'delete')
   remove(@Param('id') id: string) {
     return this.pagesService.remove(+id);
   }

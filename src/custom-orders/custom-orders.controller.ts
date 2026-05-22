@@ -27,6 +27,9 @@ import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
 import { AcceptCustomOrderDto } from './dto/accept-custom-order.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
+import { AccessGuard } from 'src/common/guard/access/access.guard';
+import { Access } from 'src/common/decorator/access/access.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 
 // Setup upload directory
 const uploadDir = './uploads/custom-orders';
@@ -69,13 +72,17 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('custom-orders')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class CustomOrdersController {
   private readonly logger = new Logger(CustomOrdersController.name);
-  constructor(private readonly customOrdersService: CustomOrdersService) {}
+  constructor(
+    private readonly customOrdersService: CustomOrdersService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // ==================== CREATE ====================
   @Post()
+  @Access('CustomOrders', 'create')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FilesInterceptor('images', 10, { 
     storage, 
@@ -100,29 +107,31 @@ export class CustomOrdersController {
 
   // ==================== FIND ALL (Admin only) ====================
   @Get()
+  @Access('CustomOrders', 'read')
   async findAll(@Req() req: RequestWithUser) {
-    if (req.user.role_id !== 1) {
-      throw new ForbiddenException('You do not have permission to view all custom orders');
-    }
     return this.customOrdersService.findAll();
   }
 
   // ==================== STATISTICS ====================
   @Get('statistics')
+  @Access('CustomOrders', 'read')
   async getStatistics(@Req() req: RequestWithUser) {
-    if (req.user.role_id !== 1) {
-      throw new ForbiddenException('You do not have permission to view statistics');
-    }
     return this.customOrdersService.getStatistics();
   }
 
   // ==================== FIND BY USER ====================
   @Get('user/:userId')
+  @Access('CustomOrders', 'read')
   async findByUser(
     @Param('userId', ParseIntPipe) userId: number,
     @Req() req: RequestWithUser,
   ) {
-    if (req.user.role_id !== 1 && req.user.id !== userId) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin && req.user.id !== userId) {
       throw new ForbiddenException('You can only view your own custom orders');
     }
     return this.customOrdersService.findByUser(userId);
@@ -130,12 +139,18 @@ export class CustomOrdersController {
 
   // ==================== FIND ONE ====================
   @Get(':id')
+  @Access('CustomOrders', 'read')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestWithUser,
   ) {
     const customOrder = await this.customOrdersService.findOne(id);
-    if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin && customOrder.user_id !== req.user.id) {
       throw new ForbiddenException('You do not have permission to view this order');
     }
     return customOrder;
@@ -143,6 +158,7 @@ export class CustomOrdersController {
 
   // ==================== UPDATE ====================
   @Patch(':id')
+  @Access('CustomOrders', 'update')
   @UseInterceptors(FilesInterceptor('images', 10, { 
     storage, 
     fileFilter, 
@@ -155,7 +171,12 @@ export class CustomOrdersController {
     @Req() req: RequestWithUser,
   ) {
     const customOrder = await this.customOrdersService.findOne(id);
-    if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin && customOrder.user_id !== req.user.id) {
       throw new ForbiddenException('You do not have permission to update this order');
     }
     return this.customOrdersService.update(id, updateCustomOrderDto, req.user, files);
@@ -163,12 +184,18 @@ export class CustomOrdersController {
 
   // ==================== UPDATE ACCEPT STATUS ====================
   @Patch(':id/accept-status')
+  @Access('CustomOrders', 'update')
   async updateAcceptStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() acceptData: AcceptCustomOrderDto,
     @Req() req: RequestWithUser,
   ) {
-    if (req.user.role_id !== 1) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin) {
       throw new ForbiddenException('Only admin can change accept status');
     }
     return this.customOrdersService.updateAcceptStatus(id, true, acceptData);
@@ -176,11 +203,17 @@ export class CustomOrdersController {
 
   // ==================== REJECT CUSTOM ORDER ====================
   @Patch(':id/reject')
+  @Access('CustomOrders', 'update')
   async rejectOrder(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestWithUser,
   ) {
-    if (req.user.role_id !== 1) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin) {
       throw new ForbiddenException('Only admin can reject orders');
     }
     return this.customOrdersService.updateAcceptStatus(id, false);
@@ -188,13 +221,19 @@ export class CustomOrdersController {
 
   // ==================== DELETE ====================
   @Delete(':id')
+  @Access('CustomOrders', 'delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestWithUser,
   ) {
     const customOrder = await this.customOrdersService.findOne(id);
-    if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin && customOrder.user_id !== req.user.id) {
       throw new ForbiddenException('You do not have permission to delete this order');
     }
     return this.customOrdersService.remove(id);
@@ -202,12 +241,18 @@ export class CustomOrdersController {
 
   // ==================== GET TOTAL QUANTITY ====================
   @Get(':id/total-quantity')
+  @Access('CustomOrders', 'read')
   async getTotalQuantity(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestWithUser,
   ) {
     const customOrder = await this.customOrdersService.findOne(id);
-    if (req.user.role_id !== 1 && customOrder.user_id !== req.user.id) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
+    if (!isAdmin && customOrder.user_id !== req.user.id) {
       throw new ForbiddenException('You do not have permission to view this order');
     }
     const totalQuantity = await this.customOrdersService.getTotalQuantityForProject(id);

@@ -23,35 +23,35 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  @Access(3, 'read')
+  @Access('Categories', 'read')
   async findAll(@Query('include_inactive') includeInactive?: string) {
     const includeInactiveBool = includeInactive === 'true';
     return this.categoriesService.findAll(includeInactiveBool);
   }
 
   @Get(':id')
-  @Access(3, 'read')
+  @Access('Categories', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.findOne(id);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @Access(3, 'create')
+  @Access('Categories', 'create')
   create(@Body() createDto: CreateCategoryDto) {
     return this.categoriesService.create(createDto);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @Access(3, 'update')
+  @Access('Categories', 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateCategoryDto) {
     return this.categoriesService.update(id, updateDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
-  @Access(3, 'delete')
+  @Access('Categories', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.remove(id);
   }

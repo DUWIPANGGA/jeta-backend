@@ -56,19 +56,19 @@ export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 
   @Get('staff-ranking')
-  @Access(11, 'read')
+  @Access('Finance', 'read')
   async getStaffRanking() {
     return this.financeService.getStaffRanking();
   }
 
   @Get('staff/:staffId/projects')
-  @Access(11, 'read')
+  @Access('Finance', 'read')
   async getStaffProjects(@Param('staffId', ParseIntPipe) staffId: number) {
     return this.financeService.getStaffProjects(staffId);
   }
 
   @Post('payments')
-  @Access(11, 'create')
+  @Access('Finance', 'create')
   @UseInterceptors(FileInterceptor('proof', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async createPayment(
     @Body() createDto: CreatePaymentDto,

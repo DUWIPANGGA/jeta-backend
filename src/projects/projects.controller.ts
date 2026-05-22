@@ -20,6 +20,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface RequestWithUser extends Request {
   user: { id: number; role_id: number };
@@ -28,57 +29,80 @@ interface RequestWithUser extends Request {
 @Controller('projects')
 @UseGuards(JwtAuthGuard, AccessGuard)
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post()
-  @Access(23, 'create')
+  @Access('Projects', 'create')
   create(@Body() createDto: CreateProjectDto, @Req() req: RequestWithUser) {
     return this.projectsService.create(createDto, req.user.id);
   }
 
   @Get()
-  @Access(23, 'read')
-  findAll(@Req() req: RequestWithUser) {
-    const isAdmin = req.user.role_id === 1;
+  @Access('Projects', 'read')
+  async findAll(@Req() req: RequestWithUser) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     return this.projectsService.findAll(req.user.id, isAdmin);
   }
 
   @Get('my-tasks')
-  @Access(23, 'read')
+  @Access('Projects', 'read')
   async getMyTasks(@Req() req: RequestWithUser) {
     return this.projectsService.getMyTasks(req.user.id);
   }
 
   @Get('queue')
-  @Access(23, 'read')
-  getQueue(@Req() req: RequestWithUser) {
-    const isAdmin = req.user.role_id === 1;
+  @Access('Projects', 'read')
+  async getQueue(@Req() req: RequestWithUser) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     return this.projectsService.getQueue(isAdmin);
   }
 
   @Get(':id')
-  @Access(23, 'read')
-  findOne(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
-    const isAdmin = req.user.role_id === 1;
+  @Access('Projects', 'read')
+  async findOne(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     return this.projectsService.findOne(id, req.user.id, isAdmin);
   }
 
   @Patch(':id')
-  @Access(23, 'update')
-  update(
+  @Access('Projects', 'update')
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateProjectDto,
     @Req() req: RequestWithUser,
   ) {
-    const isAdmin = req.user.role_id === 1;
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     return this.projectsService.update(id, updateDto, req.user.id, isAdmin);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Access(23, 'delete')
+  @Access('Projects', 'delete')
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
-    const isAdmin = req.user.role_id === 1;
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { role: true },
+    });
+    const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     await this.projectsService.remove(id, req.user.id, isAdmin);
   }
 }

@@ -25,32 +25,32 @@ export class PortofolioController {
   constructor(private readonly portofolioService: PortofolioService) { }
 
   @Post()
-  @Access(20, 'create')
+  @Access('Portofolio', 'create')
   create(@Body() dto: CreatePortofolioDto) {
     return this.portofolioService.create(dto);
   }
 
   @Get()
-  @Access(20, 'read')
+  @Access('Portofolio', 'read')
   findAll() {
     return this.portofolioService.findAll();
   }
 
   @Get(':id')
-  @Access(20, 'read')
+  @Access('Portofolio', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.portofolioService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(20, 'update')
+  @Access('Portofolio', 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePortofolioDto) {
     return this.portofolioService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Access(20, 'delete')
+  @Access('Portofolio', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.portofolioService.remove(id);
   }

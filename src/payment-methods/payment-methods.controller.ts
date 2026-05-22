@@ -22,25 +22,25 @@ export class PaymentMethodsController {
   constructor(private readonly paymentMethodsService: PaymentMethodsService) { }
 
   @Post()
-  @Access(18, 'create')
+  @Access('PaymentMethods', 'create')
   create(@Body() createPaymentMethodDto: CreatePaymentMethodDto) {
     return this.paymentMethodsService.create(createPaymentMethodDto);
   }
 
   @Get()
-  @Access(18, 'read')
+  @Access('PaymentMethods', 'read')
   findAll() {
     return this.paymentMethodsService.findAll();
   }
 
   @Get(':id')
-  @Access(18, 'read')
+  @Access('PaymentMethods', 'read')
   findOne(@Param('id') id: string) {
     return this.paymentMethodsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(18, 'update')
+  @Access('PaymentMethods', 'update')
   update(
     @Param('id') id: string,
     @Body() updatePaymentMethodDto: UpdatePaymentMethodDto,
@@ -49,7 +49,7 @@ export class PaymentMethodsController {
   }
 
   @Delete(':id')
-  @Access(18, 'delete')
+  @Access('PaymentMethods', 'delete')
   remove(@Param('id') id: string) {
     return this.paymentMethodsService.remove(+id);
   }

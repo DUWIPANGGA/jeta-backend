@@ -23,25 +23,25 @@ export class SalaryProjectsController {
   constructor(private readonly service: SalaryProjectsService) { }
 
   @Post()
-  @Access(27, 'create')
+  @Access('SalaryProjects', 'create')
   create(@Body() dto: CreateSalaryProjectDto) {
     return this.service.create(dto);
   }
 
   @Get()
-  @Access(27, 'read')
+  @Access('SalaryProjects', 'read')
   findAll() {
     return this.service.findAll();
   }
 
   @Get(':id')
-  @Access(27, 'read')
+  @Access('SalaryProjects', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   @Patch(':id')
-  @Access(27, 'update')
+  @Access('SalaryProjects', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSalaryProjectDto,
@@ -50,7 +50,7 @@ export class SalaryProjectsController {
   }
 
   @Delete(':id')
-  @Access(27, 'delete')
+  @Access('SalaryProjects', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);
   }

@@ -22,25 +22,25 @@ export class ColorsController {
   constructor(private readonly colorsService: ColorsService) {}
 
   @Post()
-  @Access(35, 'create')
+  @Access('Colors', 'create')
   create(@Body() createDto: CreateColorDto) {
     return this.colorsService.create(createDto);
   }
 
   @Get()
-  @Access(35, 'read')
+  @Access('Colors', 'read')
   findAll() {
     return this.colorsService.findAll();
   }
 
   @Get(':id')
-  @Access(35, 'read')
+  @Access('Colors', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.colorsService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(35, 'update')
+  @Access('Colors', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateColorDto,
@@ -49,7 +49,7 @@ export class ColorsController {
   }
 
   @Delete(':id')
-  @Access(35, 'delete')
+  @Access('Colors', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.colorsService.remove(id);
   }

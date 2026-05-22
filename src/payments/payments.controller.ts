@@ -44,31 +44,31 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) { }
 
   @Post()
-  @Access(19, 'create')
+  @Access('Payments', 'create')
   create(@Body() createDto: CreatePaymentDto) {
     return this.paymentsService.create(createDto);
   }
 
   @Get()
-  @Access(19, 'read')
+  @Access('Payments', 'read')
   findAll() {
     return this.paymentsService.findAll();
   }
 
   @Get('pending')
-  @Access(19, 'read')
+  @Access('Payments', 'read')
   findPending() {
     return this.paymentsService.findPending();
   }
 
   @Get(':id')
-  @Access(19, 'read')
+  @Access('Payments', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.findOne(id);
   }
 
   @Post(':id/upload-proof')
-  @Access(19, 'update')
+  @Access('Payments', 'update')
   @UseInterceptors(
     FileInterceptor('file', {
       storage,
@@ -90,7 +90,7 @@ export class PaymentsController {
   }
 
   @Patch(':id/verify')
-  @Access(19, 'update')
+  @Access('Payments', 'update')
   verify(@Param('id', ParseIntPipe) id: number, @Body('status') status: 'completed' | 'failed') {
     if (!['completed', 'failed'].includes(status)) {
       throw new BadRequestException('Invalid status');
@@ -99,13 +99,13 @@ export class PaymentsController {
   }
 
   @Patch(':id')
-  @Access(19, 'update')
+  @Access('Payments', 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdatePaymentDto) {
     return this.paymentsService.update(id, updateDto);
   }
 
   @Delete(':id')
-  @Access(19, 'delete')
+  @Access('Payments', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.remove(id);
   }

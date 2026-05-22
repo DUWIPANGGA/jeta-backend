@@ -11,37 +11,37 @@ export class SalaryLogsController {
   constructor(private readonly salaryLogsService: SalaryLogsService) { }
 
   @Post()
-  @Access(26, 'create')
+  @Access('SalaryLogs', 'create')
   create(@Body() createDto: any) {
     return this.salaryLogsService.create(createDto);
   }
 
   @Get()
-  @Access(26, 'read')
+  @Access('SalaryLogs', 'read')
   findAll() {
     return this.salaryLogsService.findAll();
   }
 
   @Get(':id')
-  @Access(26, 'read')
+  @Access('SalaryLogs', 'read')
   findOne(@Param('id') id: string) {
     return this.salaryLogsService.findOne(+id);
   }
 
   @Get('staff/:staffId')
-  @Access(26, 'read')
+  @Access('SalaryLogs', 'read')
   findByStaff(@Param('staffId') staffId: string) {
     return this.salaryLogsService.findByUser(+staffId);
   }
 
   @Patch(':id')
-  @Access(26, 'update')
+  @Access('SalaryLogs', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.salaryLogsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(26, 'delete')
+  @Access('SalaryLogs', 'delete')
   remove(@Param('id') id: string) {
     return this.salaryLogsService.remove(+id);
   }

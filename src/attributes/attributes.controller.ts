@@ -22,25 +22,25 @@ export class AttributesController {
   constructor(private readonly attributesService: AttributesService) {}
 
   @Post()
-  @Access(36, 'create')
+  @Access('Attributes', 'create')
   create(@Body() createDto: CreateAttributeDto) {
     return this.attributesService.create(createDto);
   }
 
   @Get()
-  @Access(36, 'read')
+  @Access('Attributes', 'read')
   findAll() {
     return this.attributesService.findAll();
   }
 
   @Get(':id')
-  @Access(36, 'read')
+  @Access('Attributes', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.attributesService.findOne(id);
   }
 
   @Patch(':id')
-  @Access(36, 'update')
+  @Access('Attributes', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateAttributeDto,
@@ -49,7 +49,7 @@ export class AttributesController {
   }
 
   @Delete(':id')
-  @Access(36, 'delete')
+  @Access('Attributes', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.attributesService.remove(id);
   }

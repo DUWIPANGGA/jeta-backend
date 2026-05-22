@@ -11,31 +11,31 @@ export class ConsultationsController {
   constructor(private readonly consultationsService: ConsultationsService) { }
 
   @Post()
-  @Access(9, 'create')
+  @Access('Consultations', 'create')
   create(@Body() createDto: any) {
     return this.consultationsService.create(createDto);
   }
 
   @Get()
-  @Access(9, 'read')
+  @Access('Consultations', 'read')
   findAll() {
     return this.consultationsService.findAll();
   }
 
   @Get(':id')
-  @Access(9, 'read')
+  @Access('Consultations', 'read')
   findOne(@Param('id') id: string) {
     return this.consultationsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(9, 'update')
+  @Access('Consultations', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.consultationsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(9, 'delete')
+  @Access('Consultations', 'delete')
   remove(@Param('id') id: string) {
     return this.consultationsService.remove(+id);
   }

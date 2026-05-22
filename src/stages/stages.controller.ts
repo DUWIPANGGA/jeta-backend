@@ -24,32 +24,32 @@ export class StagesController {
   constructor(private readonly stagesService: StagesService) { }
 
   @Post()
-  @Access(29, 'create')
+  @Access('Stages', 'create')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createStageDto: CreateStageDto) {
     return this.stagesService.create(createStageDto);
   }
 
   @Get()
-  @Access(29, 'read')
+  @Access('Stages', 'read')
   findAll() {
     return this.stagesService.findAll();
   }
 
   @Get(':id')
-  @Access(29, 'read')
+  @Access('Stages', 'read')
   findOne(@Param('id') id: string) {
     return this.stagesService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(29, 'update')
+  @Access('Stages', 'update')
   update(@Param('id') id: string, @Body() updateStageDto: UpdateStageDto) {
     return this.stagesService.update(+id, updateStageDto);
   }
 
   @Patch(':id/order')
-  @Access(29, 'update')
+  @Access('Stages', 'update')
   updateOrder(
     @Param('id') id: string,
     @Body('order') order: number,
@@ -58,7 +58,7 @@ export class StagesController {
   }
 
   @Delete(':id')
-  @Access(29, 'delete')
+  @Access('Stages', 'delete')
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
     return this.stagesService.remove(+id);

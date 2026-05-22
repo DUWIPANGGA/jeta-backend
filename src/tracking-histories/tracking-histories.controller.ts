@@ -11,31 +11,31 @@ export class TrackingHistoriesController {
   constructor(private readonly trackingHistoriesService: TrackingHistoriesService) { }
 
   @Post()
-  @Access(30, 'create')
+  @Access('TrackingHistories', 'create')
   create(@Body() createDto: any) {
     return this.trackingHistoriesService.create(createDto);
   }
 
   @Get()
-  @Access(30, 'read')
+  @Access('TrackingHistories', 'read')
   findAll() {
     return this.trackingHistoriesService.findAll();
   }
 
   @Get(':id')
-  @Access(30, 'read')
+  @Access('TrackingHistories', 'read')
   findOne(@Param('id') id: string) {
     return this.trackingHistoriesService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(30, 'update')
+  @Access('TrackingHistories', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.trackingHistoriesService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(30, 'delete')
+  @Access('TrackingHistories', 'delete')
   remove(@Param('id') id: string) {
     return this.trackingHistoriesService.remove(+id);
   }

@@ -11,37 +11,37 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
-  @Access(16, 'create')
+  @Access('Orders', 'create')
   create(@Body() createDto: any) {
     return this.ordersService.create(createDto);
   }
 
   @Get()
-  @Access(16, 'read')
+  @Access('Orders', 'read')
   findAll() {
     return this.ordersService.findAll();
   }
 
   @Get(':id')
-  @Access(16, 'read')
+  @Access('Orders', 'read')
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(16, 'update')
+  @Access('Orders', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.ordersService.update(+id, updateDto);
   }
 
   @Post(':id/tracking')
-  @Access(16, 'update')
+  @Access('Orders', 'update')
   updateTracking(@Param('id') id: string, @Body('stage_name') stageName: string) {
     return this.ordersService.updateTracking(+id, stageName);
   }
 
   @Delete(':id')
-  @Access(16, 'delete')
+  @Access('Orders', 'delete')
   remove(@Param('id') id: string) {
     return this.ordersService.remove(+id);
   }

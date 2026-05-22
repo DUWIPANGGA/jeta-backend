@@ -168,8 +168,13 @@ export class FinanceService {
 
     const finance = await this.prisma.user.findUnique({
       where: { id: financeUserId },
+      include: { role: true },
     });
-    if (!finance || finance.role_id !== 2) {
+    const hasFinanceAccess =
+      finance?.role?.name === 'finance' ||
+      finance?.role?.name === 'admin' ||
+      finance?.role?.name === 'superadmin';
+    if (!finance || !hasFinanceAccess) {
       throw new ForbiddenException('Only finance can make payments');
     }
 

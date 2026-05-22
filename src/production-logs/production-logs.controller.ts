@@ -11,31 +11,31 @@ export class ProductionLogsController {
   constructor(private readonly productionLogsService: ProductionLogsService) { }
 
   @Post()
-  @Access(21, 'create')
+  @Access('ProductionLogs', 'create')
   create(@Body() createDto: any) {
     return this.productionLogsService.create(createDto);
   }
 
   @Get()
-  @Access(21, 'read')
+  @Access('ProductionLogs', 'read')
   findAll() {
     return this.productionLogsService.findAll();
   }
 
   @Get(':id')
-  @Access(21, 'read')
+  @Access('ProductionLogs', 'read')
   findOne(@Param('id') id: string) {
     return this.productionLogsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(21, 'update')
+  @Access('ProductionLogs', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.productionLogsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(21, 'delete')
+  @Access('ProductionLogs', 'delete')
   remove(@Param('id') id: string) {
     return this.productionLogsService.remove(+id);
   }

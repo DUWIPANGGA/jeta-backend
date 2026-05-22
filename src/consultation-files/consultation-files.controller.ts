@@ -13,7 +13,7 @@ export class ConsultationFilesController {
   constructor(private readonly consultationFilesService: ConsultationFilesService) { }
 
   @Post()
-  @Access(7, 'create')
+  @Access('ConsultationFiles', 'create')
   @UseInterceptors(FileInterceptor('file', { storage: storage('consultations'), fileFilter }))
   create(@Body() createDto: any, @UploadedFile() file: Express.Multer.File) {
     if (file) {
@@ -24,25 +24,25 @@ export class ConsultationFilesController {
   }
 
   @Get()
-  @Access(7, 'read')
+  @Access('ConsultationFiles', 'read')
   findAll() {
     return this.consultationFilesService.findAll();
   }
 
   @Get(':id')
-  @Access(7, 'read')
+  @Access('ConsultationFiles', 'read')
   findOne(@Param('id') id: string) {
     return this.consultationFilesService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(7, 'update')
+  @Access('ConsultationFiles', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.consultationFilesService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(7, 'delete')
+  @Access('ConsultationFiles', 'delete')
   remove(@Param('id') id: string) {
     return this.consultationFilesService.remove(+id);
   }

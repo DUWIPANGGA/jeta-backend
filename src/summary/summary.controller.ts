@@ -10,7 +10,7 @@ export class SummaryController {
   constructor(private readonly summaryService: SummaryService) {}
 
   @Get('stats')
-  @Access(39, 'read') // Page ID 53 untuk Summary
+  @Access('Summary', 'read') // Page ID 53 untuk Summary
   async getStats() {
     return this.summaryService.getStats();
   }

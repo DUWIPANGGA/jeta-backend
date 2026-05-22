@@ -11,31 +11,31 @@ export class ConsultationMaterialsController {
   constructor(private readonly consultationMaterialsService: ConsultationMaterialsService) { }
 
   @Post()
-  @Access(8, 'create')
+  @Access('ConsultationMaterials', 'create')
   create(@Body() createDto: any) {
     return this.consultationMaterialsService.create(createDto);
   }
 
   @Get()
-  @Access(8, 'read')
+  @Access('ConsultationMaterials', 'read')
   findAll() {
     return this.consultationMaterialsService.findAll();
   }
 
   @Get(':id')
-  @Access(8, 'read')
+  @Access('ConsultationMaterials', 'read')
   findOne(@Param('id') id: string) {
     return this.consultationMaterialsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(8, 'update')
+  @Access('ConsultationMaterials', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.consultationMaterialsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(8, 'delete')
+  @Access('ConsultationMaterials', 'delete')
   remove(@Param('id') id: string) {
     return this.consultationMaterialsService.remove(+id);
   }

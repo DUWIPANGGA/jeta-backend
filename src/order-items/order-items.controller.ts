@@ -11,31 +11,31 @@ export class OrderItemsController {
   constructor(private readonly orderItemsService: OrderItemsService) { }
 
   @Post()
-  @Access(15, 'create')
+  @Access('OrderItems', 'create')
   create(@Body() createDto: any) {
     return this.orderItemsService.create(createDto);
   }
 
   @Get()
-  @Access(15, 'read')
+  @Access('OrderItems', 'read')
   findAll() {
     return this.orderItemsService.findAll();
   }
 
   @Get(':id')
-  @Access(15, 'read')
+  @Access('OrderItems', 'read')
   findOne(@Param('id') id: string) {
     return this.orderItemsService.findOne(+id);
   }
 
   @Patch(':id')
-  @Access(15, 'update')
+  @Access('OrderItems', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.orderItemsService.update(+id, updateDto);
   }
 
   @Delete(':id')
-  @Access(15, 'delete')
+  @Access('OrderItems', 'delete')
   remove(@Param('id') id: string) {
     return this.orderItemsService.remove(+id);
   }
