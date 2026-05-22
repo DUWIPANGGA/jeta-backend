@@ -1,4 +1,3 @@
-// src/users/users.service.ts
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -51,7 +50,6 @@ export class UsersService {
 
   // ==================== GET USER PERMISSIONS (UNTUK FRONTEND) ====================
   async getUserPermissions(userId: number) {
-    // 1. Ambil user dengan role
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { role: true },
@@ -60,14 +58,12 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    // 2. Ambil semua access untuk role user
     const accesses = await this.prisma.access.findMany({
       where: { role_id: user.role_id },
       include: { page: true },
       orderBy: { page: { nomor: 'asc' } },
     });
 
-    // 3. Format response
     const permissions = accesses.map(access => ({
       page_id: access.page.id,
       page_name: access.page.name,
@@ -116,13 +112,13 @@ export class UsersService {
         role: user.role,
         staff: staff
           ? {
-            id: staff.id,
-            user_id: staff.user_id,
-            tgl_masuk: staff.tgl_masuk,
-            salary: staff.salary,
-            stage_ids: staff.staffStages.map((ss) => ss.stage_id),
-            stages: staff.staffStages.map((ss) => ss.stage),
-          }
+              id: staff.id,
+              user_id: staff.user_id,
+              tgl_masuk: staff.tgl_masuk,
+              salary: staff.salary,
+              stage_ids: staff.staffStages.map((ss) => ss.stage_id),
+              stages: staff.staffStages.map((ss) => ss.stage),
+            }
           : null,
       };
     });
@@ -142,6 +138,130 @@ export class UsersService {
       },
       orderBy: { name: 'asc' },
     });
+  }
+
+  // ==================== CUSTOMER DETAIL WITH ORDER HISTORY ====================
+  async getCustomerDetail(customerId: number) {
+    // 1. Ambil data user
+    const user = await this.prisma.user.findUnique({
+      where: { id: customerId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        image: true,
+        created_at: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+
+    // 2. Ambil product orders (completed only)
+    const productOrders = await this.prisma.order.findMany({
+      where: {
+        user_id: customerId,
+        status: 'completed',
+      },
+      include: {
+        order_items: {
+          include: {
+            product: {
+              select: { name: true, price: true, image: true },
+            },
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const formattedProductOrders = productOrders.map(order => ({
+      order_id: order.id,
+      order_number: order.order_number,
+      total_amount: order.grand_total,
+      status: order.status,
+      created_at: order.created_at,
+      items: order.order_items.map(item => ({
+        product_name: item.product.name,
+        quantity: item.quantity,
+        price: item.price ?? item.product.price,
+      })),
+    }));
+
+    // 3. Ambil custom orders (accepted)
+    const customOrders = await this.prisma.customOrder.findMany({
+      where: {
+        user_id: customerId,
+        accept_status: true,
+      },
+      include: {
+        items: {
+          include: {
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: {
+                    custom_variant: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const formattedCustomOrders = customOrders.map(order => {
+      const itemsDesc = order.items
+        .flatMap(item =>
+          item.selected_options?.map(opt =>
+            `${opt.variant_option?.custom_variant?.name || ''} ${opt.variant_option?.name || ''}`.trim()
+          ) || []
+        )
+        .filter(Boolean)
+        .join(', ');
+
+      return {
+        id: order.id,
+        name: order.name,
+        total_amount: order.total_amount,
+        dp_amount: order.dp_amount,
+        remaining_amount: order.remaining_amount,
+        deadline: order.deadline,
+        accept_status: order.accept_status,
+        payment_status: order.payment_status,
+        created_at: order.created_at,
+        deskripsi_produk: itemsDesc || 'Produk Custom',
+        total_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      };
+    });
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        image: user.image,
+        member_since: user.created_at,
+      },
+      orders: {
+        product_orders: formattedProductOrders,
+        custom_orders: formattedCustomOrders,
+      },
+      summary: {
+        total_product_orders: formattedProductOrders.length,
+        total_custom_orders: formattedCustomOrders.length,
+        total_spent_product: formattedProductOrders.reduce((sum, order) => sum + order.total_amount, 0),
+        total_spent_custom: formattedCustomOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0),
+      },
+    };
   }
 
   async update(id: number, updateDto: UpdateUserDto) {
