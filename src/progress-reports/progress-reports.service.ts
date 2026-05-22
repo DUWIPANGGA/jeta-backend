@@ -15,13 +15,12 @@ export class ProgressReportsService {
   constructor(private readonly prisma: PrismaService) { }
 
   // ==================== HELPER: VALIDASI SISA QUANTITY ====================
-  private async validateRemainingQuantity(customOrderItemId: number, requestedQuantity: number) {
+  private async validateRemainingQuantity(customOrderItemId: number, stageId: number, requestedQuantity: number) {
     const item = await this.prisma.customOrderItem.findUnique({
       where: { id: customOrderItemId },
       select: { 
-        remaining_quantity: true, 
         quantity: true,
-        custom_order_id: true  // ✅ TAMBAHKAN
+        custom_order_id: true
       },
     });
 
@@ -29,13 +28,59 @@ export class ProgressReportsService {
       throw new BadRequestException('Custom order item not found');
     }
 
-    if (requestedQuantity > item.remaining_quantity) {
+    // Hitung sisa quantity secara dinamis khusus untuk stage ini
+    const reportsForStage = await this.prisma.progressReport.findMany({
+      where: {
+        custom_order_item_id: customOrderItemId,
+        stage_id: stageId,
+        status: { in: ['proses', 'selesai'] }
+      },
+      select: { quantity: true }
+    });
+
+    const reportedQuantity = reportsForStage.reduce((sum, r) => sum + (r.quantity ?? 0), 0);
+    const remainingQuantityForStage = item.quantity - reportedQuantity;
+
+    if (requestedQuantity > remainingQuantityForStage) {
       throw new BadRequestException(
-        `Sisa yang bisa dilaporkan hanya ${item.remaining_quantity} pcs. Anda mencoba melaporkan ${requestedQuantity} pcs.`
+        `Sisa yang bisa dilaporkan untuk stage ini hanya ${remainingQuantityForStage} pcs. Anda mencoba melaporkan ${requestedQuantity} pcs.`
       );
     }
 
-    return item;
+    return { ...item, remaining_quantity: remainingQuantityForStage };
+  }
+
+  // ==================== HELPER: UPDATE SISA GLOBAL MINIMUM ====================
+  private async updateGlobalRemainingQuantity(tx: any, customOrderItemId: number) {
+    const item = await tx.customOrderItem.findUnique({
+      where: { id: customOrderItemId },
+      select: { quantity: true }
+    });
+    if (!item) return;
+
+    const stages = await tx.stage.findMany();
+    let minRemaining = item.quantity;
+
+    for (const stage of stages) {
+      const reports = await tx.progressReport.findMany({
+        where: {
+          custom_order_item_id: customOrderItemId,
+          stage_id: stage.id,
+          status: { in: ['proses', 'selesai'] }
+        },
+        select: { quantity: true }
+      });
+      const reported = reports.reduce((sum, r) => sum + (r.quantity ?? 0), 0);
+      const remaining = item.quantity - reported;
+      if (remaining < minRemaining) {
+        minRemaining = remaining;
+      }
+    }
+
+    await tx.customOrderItem.update({
+      where: { id: customOrderItemId },
+      data: { remaining_quantity: minRemaining }
+    });
   }
 
   // ==================== HELPER: CEK STAFF MEMBER PROJECT ====================
@@ -93,7 +138,7 @@ export class ProgressReportsService {
       throw new NotFoundException(`Stage with ID ${stage_id} not found`);
     }
 
-    const item = await this.validateRemainingQuantity(custom_order_item_id, quantity);
+    const item = await this.validateRemainingQuantity(custom_order_item_id, stage_id, quantity);
 
     const customOrder = await this.prisma.customOrder.findFirst({
       where: {
@@ -139,14 +184,7 @@ export class ProgressReportsService {
         },
       });
 
-      await tx.customOrderItem.update({
-        where: { id: custom_order_item_id },
-        data: {
-          remaining_quantity: {
-            decrement: quantity,
-          },
-        },
-      });
+      await this.updateGlobalRemainingQuantity(tx, custom_order_item_id);
 
       return report;
     });
@@ -231,18 +269,11 @@ export class ProgressReportsService {
         await this.prisma.$transaction(async (tx) => {
           await tx.progressReport.update({
             where: { id },
-            data: { approval_status: false },
+            data: { approval_status: false, status: 'pending' },
           });
 
-          if (report.custom_order_item_id && report.quantity) {
-            await tx.customOrderItem.update({
-              where: { id: report.custom_order_item_id },
-              data: {
-                remaining_quantity: {
-                  increment: report.quantity,
-                },
-              },
-            });
+          if (report.custom_order_item_id) {
+            await this.updateGlobalRemainingQuantity(tx, report.custom_order_item_id);
           }
         });
         return this.findOne(id);
@@ -272,6 +303,8 @@ export class ProgressReportsService {
                 earned_amount: 0,
               },
             });
+
+            await this.updateGlobalRemainingQuantity(tx, report.custom_order_item_id);
           }
 
           return updated;
@@ -297,17 +330,26 @@ export class ProgressReportsService {
       newQuantity = updateDto.quantity;
       if (isNaN(newQuantity)) throw new BadRequestException('Quantity harus berupa angka');
       
-      const item = await this.prisma.customOrderItem.findUnique({
-        where: { id: report.custom_order_item_id! },
-        select: { remaining_quantity: true },
+      // Hitung sisa quantity secara dinamis khusus untuk stage ini (mengeluarkan report saat ini)
+      const reportsForStage = await this.prisma.progressReport.findMany({
+        where: {
+          custom_order_item_id: report.custom_order_item_id!,
+          stage_id: report.stage_id,
+          id: { not: id },
+          status: { in: ['proses', 'selesai'] }
+        },
+        select: { quantity: true }
       });
 
-      const oldQuantity = report.quantity || 0;
-      const selisih = newQuantity - oldQuantity;
+      const reportedQuantity = reportsForStage.reduce((sum, r) => sum + (r.quantity ?? 0), 0);
+      if (!report.custom_order_item) {
+        throw new BadRequestException('Custom order item tidak ditemukan untuk laporan progres ini.');
+      }
+      const remainingForStage = report.custom_order_item.quantity - reportedQuantity;
 
-      if (selisih > 0 && selisih > (item?.remaining_quantity || 0)) {
+      if (newQuantity > remainingForStage) {
         throw new BadRequestException(
-          `Sisa yang bisa ditambahkan hanya ${item?.remaining_quantity} pcs`
+          `Sisa yang bisa dilaporkan untuk stage ini hanya ${remainingForStage} pcs.`
         );
       }
 
@@ -328,19 +370,7 @@ export class ProgressReportsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      if (newQuantity !== undefined && newQuantity !== report.quantity) {
-        const selisih = newQuantity - (report.quantity || 0);
-        await tx.customOrderItem.update({
-          where: { id: report.custom_order_item_id! },
-          data: {
-            remaining_quantity: {
-              decrement: selisih,
-            },
-          },
-        });
-      }
-
-      return tx.progressReport.update({
+      const updatedReport = await tx.progressReport.update({
         where: { id },
         data: updateData,
         include: {
@@ -360,6 +390,12 @@ export class ProgressReportsService {
           },
         },
       });
+
+      if (report.custom_order_item_id) {
+        await this.updateGlobalRemainingQuantity(tx, report.custom_order_item_id);
+      }
+
+      return updatedReport;
     });
   }
 
@@ -379,15 +415,10 @@ export class ProgressReportsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      if (report.custom_order_item_id && report.quantity) {
-        await tx.customOrderItem.update({
-          where: { id: report.custom_order_item_id },
-          data: {
-            remaining_quantity: {
-              increment: report.quantity,
-            },
-          },
-        });
+      await tx.progressReport.delete({ where: { id } });
+
+      if (report.custom_order_item_id) {
+        await this.updateGlobalRemainingQuantity(tx, report.custom_order_item_id);
       }
 
       if (report.image) {
@@ -395,7 +426,6 @@ export class ProgressReportsService {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       }
 
-      await tx.progressReport.delete({ where: { id } });
       return { message: `Progress report ${id} deleted successfully` };
     });
   }
@@ -454,7 +484,7 @@ export class ProgressReportsService {
   }
 
   // ==================== GET REMAINING QUANTITY ====================
-  async getRemainingQuantity(customOrderItemId: number) {
+  async getRemainingQuantity(customOrderItemId: number, stageId?: number) {
     const item = await this.prisma.customOrderItem.findUnique({
       where: { id: customOrderItemId },
       select: {
@@ -474,16 +504,62 @@ export class ProgressReportsService {
       throw new NotFoundException(`Custom order item with ID ${customOrderItemId} not found`);
     }
 
-    const completed = item.quantity - item.remaining_quantity;
+    const productDescription = item.selected_options
+      .map(opt => `${opt.variant_option?.custom_variant?.name || ''} ${opt.variant_option?.name || ''}`.trim())
+      .filter(Boolean)
+      .join(', ');
 
-    return {
-      total: item.quantity,
-      completed: completed,
-      remaining: item.remaining_quantity,
-      product_description: item.selected_options
-        .map(opt => `${opt.variant_option?.custom_variant?.name || ''} ${opt.variant_option?.name || ''}`.trim())
-        .filter(Boolean)
-        .join(', '),
-    };
+    if (stageId !== undefined) {
+      // Hitung sisa untuk stage tertentu
+      const reports = await this.prisma.progressReport.findMany({
+        where: {
+          custom_order_item_id: customOrderItemId,
+          stage_id: stageId,
+          status: { in: ['proses', 'selesai'] }
+        },
+        select: { quantity: true }
+      });
+      const completed = reports.reduce((sum, r) => sum + (r.quantity ?? 0), 0);
+      const remaining = item.quantity - completed;
+
+      return {
+        total: item.quantity,
+        completed,
+        remaining,
+        product_description: productDescription,
+      };
+    } else {
+      // Hitung sisa untuk semua stage
+      const stages = await this.prisma.stage.findMany({
+        orderBy: { order_index: 'asc' }
+      });
+
+      const stagesResult: any[] = [];
+      for (const stage of stages) {
+        const reports = await this.prisma.progressReport.findMany({
+          where: {
+            custom_order_item_id: customOrderItemId,
+            stage_id: stage.id,
+            status: { in: ['proses', 'selesai'] }
+          },
+          select: { quantity: true }
+        });
+        const completed = reports.reduce((sum, r) => sum + (r.quantity ?? 0), 0);
+        const remaining = item.quantity - completed;
+
+        stagesResult.push({
+          stage_id: stage.id,
+          stage_name: stage.stage_name,
+          completed,
+          remaining
+        });
+      }
+
+      return {
+        total: item.quantity,
+        product_description: productDescription,
+        stages: stagesResult,
+      };
+    }
   }
 }

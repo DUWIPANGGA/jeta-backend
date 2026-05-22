@@ -2,10 +2,20 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { enrichCustomOrderItemsWithStages } from '../common/utils/remaining-quantity.helper';
 
 @Injectable()
 export class ProjectsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async getStageIdForUser(userId?: number): Promise<number | undefined> {
+    if (!userId) return undefined;
+    const staff = await this.prisma.staff.findUnique({
+      where: { user_id: userId },
+      include: { staffStages: true }
+    });
+    return staff?.staffStages?.[0]?.stage_id;
+  }
 
   async create(createDto: CreateProjectDto, userId: number) {
     const customOrder = await this.prisma.customOrder.findUnique({
@@ -77,7 +87,7 @@ export class ProjectsService {
   async findAll(userId: number, isAdmin: boolean) {
     const where = isAdmin ? {} : { user_id: userId };
     
-    return this.prisma.project.findMany({
+    const projects = await this.prisma.project.findMany({
       where,
       include: {
         user: true,
@@ -116,6 +126,9 @@ export class ProjectsService {
       },
       orderBy: { created_at: 'desc' },
     });
+
+    const stageId = await this.getStageIdForUser(userId);
+    return enrichCustomOrderItemsWithStages(this.prisma, projects, stageId);
   }
 
   async getMyTasks(userId: number) {
@@ -157,13 +170,15 @@ export class ProjectsService {
       },
     });
     
-    return memberships.map(m => m.project);
+    const projects = memberships.map(m => m.project);
+    const stageId = await this.getStageIdForUser(userId);
+    return enrichCustomOrderItemsWithStages(this.prisma, projects, stageId);
   }
 
-  async getQueue(isAdmin: boolean) {
+  async getQueue(userId: number, isAdmin: boolean) {
     const where = isAdmin ? {} : { status: true };
     
-    return this.prisma.project.findMany({
+    const projects = await this.prisma.project.findMany({
       where,
       include: {
         custom_order: {
@@ -191,6 +206,9 @@ export class ProjectsService {
       },
       orderBy: { created_at: 'asc' },
     });
+
+    const stageId = await this.getStageIdForUser(userId);
+    return enrichCustomOrderItemsWithStages(this.prisma, projects, stageId);
   }
 
   async findOne(id: number, userId: number, isAdmin: boolean) {
@@ -241,7 +259,8 @@ export class ProjectsService {
       throw new ForbiddenException('You do not have access to this project');
     }
     
-    return project;
+    const stageId = await this.getStageIdForUser(userId);
+    return enrichCustomOrderItemsWithStages(this.prisma, project, stageId);
   }
 
   async update(id: number, updateDto: UpdateProjectDto, userId: number, isAdmin: boolean) {

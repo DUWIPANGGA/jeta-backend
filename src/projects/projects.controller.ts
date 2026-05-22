@@ -65,7 +65,7 @@ export class ProjectsController {
       include: { role: true },
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
-    return this.projectsService.getQueue(isAdmin);
+    return this.projectsService.getQueue(req.user.id, isAdmin);
   }
 
   @Get(':id')

@@ -4,10 +4,20 @@ import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
 import { AcceptCustomOrderDto } from './dto/accept-custom-order.dto';
 import { Prisma } from '@prisma/client';
+import { enrichCustomOrderItemsWithStages } from '../common/utils/remaining-quantity.helper';
 
 @Injectable()
 export class CustomOrdersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async getStageIdForUser(userId?: number): Promise<number | undefined> {
+    if (!userId) return undefined;
+    const staff = await this.prisma.staff.findUnique({
+      where: { user_id: userId },
+      include: { staffStages: true }
+    });
+    return staff?.staffStages?.[0]?.stage_id;
+  }
 
   private isDeadlineValid(deadline: Date): boolean {
     const today = new Date();
@@ -145,6 +155,7 @@ export class CustomOrdersService {
             data: {
               custom_order_id: order.id,
               quantity: item.quantity,
+              remaining_quantity: item.quantity,
             },
           });
           
@@ -181,10 +192,13 @@ export class CustomOrdersService {
           throw new NotFoundException('Failed to retrieve created custom order');
         }
 
-        return {
+        const enriched = {
           ...result,
           images: this.parseImages(result.images),
         };
+
+        const stageId = await this.getStageIdForUser(user.id);
+        return enrichCustomOrderItemsWithStages(tx, enriched, stageId);
       });
       return customOrder;
     } catch (error) {
@@ -196,7 +210,7 @@ export class CustomOrdersService {
   }
 
   // ==================== FIND ALL ====================
-  async findAll() {
+  async findAll(userId?: number) {
     const customOrders = await this.prisma.customOrder.findMany({
       orderBy: { created_at: 'desc' },
       include: {
@@ -217,14 +231,17 @@ export class CustomOrdersService {
       },
     });
 
-    return customOrders.map(order => ({
+    const parsedOrders = customOrders.map(order => ({
       ...order,
       images: this.parseImages(order.images),
     }));
+
+    const stageId = await this.getStageIdForUser(userId);
+    return enrichCustomOrderItemsWithStages(this.prisma, parsedOrders, stageId);
   }
 
   // ==================== FIND ONE ====================
-  async findOne(id: number) {
+  async findOne(id: number, userId?: number) {
     const customOrder = await this.prisma.customOrder.findUnique({
       where: { id },
       include: {
@@ -247,14 +264,16 @@ export class CustomOrdersService {
     if (!customOrder) {
       throw new NotFoundException(`Custom order with ID ${id} not found`);
     }
-    return {
+    const enriched = {
       ...customOrder,
       images: this.parseImages(customOrder.images),
     };
+    const stageId = await this.getStageIdForUser(userId);
+    return enrichCustomOrderItemsWithStages(this.prisma, enriched, stageId);
   }
 
   // ==================== FIND BY USER ====================
-  async findByUser(userId: number) {
+  async findByUser(userId: number, currentUserId?: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
@@ -277,10 +296,12 @@ export class CustomOrdersService {
         },
       },
     });
-    return customOrders.map(order => ({
+    const parsedOrders = customOrders.map(order => ({
       ...order,
       images: this.parseImages(order.images),
     }));
+    const stageId = await this.getStageIdForUser(currentUserId);
+    return enrichCustomOrderItemsWithStages(this.prisma, parsedOrders, stageId);
   }
 
   async update(id: number, updateCustomOrderDto: UpdateCustomOrderDto, currentUser: any, files?: Express.Multer.File[]) {
@@ -399,6 +420,7 @@ export class CustomOrdersService {
               data: {
                 custom_order_id: id,
                 quantity: quantity,
+                remaining_quantity: quantity,
               },
             });
             
@@ -437,10 +459,13 @@ export class CustomOrdersService {
         throw new NotFoundException(`Custom order with ID ${id} not found after update`);
       }
 
-      return {
+      const enriched = {
         ...result,
         images: this.parseImages(result.images),
       };
+
+      const stageId = await this.getStageIdForUser(currentUser.id);
+      return enrichCustomOrderItemsWithStages(tx, enriched, stageId);
     });
   }
 

@@ -290,7 +290,7 @@ CREATE TABLE "custom_order_items" (
     "id" SERIAL NOT NULL,
     "custom_order_id" INTEGER NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 0,
-    "remaining_quantity" INTEGER NOT NULL DEFAULT 0,
+    "remaining_quantity" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

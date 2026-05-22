@@ -105,8 +105,14 @@ export class ProgressReportsController {
 
   @Get('remaining/:customOrderItemId')
   @Access('ProgressReports', 'read')
-  getRemainingQuantity(@Param('customOrderItemId', ParseIntPipe) customOrderItemId: number) {
-    return this.service.getRemainingQuantity(customOrderItemId);
+  getRemainingQuantity(
+    @Param('customOrderItemId', ParseIntPipe) customOrderItemId: number,
+    @Query('stage_id') stageId?: string,
+  ) {
+    return this.service.getRemainingQuantity(
+      customOrderItemId,
+      stageId ? parseInt(stageId, 10) : undefined,
+    );
   }
 
   @Get(':id')

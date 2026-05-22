@@ -16,11 +16,13 @@ async function main() {
         'staffs.js',
         'categories.js',
         'products.js',
-        'product_variants.js',
+        'custom-variants.js',
+        'product-variants.js',
         'payment_methods.js',
         'stages.js',
         'orders.js',
-        'custom_orders.js'
+        'custom-orders.js',
+        'projects.js'
     ];
 
     for (const file of seeders) {

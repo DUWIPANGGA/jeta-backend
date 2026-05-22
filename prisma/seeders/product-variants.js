@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding product variants...');
+  console.log('🌱 Seeding sizes, colors, and product variants...');
 
   const products = await prisma.product.findMany();
 
@@ -12,7 +12,41 @@ async function main() {
   }
 
   const sizes = ['S', 'M', 'L', 'XL'];
-  const colors = ['Hitam', 'Putih', 'Navy', 'Merah', 'Abu-abu'];
+  const colors = [
+    { name: 'Hitam', hex_code: '#000000' },
+    { name: 'Putih', hex_code: '#FFFFFF' },
+    { name: 'Navy', hex_code: '#000080' },
+    { name: 'Merah', hex_code: '#FF0000' },
+    { name: 'Abu-abu', hex_code: '#808080' }
+  ];
+
+  // Seed sizes and map their names to IDs
+  const sizeMap = {};
+  for (const sizeName of sizes) {
+    const size = await prisma.size.upsert({
+      where: { name: sizeName },
+      update: {},
+      create: { name: sizeName }
+    });
+    sizeMap[sizeName] = size.id;
+  }
+  console.log('✅ Sizes seeded and mapped.');
+
+  // Seed colors and map their names to IDs
+  const colorMap = {};
+  for (const colorData of colors) {
+    const color = await prisma.color.upsert({
+      where: { name: colorData.name },
+      update: {},
+      create: { name: colorData.name, hex_code: colorData.hex_code }
+    });
+    colorMap[colorData.name] = color.id;
+  }
+  console.log('✅ Colors seeded and mapped.');
+
+  // Clear existing product variants to ensure fresh seeding and no duplicate items
+  await prisma.productVariant.deleteMany({});
+  console.log('🗑️  Semua product variants sebelumnya dihapus.');
 
   let count = 0;
 
@@ -22,21 +56,20 @@ async function main() {
     const numVariants = Math.floor(Math.random() * 3) + 2; 
 
     for (let i = 0; i < numVariants; i++) {
-      const size = sizes[Math.floor(Math.random() * sizes.length)];
-      const color = colors[Math.floor(Math.random() * colors.length)];
+      const sizeName = sizes[Math.floor(Math.random() * sizes.length)];
+      const colorName = colors[Math.floor(Math.random() * colors.length)].name;
       
-      // Check if this variant already exists (optional, but good for idempotency if you use upsert)
-      // Since there's no unique constraint on size/color/product_id, we just create.
-      
+      const sizeId = sizeMap[sizeName];
+      const colorId = colorMap[colorName];
+
       await prisma.productVariant.create({
         data: {
           product_id: product.id,
-          size: size,
-          color: color,
+          size_id: sizeId,
+          color_id: colorId,
           stock: Math.floor(Math.random() * 100) + 10,
           price_adjustment: Math.floor(Math.random() * 5000) * 1, // small price variation
-          description: `Varian ${product.name} ukuran ${size} warna ${color}`,
-          atribute: 'Original',
+          description: `Varian ${product.name} ukuran ${sizeName} warna ${colorName}`,
         }
       });
       count++;

@@ -109,7 +109,7 @@ export class CustomOrdersController {
   @Get()
   @Access('CustomOrders', 'read')
   async findAll(@Req() req: RequestWithUser) {
-    return this.customOrdersService.findAll();
+    return this.customOrdersService.findAll(req.user.id);
   }
 
   // ==================== STATISTICS ====================
@@ -134,7 +134,7 @@ export class CustomOrdersController {
     if (!isAdmin && req.user.id !== userId) {
       throw new ForbiddenException('You can only view your own custom orders');
     }
-    return this.customOrdersService.findByUser(userId);
+    return this.customOrdersService.findByUser(userId, req.user.id);
   }
 
   // ==================== FIND ONE ====================
@@ -144,7 +144,7 @@ export class CustomOrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestWithUser,
   ) {
-    const customOrder = await this.customOrdersService.findOne(id);
+    const customOrder = await this.customOrdersService.findOne(id, req.user.id);
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.id },
       include: { role: true },

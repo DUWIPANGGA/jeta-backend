@@ -56,7 +56,7 @@ const accessConfig = {
     }
 
     return { create: false, read: true, update: false, delete: false };
-  }),
+  },
 
   user: (pageName) => {
     const userPages = new Set([
