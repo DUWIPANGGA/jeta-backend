@@ -56,7 +56,9 @@ export class FinanceService {
         salaryProjects: true,
         progressReports: {
           where: { approval_status: true },
-          select: { project_id: true, quantity: true },
+          include: {
+            salaryPaymentDetail: true,
+          },
         },
       },
     });
@@ -92,29 +94,34 @@ export class FinanceService {
       },
     });
 
-    const paidProjectDetails = await this.prisma.salaryPaymentDetail.findMany({
-      where: {
-        project_id: { in: projectMembers.map((pm) => pm.project_id) },
-        salaryPayment: { staff_id: staff.id },
-      },
-      select: { project_id: true },
-    });
-    const paidProjectIds = new Set(paidProjectDetails.map((p) => p.project_id));
+    const unpaidQuantityMap = new Map<number, number>();
+    const totalQuantityMap = new Map<number, number>();
 
-    const quantityMap = new Map<number, number>();
     for (const report of staff.progressReports) {
-      const current = quantityMap.get(report.project_id) ?? 0;
-      quantityMap.set(report.project_id, current + (report.quantity ?? 0));
+      const pId = report.project_id;
+      const qty = report.quantity ?? 0;
+
+      // Total quantity
+      const currentTotal = totalQuantityMap.get(pId) ?? 0;
+      totalQuantityMap.set(pId, currentTotal + qty);
+
+      // Unpaid quantity
+      if (!report.salaryPaymentDetail) {
+        const currentUnpaid = unpaidQuantityMap.get(pId) ?? 0;
+        unpaidQuantityMap.set(pId, currentUnpaid + qty);
+      }
     }
 
     const projects = projectMembers.map((pm) => {
       const adjustment = staff.salaryProjects.find(
         (sp) => sp.project_id === pm.project_id,
       );
-      const quantity = quantityMap.get(pm.project_id) ?? 0;
+      const totalQuantity = totalQuantityMap.get(pm.project_id) ?? 0;
+      const unpaidQuantity = unpaidQuantityMap.get(pm.project_id) ?? 0;
       const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
-      const amount = quantity * ratePerUnit;
-      const isPaid = paidProjectIds.has(pm.project_id);
+      const amount = totalQuantity * ratePerUnit;
+      const unpaidAmount = unpaidQuantity * ratePerUnit;
+      const isPaid = totalQuantity > 0 && unpaidQuantity === 0;
 
       let deskripsiProduk = '-';
       const customOrder = pm.project?.custom_order;
@@ -134,9 +141,11 @@ export class FinanceService {
         project_id: pm.project_id,
         project_name: customOrder?.name || `Project ${pm.project_id}`,
         jenis_produk: deskripsiProduk,
-        quantity,
+        quantity: totalQuantity,
+        unpaid_quantity: unpaidQuantity,
         rate_per_unit: ratePerUnit,
         amount,
+        unpaid_amount: unpaidAmount,
         is_paid: isPaid,
       };
     });
@@ -159,7 +168,9 @@ export class FinanceService {
         salaryProjects: true,
         progressReports: {
           where: { approval_status: true },
-          select: { project_id: true, quantity: true },
+          include: {
+            salaryPaymentDetail: true,
+          },
         },
       },
     });
@@ -179,7 +190,7 @@ export class FinanceService {
       throw new ForbiddenException('Only finance can make payments');
     }
 
-    const projectDetails: { projectId: number; amount: number; quantity: number; rate: number }[] = [];
+    const projectDetails: { progressReportId: number; amount: number }[] = [];
     let totalAmount = 0;
 
     for (const projectId of project_ids) {
@@ -190,32 +201,31 @@ export class FinanceService {
         throw new BadRequestException(`Staff tidak mengerjakan project ID ${projectId}`);
       }
 
-      const existingPayment = await this.prisma.salaryPaymentDetail.findFirst({
-        where: { 
-          project_id: projectId,
-          salaryPayment: { staff_id: staff.id },
-        },
-      });
-      if (existingPayment) {
-        throw new BadRequestException(`Project ID ${projectId} sudah pernah dibayar untuk staff ini`);
+      const unpaidReports = staff.progressReports.filter(
+        (r) => r.project_id === projectId && !r.salaryPaymentDetail,
+      );
+      if (unpaidReports.length === 0) {
+        throw new BadRequestException(`Tidak ada progress report yang belum dibayar untuk project ID ${projectId}`);
       }
 
-      const totalQuantity = staff.progressReports
-        .filter((r) => r.project_id === projectId)
-        .reduce((sum, r) => sum + (r.quantity ?? 0), 0);
-
+      const totalQuantity = unpaidReports.reduce((sum, r) => sum + (r.quantity ?? 0), 0);
       if (totalQuantity === 0) {
-        throw new BadRequestException(`Tidak ada progress report untuk project ID ${projectId}`);
+        throw new BadRequestException(`Tidak ada progress report dengan kuantitas lebih dari 0 untuk project ID ${projectId}`);
       }
 
       const adjustment = staff.salaryProjects.find(
         (sp) => sp.project_id === projectId,
       );
       const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
-      const amount = totalQuantity * ratePerUnit;
 
-      totalAmount += amount;
-      projectDetails.push({ projectId, amount, quantity: totalQuantity, rate: ratePerUnit });
+      for (const report of unpaidReports) {
+        const reportAmount = (report.quantity ?? 0) * ratePerUnit;
+        projectDetails.push({
+          progressReportId: report.id,
+          amount: reportAmount,
+        });
+        totalAmount += reportAmount;
+      }
     }
 
     let proofPath: string | null = null;
@@ -242,7 +252,7 @@ export class FinanceService {
         await tx.salaryPaymentDetail.create({
           data: {
             salary_payment_id: salaryPayment.id,
-            project_id: detail.projectId,
+            progress_report_id: detail.progressReportId,
             amount: detail.amount,
           },
         });

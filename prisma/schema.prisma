@@ -441,7 +441,6 @@ model Project {
   members         ProjectMember[]
   progressReports ProgressReport[]
   salaryProjects  SalaryProjects[]
-  salaryPaymentDetails SalaryPaymentDetail[]
 
   @@map("projects")
 }
@@ -756,6 +755,7 @@ model ProgressReport {
   project           Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
   custom_order_item CustomOrderItem? @relation(fields: [custom_order_item_id], references: [id], onDelete: Cascade)  // ✅ TAMBAH
   stage             Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  salaryPaymentDetail SalaryPaymentDetail?
 
   @@map("progress_reports")
 }
@@ -783,15 +783,15 @@ model SalaryPayment {
 }
 
 model SalaryPaymentDetail {
-  id                Int       @id @default(autoincrement())
-  salary_payment_id Int
-  project_id        Int
-  amount            Int?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  id                 Int            @id @default(autoincrement())
+  salary_payment_id  Int
+  progress_report_id Int            @unique
+  amount             Int?
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
 
-  salaryPayment     SalaryPayment @relation(fields: [salary_payment_id], references: [id], onDelete: Cascade)
-  project           Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  salaryPayment      SalaryPayment  @relation(fields: [salary_payment_id], references: [id], onDelete: Cascade)
+  progressReport     ProgressReport @relation(fields: [progress_report_id], references: [id], onDelete: Cascade)
 
   @@map("salary_payment_details")
 }
