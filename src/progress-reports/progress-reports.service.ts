@@ -151,7 +151,9 @@ export class ProgressReportsService {
       throw new BadRequestException('Custom order item tidak terkait dengan project ini');
     }
 
-    await this.checkDuplicateReport(staff.id, custom_order_item_id, stage_id);
+    // Pengecekan multi-report pending dinonaktifkan agar staf dapat mencicil laporan
+    // selama total kuantitas tidak melebihi sisa target (divalidasi oleh validateRemainingQuantity)
+    // await this.checkDuplicateReport(staff.id, custom_order_item_id, stage_id);
 
     return this.prisma.$transaction(async (tx) => {
       const report = await tx.progressReport.create({
