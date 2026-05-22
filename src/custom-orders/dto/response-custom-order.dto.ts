@@ -126,7 +126,7 @@ export class CustomOrderResponseDto {
 
   @Expose()
   @Type(() => PaymentResponseDto)
-  payment?: PaymentResponseDto;
+  payments?: PaymentResponseDto[];
 
   @Expose()
   @Type(() => ProjectResponseDto)

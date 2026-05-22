@@ -20,11 +20,16 @@ export class PaymentsService {
       if (!customOrder) {
         throw new NotFoundException(`CustomOrder with ID ${createDto.custom_order_id} not found`);
       }
-      const existingPayment = await this.prisma.payment.findUnique({
-        where: { custom_order_id: createDto.custom_order_id },
+      
+      const stage = createDto.payment_stage ?? 'down_payment';
+      const existingPayment = await this.prisma.payment.findFirst({
+        where: { 
+          custom_order_id: createDto.custom_order_id,
+          payment_stage: stage,
+        },
       });
       if (existingPayment) {
-        throw new BadRequestException(`Payment already exists for custom order ID ${createDto.custom_order_id}`);
+        throw new BadRequestException(`Payment with stage ${stage} already exists for custom order ID ${createDto.custom_order_id}`);
       }
     }
 
@@ -62,6 +67,7 @@ export class PaymentsService {
         payment_proof: createDto.payment_proof,
         payment_status: createDto.payment_status ?? 'pending',
         order_type: createDto.order_type ?? (createDto.custom_order_id ? 'custom_order' : 'order'),
+        payment_stage: createDto.payment_stage ?? (createDto.custom_order_id ? 'down_payment' : 'standard_full'),
       },
       include: {
         custom_order: true,
@@ -159,22 +165,27 @@ export class PaymentsService {
           });
         }
         if (payment.custom_order_id) {
-          await prisma.customOrder.update({
-            where: { id: payment.custom_order_id },
-            data: { payment_status: true },
-          });
-
-          // Pembuatan project custom order sudah ditangani di custom-orders.service.ts
-          // untuk mencegah error unique constraint P2002.
-          /*
-          await prisma.project.create({
-            data: {
-              custom_order_id: payment.custom_order_id,
-              user_id: payment.custom_order?.user_id || 1,
-              status: true,
+          if (payment.payment_stage === 'down_payment') {
+            // Create Project for Custom Order on DP verification success
+            const existingProject = await prisma.project.findFirst({
+              where: { custom_order_id: payment.custom_order_id },
+            });
+            if (!existingProject) {
+              await prisma.project.create({
+                data: {
+                  custom_order_id: payment.custom_order_id,
+                  user_id: payment.custom_order?.user_id || 1,
+                  status: true,
+                }
+              });
             }
-          });
-          */
+          } else if (payment.payment_stage === 'final_payment' || payment.payment_stage === 'standard_full') {
+            // Set custom order payment status to true (Fully Paid) on final payment verification success
+            await prisma.customOrder.update({
+              where: { id: payment.custom_order_id },
+              data: { payment_status: true },
+            });
+          }
         }
       }
 

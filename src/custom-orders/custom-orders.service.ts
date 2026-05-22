@@ -173,7 +173,7 @@ export class CustomOrdersService {
           where: { id: order.id },
           include: {
             user: { select: { id: true, name: true, email: true, phone: true } },
-            payment: true,
+            payments: true,
             items: {
               include: {
                 selected_options: {
@@ -215,7 +215,7 @@ export class CustomOrdersService {
       orderBy: { created_at: 'desc' },
       include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
-        payment: true,
+        payments: true,
         projects: { include: { members: true } },
         items: {
           include: {
@@ -246,7 +246,7 @@ export class CustomOrdersService {
       where: { id },
       include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
-        payment: true,
+        payments: true,
         projects: { include: { members: true } },
         items: {
           include: {
@@ -282,7 +282,7 @@ export class CustomOrdersService {
       where: { user_id: userId },
       orderBy: { created_at: 'desc' },
       include: {
-        payment: true,
+        payments: true,
         items: {
           include: {
             selected_options: {
@@ -440,7 +440,7 @@ export class CustomOrdersService {
         where: { id },
         include: {
           user: { select: { id: true, name: true, email: true, phone: true } },
-          payment: true,
+          payments: true,
           items: {
             include: {
               selected_options: {
@@ -488,7 +488,7 @@ export class CustomOrdersService {
         }
       }
 
-      const existingPayment = await this.prisma.payment.findUnique({
+      const existingPayment = await this.prisma.payment.findFirst({
         where: { custom_order_id: id },
       });
       
@@ -501,24 +501,11 @@ export class CustomOrdersService {
             custom_order_id: id,
             order_type: 'custom_order',
             payment_status: 'pending',
+            payment_stage: 'down_payment',
             payment_method_id: defaultPaymentMethod?.id ?? null,
             amount: dpAmount,
             paid_at: null,
             payment_proof: null,
-          },
-        });
-      }
-
-      let project = await this.prisma.project.findFirst({
-        where: { custom_order_id: id },
-      });
-      
-      if (!project) {
-        project = await this.prisma.project.create({
-          data: {
-            user_id: customOrder.user_id,
-            custom_order_id: id,
-            status: true,
           },
         });
       }
@@ -532,7 +519,7 @@ export class CustomOrdersService {
           remaining_amount: remainingAmount,
         },
         include: {
-          payment: true,
+          payments: true,
           projects: { include: { members: true } },
           items: {
             include: {
