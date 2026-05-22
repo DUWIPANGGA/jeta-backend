@@ -52,6 +52,7 @@ import { CustomVariantsModule } from './custom-variants/custom-variants.module';
 import { VariantOptionsModule } from './variant-options/variant-options.module';
 
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { SummaryModule } from './summary/summary.module';
 
 @Module({
   imports: [
@@ -129,6 +130,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     MaterialsModule,
     CustomVariantsModule,
     VariantOptionsModule,
+    SummaryModule,
   ],
 
   controllers: [AppController],
