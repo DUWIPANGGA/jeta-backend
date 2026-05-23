@@ -1,9 +1,11 @@
 // src/carts/carts.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { CartsService } from './carts.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { CreateCartDto } from './dto/create-cart.dto';
+import { UpdateCartDto } from './dto/update-cart.dto';
 
 @Controller('carts')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -12,31 +14,36 @@ export class CartsController {
 
   @Post()
   @Access('Carts', 'create')
-  create(@Body() createDto: any) {
-    return this.cartsService.create(createDto);
+  create(@Request() req, @Body() createDto: CreateCartDto) {
+    const userId = req.user.id;
+    return this.cartsService.create(userId, createDto);
   }
 
   @Get()
   @Access('Carts', 'read')
-  findAll() {
-    return this.cartsService.findAll();
+  findAll(@Request() req) {
+    const userId = req.user.id;
+    return this.cartsService.findAll(userId);
   }
 
   @Get(':id')
   @Access('Carts', 'read')
-  findOne(@Param('id') id: string) {
-    return this.cartsService.findOne(+id);
+  findOne(@Request() req, @Param('id') id: string) {
+    const userId = req.user.id;
+    return this.cartsService.findOne(userId, +id);
   }
 
   @Patch(':id')
   @Access('Carts', 'update')
-  update(@Param('id') id: string, @Body() updateDto: any) {
-    return this.cartsService.update(+id, updateDto);
+  update(@Request() req, @Param('id') id: string, @Body() updateDto: UpdateCartDto) {
+    const userId = req.user.id;
+    return this.cartsService.update(userId, +id, updateDto);
   }
 
   @Delete(':id')
   @Access('Carts', 'delete')
-  remove(@Param('id') id: string) {
-    return this.cartsService.remove(+id);
+  remove(@Request() req, @Param('id') id: string) {
+    const userId = req.user.id;
+    return this.cartsService.remove(userId, +id);
   }
 }

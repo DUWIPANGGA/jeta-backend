@@ -4,54 +4,80 @@ import { randomBytes } from 'crypto';
 
 @Injectable()
 export class CheckoutService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async processCheckout(userId: number, dto: any) {
-    const { items, paymentMethodId, shippingAddress, shippingCost } = dto;
-    // items expected format: { productId: number, variantId: number, quantity: number, price: number }[]
-    
-    if (!items || !items.length) {
-      throw new BadRequestException('Items are required for checkout');
+    const { paymentMethodId, shippingAddress, shippingCost } = dto;
+
+    // 1. Ambil data keranjang belanja aktif dari DB sebagai Source of Truth
+    const cartItems = await this.prisma.cart.findMany({
+      where: { user_id: userId },
+      include: {
+        product: true,
+        product_variant: true
+      }
+    });
+
+    if (!cartItems || cartItems.length === 0) {
+      throw new BadRequestException('Keranjang belanja Anda kosong, tidak dapat melakukan checkout');
     }
+
     if (!paymentMethodId) {
-      throw new BadRequestException('Payment method is required');
+      throw new BadRequestException('Metode pembayaran wajib dipilih');
     }
 
     const paymentMethod = await this.prisma.paymentMethod.findUnique({
       where: { id: Number(paymentMethodId) }
     });
-    
+
     if (!paymentMethod) {
-      throw new BadRequestException('Invalid payment method');
+      throw new BadRequestException('Metode pembayaran tidak valid');
     }
 
-    const grandTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0) + (Number(shippingCost) || 0);
-    const orderNumber = `ORD-${Date.now()}-${randomBytes(2).toString('hex').toUpperCase()}`;
-
     return this.prisma.$transaction(async (prisma) => {
-      // Validasi ketersediaan stok dan potong stok untuk setiap item
-      for (const item of items) {
+      let itemsTotal = 0;
+      const orderItemsToCreate = [];
+
+      // 2. Validasi stok dan kalkulasi harga secara aman di Server-Side
+      for (const item of cartItems) {
         const variant = await prisma.productVariant.findUnique({
-          where: { id: Number(item.variantId) }
+          where: { id: item.product_variant_id },
+          include: { product: true }
         });
 
         if (!variant) {
-          throw new BadRequestException(`Varian produk dengan ID ${item.variantId} tidak ditemukan`);
+          throw new BadRequestException(`Varian produk dengan ID ${item.product_variant_id} tidak ditemukan`);
         }
 
-        if (variant.stock < Number(item.quantity)) {
+        if (variant.stock < item.quantity) {
           throw new BadRequestException(
-            `Stok tidak mencukupi untuk varian produk ID ${item.variantId}. Tersedia: ${variant.stock}, diminta: ${item.quantity}`
+            `Stok tidak mencukupi untuk ${variant.product.name || 'Produk'}. Tersedia: ${variant.stock}, diminta: ${item.quantity}`
           );
         }
 
+        // Kalkulasi harga aman: base price produk + adjustment dari varian
+        const basePrice = variant.product.price || 0;
+        const finalUnitPrice = basePrice + variant.price_adjustment;
+        itemsTotal += finalUnitPrice * item.quantity;
+
         // Kurangi stok varian produk secara dinamis
         await prisma.productVariant.update({
-          where: { id: Number(item.variantId) },
-          data: { stock: { decrement: Number(item.quantity) } }
+          where: { id: variant.id },
+          data: { stock: { decrement: item.quantity } }
         });
+
+        const orderItemsToCreate = [] as {
+          product_id: number;
+          variant_id: number;
+          quantity: number;
+          price: number;
+        }[];
       }
 
+      const grandTotal = itemsTotal + (Number(shippingCost) || 0);
+      const orderNumber = `ORD-${Date.now()}-${randomBytes(2).toString('hex').toUpperCase()}`;
+
+      // 3. Simpan data Order baru
       const order = await prisma.order.create({
         data: {
           user_id: userId,
@@ -62,16 +88,12 @@ export class CheckoutService {
           payment_method: paymentMethod.bank_name,
           status: 'pending',
           order_items: {
-            create: items.map(item => ({
-              product_id: Number(item.productId),
-              variant_id: Number(item.variantId),
-              quantity: Number(item.quantity),
-              price: Number(item.price)
-            }))
+            create: orderItemsToCreate
           }
         }
       });
 
+      // 4. Buat Invoice Pembayaran
       const payment = await prisma.payment.create({
         data: {
           order_id: order.id,
@@ -81,8 +103,8 @@ export class CheckoutService {
           payment_status: 'pending',
         }
       });
-      
-      // Clear cart items for this user - Menggunakan 'cart' bukan 'cartItem' sesuai CartsService
+
+      // 5. Bersihkan keranjang belanja setelah checkout sukses
       await prisma.cart.deleteMany({
         where: { user_id: userId }
       });
