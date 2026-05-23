@@ -1,5 +1,5 @@
 // src/orders/orders.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
@@ -23,9 +23,10 @@ export class OrdersController {
   }
 
   @Get('user/:userId')
-  @Access('Orders', 'read')
-  findByUser(@Param('userId') userId: string) {
-    return this.ordersService.findByUser(+userId);
+  findByUser(@Param('userId') userId: string, @Request() req) {
+    const loggedInUserId = req.user.id;
+    const loggedInUserRoleId = req.user.role_id;
+    return this.ordersService.findByUser(+userId, loggedInUserId, loggedInUserRoleId);
   }
 
   @Get(':id')

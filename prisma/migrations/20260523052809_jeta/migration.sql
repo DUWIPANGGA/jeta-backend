@@ -2,6 +2,9 @@
 CREATE TYPE "OrderType" AS ENUM ('order', 'custom_order');
 
 -- CreateEnum
+CREATE TYPE "CustomPaymentStage" AS ENUM ('down_payment', 'final_payment', 'standard_full');
+
+-- CreateEnum
 CREATE TYPE "PaymentType" AS ENUM ('e_wallet', 'bank_transfer');
 
 -- CreateEnum
@@ -114,6 +117,7 @@ CREATE TABLE "variant_options" (
     "name" TEXT,
     "status" BOOLEAN NOT NULL DEFAULT true,
     "description" TEXT,
+    "price_adjustment" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -220,20 +224,6 @@ CREATE TABLE "carts" (
 );
 
 -- CreateTable
-CREATE TABLE "cart_items" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "product_id" INTEGER NOT NULL,
-    "variant_id" INTEGER NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "price_at_add" INTEGER,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "cart_items_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "orders" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
@@ -289,6 +279,7 @@ CREATE TABLE "custom_orders" (
 CREATE TABLE "custom_order_items" (
     "id" SERIAL NOT NULL,
     "custom_order_id" INTEGER NOT NULL,
+    "name" TEXT DEFAULT 'Produk',
     "quantity" INTEGER NOT NULL DEFAULT 0,
     "remaining_quantity" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -370,6 +361,7 @@ CREATE TABLE "payments" (
     "payment_proof" TEXT,
     "payment_status" "PaymentStatus" NOT NULL DEFAULT 'pending',
     "order_type" "OrderType" NOT NULL DEFAULT 'order',
+    "payment_stage" "CustomPaymentStage" NOT NULL DEFAULT 'standard_full',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -593,7 +585,7 @@ CREATE TABLE "salary_payments" (
 CREATE TABLE "salary_payment_details" (
     "id" SERIAL NOT NULL,
     "salary_payment_id" INTEGER NOT NULL,
-    "project_id" INTEGER NOT NULL,
+    "progress_report_id" INTEGER NOT NULL,
     "amount" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -626,6 +618,9 @@ CREATE UNIQUE INDEX "attributes_name_key" ON "attributes"("name");
 CREATE UNIQUE INDEX "materials_name_key" ON "materials"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "carts_user_id_product_variant_id_key" ON "carts"("user_id", "product_variant_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 
 -- CreateIndex
@@ -647,9 +642,6 @@ CREATE UNIQUE INDEX "logistics_name_key" ON "logistics"("name");
 CREATE UNIQUE INDEX "logistics_alias_key" ON "logistics"("alias");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "payments_custom_order_id_key" ON "payments"("custom_order_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "payments_order_id_key" ON "payments"("order_id");
 
 -- CreateIndex
@@ -660,6 +652,9 @@ CREATE UNIQUE INDEX "salary_projects_staff_id_project_id_key" ON "salary_project
 
 -- CreateIndex
 CREATE UNIQUE INDEX "stages_stage_name_key" ON "stages"("stage_name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "salary_payment_details_progress_report_id_key" ON "salary_payment_details"("progress_report_id");
 
 -- AddForeignKey
 ALTER TABLE "accesses" ADD CONSTRAINT "accesses_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -696,15 +691,6 @@ ALTER TABLE "carts" ADD CONSTRAINT "carts_product_id_fkey" FOREIGN KEY ("product
 
 -- AddForeignKey
 ALTER TABLE "carts" ADD CONSTRAINT "carts_product_variant_id_fkey" FOREIGN KEY ("product_variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -830,4 +816,4 @@ ALTER TABLE "salary_payments" ADD CONSTRAINT "salary_payments_paid_by_fkey" FORE
 ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_salary_payment_id_fkey" FOREIGN KEY ("salary_payment_id") REFERENCES "salary_payments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_progress_report_id_fkey" FOREIGN KEY ("progress_report_id") REFERENCES "progress_reports"("id") ON DELETE CASCADE ON UPDATE CASCADE;

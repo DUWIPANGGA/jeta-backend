@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -9,7 +9,19 @@ export class OrdersService {
     return this.prisma.order.create({ data: dto });
   }
 
-  async findByUser(userId: number) {
+  async findByUser(userId: number, loggedInUserId: number, loggedInUserRoleId: number) {
+    // 1. Dapatkan role dari pengguna yang login
+    const role = await this.prisma.role.findUnique({
+      where: { id: loggedInUserRoleId }
+    });
+
+    const isOwner = loggedInUserId === userId;
+    const hasAdminAccess = role && ['superadmin', 'admin', 'staff', 'finance'].includes(role.name);
+
+    if (!isOwner && !hasAdminAccess) {
+      throw new ForbiddenException('Anda tidak memiliki izin untuk melihat pesanan ini.');
+    }
+
     return this.prisma.order.findMany({
       where: { user_id: userId },
       include: {
