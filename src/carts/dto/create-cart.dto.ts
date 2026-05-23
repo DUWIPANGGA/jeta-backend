@@ -1,4 +1,4 @@
-import { IsInt, IsPositive } from 'class-validator';
+import { IsInt, IsOptional, IsPositive } from 'class-validator';
 
 export class CreateCartDto {
     @IsInt()
@@ -9,6 +9,8 @@ export class CreateCartDto {
     @IsPositive()
     product_variant_id: number;
 
-    // Catatan: user_id biasanya diambil dari token JWT di Controller, 
-    // bukan dikirim manual lewat body demi keamanan.
+    @IsOptional()
+    @IsInt()
+    @IsPositive()
+    quantity?: number;
 }

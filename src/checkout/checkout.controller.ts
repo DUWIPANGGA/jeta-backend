@@ -1,15 +1,19 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
+import { CheckoutDto } from './dto/checkout.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 
-@Controller('checkout')
-export class CheckoutController {
-  constructor(private readonly checkoutService: CheckoutService) {}
+interface RequestWithUser extends Request {
+  user: { id: number; role_id: number };
+}
 
-  @UseGuards(JwtAuthGuard)
+@Controller('checkout')
+@UseGuards(JwtAuthGuard)
+export class CheckoutController {
+  constructor(private readonly checkoutService: CheckoutService) { }
+
   @Post()
-  checkout(@Request() req, @Body() dto: any) {
-    const userId = req.user?.id;
-    return this.checkoutService.processCheckout(userId, dto);
+  async processCheckout(@Body() dto: CheckoutDto, @Req() req: RequestWithUser) {
+    return this.checkoutService.processCheckout(req.user.id, dto);
   }
 }
