@@ -36,7 +36,14 @@ export class CheckoutService {
 
     return this.prisma.$transaction(async (prisma) => {
       let itemsTotal = 0;
-      const orderItemsToCreate = [];
+
+      // ✅ Deklarasi array dengan tipe eksplisit (menghindari shadowing)
+      const orderItemsToCreate: Array<{
+        product_id: number;
+        variant_id: number;
+        quantity: number;
+        price: number;
+      }> = [];
 
       // 2. Validasi stok dan kalkulasi harga secara aman di Server-Side
       for (const item of cartItems) {
@@ -66,12 +73,13 @@ export class CheckoutService {
           data: { stock: { decrement: item.quantity } }
         });
 
-        const orderItemsToCreate = [] as {
-          product_id: number;
-          variant_id: number;
-          quantity: number;
-          price: number;
-        }[];
+        // ✅ Push ke outer array (menghindari shadowing)
+        orderItemsToCreate.push({
+          product_id: item.product_id,
+          variant_id: item.product_variant_id,
+          quantity: item.quantity,
+          price: finalUnitPrice
+        });
       }
 
       const grandTotal = itemsTotal + (Number(shippingCost) || 0);
@@ -88,7 +96,15 @@ export class CheckoutService {
           payment_method: paymentMethod.bank_name,
           status: 'pending',
           order_items: {
-            create: orderItemsToCreate
+            create: orderItemsToCreate  // ✅ Gunakan array yang sudah terisi
+          }
+        },
+        include: {
+          order_items: {
+            include: {
+              product: true,
+              variant: true
+            }
           }
         }
       });
