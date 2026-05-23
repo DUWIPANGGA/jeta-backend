@@ -81,21 +81,35 @@ export class PaymentsController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  uploadProof(@Param('id', ParseIntPipe) id: number, @UploadedFile() file: Express.Multer.File) {
+  uploadProof(
+    @Param('id', ParseIntPipe) id: number, 
+    @UploadedFile() file: Express.Multer.File,
+    @Body('amount') amount?: string,
+    @Body('payment_method_id') paymentMethodId?: string
+  ) {
     if (!file) {
       throw new BadRequestException('File is required');
     }
     const filePath = `/uploads/payments/${file.filename}`;
-    return this.paymentsService.uploadProof(id, filePath);
+    return this.paymentsService.uploadProof(
+      id, 
+      filePath,
+      amount ? parseInt(amount) : undefined,
+      paymentMethodId ? parseInt(paymentMethodId) : undefined
+    );
   }
 
   @Patch(':id/verify')
   @Access('Payments', 'update')
-  verify(@Param('id', ParseIntPipe) id: number, @Body('status') status: 'completed' | 'failed') {
+  verify(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body('status') status: 'completed' | 'failed',
+    @Body('amount') amount?: number
+  ) {
     if (!['completed', 'failed'].includes(status)) {
       throw new BadRequestException('Invalid status');
     }
-    return this.paymentsService.verifyPayment(id, status);
+    return this.paymentsService.verifyPayment(id, status, amount);
   }
 
   @Patch(':id')

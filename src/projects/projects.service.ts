@@ -154,6 +154,12 @@ export class ProjectsService {
                 },
               },
             },
+            order: {
+              include: {
+                user: true,
+                order_items: true,
+              }
+            },
             progressReports: {
               where: { staff_id: userId },
               include: {
@@ -197,6 +203,12 @@ export class ProjectsService {
               },
             },
           },
+        },
+        order: {
+          include: {
+            user: true,
+            order_items: true,
+          }
         },
         members: {
           include: {

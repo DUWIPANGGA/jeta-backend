@@ -249,4 +249,90 @@ export class WorkLogsService {
       total_earned: result._sum.earned_amount || 0,
     };
   }
+
+  async getProgress(type: string, id: number) {
+    // 1. Dapatkan daftar tahapan (stages) berurutan
+    const stages = await this.prisma.stage.findMany({
+      orderBy: { order_index: 'asc' },
+    });
+
+    let orderIdLabel = '';
+    let overallTotalQty = 0;
+    const progressData: any[] = [];
+
+    if (type.toUpperCase() === 'SPORT') {
+      const order = await this.prisma.order.findUnique({
+        where: { id },
+        include: { order_items: true },
+      });
+      if (!order) throw new NotFoundException(`Order SPORT #${id} not found`);
+
+      orderIdLabel = order.order_number;
+      overallTotalQty = order.order_items.reduce((acc, curr) => acc + curr.quantity, 0);
+
+      // Agregasi work_logs untuk SPORT
+      const groupedLogs = await this.prisma.workLog.groupBy({
+        by: ['stage_id'],
+        where: { sport_order_id: id },
+        _sum: { quantity: true },
+      });
+
+      for (const stage of stages) {
+        const logForStage = groupedLogs.find(g => g.stage_id === stage.id);
+        const completedQuantity = logForStage?._sum.quantity || 0;
+        const totalQuantity = overallTotalQty;
+        const percentage = totalQuantity > 0 ? Math.min(100, Math.round((completedQuantity / totalQuantity) * 100)) : 0;
+
+        progressData.push({
+          stageId: stage.id,
+          stageName: stage.stage_name,
+          completedQuantity,
+          totalQuantity,
+          percentage
+        });
+      }
+    } else if (type.toUpperCase() === 'CUSTOM') {
+      const customOrder = await this.prisma.customOrder.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+      if (!customOrder) throw new NotFoundException(`Custom Order #${id} not found`);
+
+      orderIdLabel = customOrder.name || `Custom #${id}`;
+      overallTotalQty = customOrder.items.reduce((acc, curr) => acc + curr.quantity, 0);
+
+      // Ambil progress dari ProgressReports (milik custom order)
+      // Kita asumsikan relasinya lewat custom_order_item_id atau project.custom_order_id
+      const project = await this.prisma.project.findUnique({
+        where: { custom_order_id: id },
+        include: { progressReports: true }
+      });
+
+      const progressReports = project ? project.progressReports : [];
+
+      for (const stage of stages) {
+        // Asumsi progressReport.quantity mencatat barang selesai, atau kita hitung berdasarkan approval_status jika mau lebih strict
+        const logsForStage = progressReports.filter(pr => pr.stage_id === stage.id && (pr.approval_status === true || pr.status === 'selesai'));
+        const completedQuantity = logsForStage.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
+        const totalQuantity = overallTotalQty;
+        const percentage = totalQuantity > 0 ? Math.min(100, Math.round((completedQuantity / totalQuantity) * 100)) : 0;
+
+        progressData.push({
+          stageId: stage.id,
+          stageName: stage.stage_name,
+          completedQuantity,
+          totalQuantity,
+          percentage
+        });
+      }
+    } else {
+      throw new NotFoundException(`Invalid type: ${type}`);
+    }
+
+    return {
+      orderId: orderIdLabel,
+      totalQuantity: overallTotalQty,
+      progress: progressData
+    };
+  }
 }

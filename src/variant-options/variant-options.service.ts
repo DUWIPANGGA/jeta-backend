@@ -21,6 +21,7 @@ export class VariantOptionsService {
         custom_variant_id: createDto.custom_variant_id,
         description: createDto.description,
         status: createDto.status ?? true,
+        price_adjustment: createDto.price_adjustment ?? 0,
       },
     });
   }

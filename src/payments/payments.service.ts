@@ -115,23 +115,27 @@ export class PaymentsService {
     return payment;
   }
 
-  async uploadProof(id: number, filePath: string) {
+  async uploadProof(id: number, filePath: string, amount?: number, paymentMethodId?: number) {
     const payment = await this.findOne(id);
     
     if (payment.payment_status === 'completed') {
       throw new BadRequestException('Payment already completed');
     }
 
+    const dataToUpdate: any = {
+      payment_proof: filePath,
+      payment_status: 'waiting_verification',
+    };
+    if (amount) dataToUpdate.amount = amount;
+    if (paymentMethodId) dataToUpdate.payment_method_id = paymentMethodId;
+
     return this.prisma.payment.update({
       where: { id },
-      data: {
-        payment_proof: filePath,
-        payment_status: 'waiting_verification',
-      },
+      data: dataToUpdate,
     });
   }
 
-  async verifyPayment(id: number, status: 'completed' | 'failed') {
+  async verifyPayment(id: number, status: 'completed' | 'failed', verifiedAmount?: number) {
     const payment = await this.findOne(id);
 
     if (payment.payment_status === 'completed') {
@@ -144,6 +148,7 @@ export class PaymentsService {
         data: {
           payment_status: status as PaymentStatus,
           paid_at: status === 'completed' ? new Date() : null,
+          ...(verifiedAmount ? { amount: verifiedAmount } : {}),
         },
       });
 
@@ -177,7 +182,22 @@ export class PaymentsService {
           }
         }
         if (payment.custom_order_id) {
+          const finalAmount = verifiedAmount || payment.amount || 0;
           if (payment.payment_stage === 'down_payment') {
+            const customOrder = await prisma.customOrder.findUnique({
+              where: { id: payment.custom_order_id }
+            });
+            const remaining = Math.max(0, (customOrder?.total_amount || 0) - finalAmount);
+            
+            await prisma.customOrder.update({
+              where: { id: payment.custom_order_id },
+              data: {
+                dp_amount: finalAmount,
+                remaining_amount: remaining,
+                payment_status: remaining === 0 ? true : false
+              }
+            });
+
             // Create Project for Custom Order on DP verification success
             const existingProject = await prisma.project.findFirst({
               where: { custom_order_id: payment.custom_order_id },
@@ -192,10 +212,18 @@ export class PaymentsService {
               });
             }
           } else if (payment.payment_stage === 'final_payment' || payment.payment_stage === 'standard_full') {
+            const customOrder = await prisma.customOrder.findUnique({
+              where: { id: payment.custom_order_id }
+            });
+            const remaining = Math.max(0, (customOrder?.remaining_amount || 0) - finalAmount);
+
             // Set custom order payment status to true (Fully Paid) on final payment verification success
             await prisma.customOrder.update({
               where: { id: payment.custom_order_id },
-              data: { payment_status: true },
+              data: { 
+                remaining_amount: remaining,
+                payment_status: remaining === 0 ? true : false 
+              },
             });
           }
         }

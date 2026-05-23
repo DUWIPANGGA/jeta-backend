@@ -26,6 +26,12 @@ export class WorkLogsController {
     return this.workLogsService.findAll();
   }
 
+  @Get('progress/:type/:id')
+  @Access('WorkLogs', 'read')
+  getProgress(@Param('type') type: string, @Param('id') id: string) {
+    return this.workLogsService.getProgress(type, +id);
+  }
+
   @Get(':id')
   @Access('WorkLogs', 'read')
   findOne(@Param('id') id: string) {

@@ -9,6 +9,24 @@ export class OrdersService {
     return this.prisma.order.create({ data: dto });
   }
 
+  async findByUser(userId: number) {
+    return this.prisma.order.findMany({
+      where: { user_id: userId },
+      include: {
+        order_items: {
+          include: {
+            product: { select: { name: true } },
+            variant: { select: { size: true, color: true } }
+          }
+        },
+        trackings: {
+          include: { tracking_histories: { orderBy: { created_at: 'desc' } } }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+  }
+
   async findAll() {
     return this.prisma.order.findMany({
       include: {

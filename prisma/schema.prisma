@@ -181,6 +181,7 @@ model VariantOption {
   name              String?
   status            Boolean  @default(true) 
   description       String?
+  price_adjustment  Int      @default(0)
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
@@ -407,6 +408,7 @@ model CustomOrder {
 model CustomOrderItem {
   id                Int      @id @default(autoincrement())
   custom_order_id   Int
+  name              String?  @default("Produk")
   quantity          Int      @default(0)
   remaining_quantity Int     
   created_at        DateTime @default(now())

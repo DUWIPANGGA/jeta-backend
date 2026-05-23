@@ -36,6 +36,10 @@ export class CustomOrderItemDto {
   @IsInt({ each: true, message: 'each value in variant_option_ids must be an integer number' })
   variant_option_ids: number[];
 
+  @IsString()
+  @IsOptional()
+  name?: string;
+
   @Transform(({ value }) => {
     const num = typeof value === 'string' ? parseInt(value, 10) : value;
     return isNaN(num) ? value : num;

@@ -18,4 +18,9 @@ export class CreateVariantOptionDto {
   @IsBoolean()
   @IsOptional()
   status?: boolean;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  price_adjustment?: number;
 }
