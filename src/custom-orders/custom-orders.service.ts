@@ -77,7 +77,6 @@ export class CustomOrdersService {
     interface ValidatedItem {
       variant_option_ids: number[];
       quantity: number;
-      name?: string;
     }
 
     const validatedItems: ValidatedItem[] = [];
@@ -119,8 +118,7 @@ export class CustomOrdersService {
 
       validatedItems.push({
         variant_option_ids: variantOptionIds.map(id => Number(id)),
-        quantity,
-        name: item.name
+        quantity
       });
     }
 
@@ -156,7 +154,6 @@ export class CustomOrdersService {
           const orderItem = await tx.customOrderItem.create({
             data: {
               custom_order_id: order.id,
-              name: item.name,
               quantity: item.quantity,
               remaining_quantity: item.quantity,
             },
@@ -422,7 +419,6 @@ export class CustomOrdersService {
             const orderItem = await tx.customOrderItem.create({
               data: {
                 custom_order_id: id,
-                name: (item as any).name,
                 quantity: quantity,
                 remaining_quantity: quantity,
               },
