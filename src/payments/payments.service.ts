@@ -26,10 +26,11 @@ export class PaymentsService {
         where: {
           custom_order_id: createDto.custom_order_id,
           payment_stage: stage,
+          payment_status: { in: [PaymentStatus.pending, PaymentStatus.waiting_verification] },
         },
       });
       if (existingPayment) {
-        throw new BadRequestException(`Payment with stage ${stage} already exists for custom order ID ${createDto.custom_order_id}`);
+        throw new BadRequestException(`An active payment with stage ${stage} already exists for custom order ID ${createDto.custom_order_id}`);
       }
     }
 
@@ -220,6 +221,30 @@ export class PaymentsService {
               }
             });
 
+            // Create final_payment automatically if remaining amount > 0
+            if (remaining > 0) {
+              const existingFinalPayment = await prisma.payment.findFirst({
+                where: {
+                  custom_order_id: payment.custom_order_id,
+                  payment_stage: CustomPaymentStage.final_payment,
+                  payment_status: { in: [PaymentStatus.pending, PaymentStatus.waiting_verification] },
+                },
+              });
+
+              if (!existingFinalPayment) {
+                await prisma.payment.create({
+                  data: {
+                    custom_order_id: payment.custom_order_id,
+                    order_type: 'custom_order',
+                    payment_status: PaymentStatus.pending,
+                    payment_method_id: payment.payment_method_id,
+                    amount: remaining,
+                    payment_stage: CustomPaymentStage.final_payment,
+                  },
+                });
+              }
+            }
+
             // Create Project for Custom Order on DP verification success
             const existingProject = await prisma.project.findFirst({
               where: { custom_order_id: payment.custom_order_id },
@@ -247,6 +272,30 @@ export class PaymentsService {
                 payment_status: remaining === 0,
               },
             });
+
+            // If remaining amount > 0, auto-create the next final_payment record as pending for the next installment
+            if (remaining > 0) {
+              const existingFinalPayment = await prisma.payment.findFirst({
+                where: {
+                  custom_order_id: payment.custom_order_id,
+                  payment_stage: CustomPaymentStage.final_payment,
+                  payment_status: { in: [PaymentStatus.pending, PaymentStatus.waiting_verification] },
+                },
+              });
+
+              if (!existingFinalPayment) {
+                await prisma.payment.create({
+                  data: {
+                    custom_order_id: payment.custom_order_id,
+                    order_type: 'custom_order',
+                    payment_status: PaymentStatus.pending,
+                    payment_method_id: payment.payment_method_id,
+                    amount: remaining,
+                    payment_stage: CustomPaymentStage.final_payment,
+                  },
+                });
+              }
+            }
           }
         }
       }
