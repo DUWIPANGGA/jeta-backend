@@ -297,7 +297,7 @@ export class ProgressReportsService {
 
             await tx.workLog.create({
               data: {
-                user_id: report.staff_id,
+                user_id: report.staff.user_id,
                 stage_id: report.stage_id,
                 order_type: 'custom_order',
                 custom_order_id: customOrderItem?.custom_order_id,

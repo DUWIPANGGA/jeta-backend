@@ -82,4 +82,27 @@ export class UpdateCustomOrderDto {
   @IsBoolean()
   @IsOptional()
   payment_status?: boolean;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  offline_customer_name?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  offline_phone?: string;
+
+  @IsString()
+  @IsOptional()
+  offline_address?: string;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  production_estimate?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  is_admin_order?: boolean;
 }

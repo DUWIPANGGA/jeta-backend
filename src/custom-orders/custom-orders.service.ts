@@ -234,6 +234,9 @@ export class CustomOrdersService {
     let customerName: string | null = null;
     let customerPhone: string | null = null;
     let customerEmail: string | null = null;
+    let offlineCustomerName: string | null = null;
+    let offlinePhone: string | null = null;
+    let offlineAddress: string | null = null;
 
     if (createDto.user_id) {
       const user = await this.prisma.user.findUnique({
@@ -247,23 +250,12 @@ export class CustomOrdersService {
       customerPhone = user.phone;
       customerEmail = user.email;
     } else if (createDto.offline_customer_name) {
-      const dummyEmail = `offline_${Date.now()}@temp.jeta.co.id`;
-      const dummyPassword = await bcrypt.hash('offline123', 10);
-
-      const newUser = await this.prisma.user.create({
-        data: {
-          name: createDto.offline_customer_name,
-          email: dummyEmail,
-          password: dummyPassword,
-          phone: createDto.offline_phone || null,
-          address: createDto.offline_address || '',
-          role_id: 4,
-        },
-      });
-      customerId = newUser.id;
-      customerName = createDto.offline_customer_name;
-      customerPhone = createDto.offline_phone || null;
-      customerEmail = dummyEmail;
+      // Offline Customer: TIDAK membuat user baru otomatis. 
+      // user_id diisi dengan ID admin yang menginputkan.
+      customerId = adminUser.id;
+      offlineCustomerName = createDto.offline_customer_name;
+      offlinePhone = createDto.offline_phone || null;
+      offlineAddress = createDto.offline_address || null;
     } else {
       throw new BadRequestException('Either user_id or offline_customer_name must be provided');
     }
@@ -367,9 +359,9 @@ export class CustomOrdersService {
 
     const data: Prisma.CustomOrderUncheckedCreateInput = {
       user_id: customerId,
-      name: customerName || undefined,
-      phone: customerPhone || undefined,
-      email: customerEmail || undefined,
+      name: customerName,
+      phone: customerPhone,
+      email: customerEmail,
       deadline,
       catatan_tambahan: createDto.catatan_tambahan ?? '',
       images: imagePaths,
@@ -379,7 +371,10 @@ export class CustomOrdersService {
       remaining_amount: remainingAmount,
       total_amount: totalAmount,
       is_admin_order: true,
-      production_estimate: productionEstimate,  // ← OTOMATIS dari deadline
+      offline_customer_name: offlineCustomerName,
+      offline_phone: offlinePhone,
+      offline_address: offlineAddress,
+      production_estimate: productionEstimate,
     };
     try {
       const customOrder = await this.prisma.$transaction(async (tx) => {
@@ -626,6 +621,11 @@ export class CustomOrdersService {
       if (updateCustomOrderDto.total_amount !== undefined) updateData.total_amount = updateCustomOrderDto.total_amount;
       if (updateCustomOrderDto.accept_status !== undefined) updateData.accept_status = updateCustomOrderDto.accept_status;
       if (updateCustomOrderDto.payment_status !== undefined) updateData.payment_status = updateCustomOrderDto.payment_status;
+      if (updateCustomOrderDto.offline_customer_name !== undefined) updateData.offline_customer_name = updateCustomOrderDto.offline_customer_name;
+      if (updateCustomOrderDto.offline_phone !== undefined) updateData.offline_phone = updateCustomOrderDto.offline_phone;
+      if (updateCustomOrderDto.offline_address !== undefined) updateData.offline_address = updateCustomOrderDto.offline_address;
+      if (updateCustomOrderDto.production_estimate !== undefined) updateData.production_estimate = updateCustomOrderDto.production_estimate;
+      if (updateCustomOrderDto.is_admin_order !== undefined) updateData.is_admin_order = updateCustomOrderDto.is_admin_order;
     }
 
     return this.prisma.$transaction(async (tx) => {
