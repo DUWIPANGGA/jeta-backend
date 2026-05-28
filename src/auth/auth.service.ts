@@ -58,15 +58,53 @@ export class AuthService {
     return { message: 'Email verification is disabled' };
   }
 
-  async login(dto: LoginDto) {
+  async loginCustomer(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Kredensial salah');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Kredensial salah');
+    }
+
+    // Hanya izinkan pengguna biasa (role_id = 4)
+    if (user.role_id !== 4) {
+      throw new UnauthorizedException('Akses ditolak. Akun staf harus login melalui portal khusus.');
+    }
+
+    const role = await this.prisma.role.findUnique({
+      where: { id: user.role_id },
+    });
+
+    const payload = { sub: user.id, email: user.email, role_id: user.role_id };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: role,
+      },
+    };
+  }
+
+  async loginStaff(dto: LoginDto) {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user) {
+      throw new UnauthorizedException('Kredensial salah');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Kredensial salah');
+    }
+
+    // Hanya izinkan peran internal (1: superadmin, 2: admin, 3: staff, 5: finance)
+    const allowedStaffRoles = [1, 2, 3, 5];
+    if (!allowedStaffRoles.includes(user.role_id)) {
+      throw new UnauthorizedException('Akses ditolak. Endpoint ini hanya untuk Staf/Admin.');
     }
 
     const role = await this.prisma.role.findUnique({

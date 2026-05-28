@@ -35,9 +35,9 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: any,
   ) {
-    const result = await this.authService.login(loginDto);
+    const result = await this.authService.loginCustomer(loginDto);
 
-    // HttpOnly cookie (bisa dikomentari jika pakai Bearer token)
+    // HttpOnly cookie khusus Customer
     res.cookie('token', result.access_token, {
       httpOnly: true,
       secure: false,
@@ -47,6 +47,29 @@ export class AuthController {
 
     return {
       message: 'Login success',
+      access_token: result.access_token,
+      user: result.user,
+    };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('login/staff')
+  async loginStaff(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: any,
+  ) {
+    const result = await this.authService.loginStaff(loginDto);
+
+    // HttpOnly cookie khusus Staf/Admin/Finance/Superadmin
+    res.cookie('staff_token', result.access_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return {
+      message: 'Login success (Staff Portal)',
       access_token: result.access_token,
       user: result.user,
     };
@@ -66,12 +89,28 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   async logout(@Req() req: any, @Res({ passthrough: true }) res: any) {
+    // Hapus sesi token pelanggan jika ada
     const token = req.cookies?.token;
     if (token) {
       await this.authService.logout(token);
     }
+    
+    // Hapus sesi token staf jika ada
+    const staffToken = req.cookies?.staff_token;
+    if (staffToken) {
+      await this.authService.logout(staffToken);
+    }
 
+    // Bersihkan cookie token pelanggan
     res.clearCookie('token', {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    // Bersihkan cookie token staf
+    res.clearCookie('staff_token', {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
