@@ -11,7 +11,7 @@ import {
   HttpCode,
   UseGuards,
   Req,
-  ForbiddenException,
+  HttpException,
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
@@ -25,6 +25,7 @@ import * as fs from 'fs';
 import { CustomOrdersService } from './custom-orders.service';
 import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
+import { CreateAdminCustomOrderDto } from './dto/create-admin-custom-order.dto';
 import { AcceptCustomOrderDto } from './dto/accept-custom-order.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
@@ -48,7 +49,6 @@ const storage = diskStorage({
   },
 });
 
-// File filter for images only
 // File filter for images and PDF
 const fileFilter = (req, file, cb) => {
   const allowedMimes = [
@@ -59,7 +59,7 @@ const fileFilter = (req, file, cb) => {
     'image/webp',
     'application/pdf'
   ];
-  
+
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -78,16 +78,16 @@ export class CustomOrdersController {
   constructor(
     private readonly customOrdersService: CustomOrdersService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
-  // ==================== CREATE ====================
+  // ==================== CREATE (USER) ====================
   @Post()
   @Access('CustomOrders', 'create')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FilesInterceptor('images', 10, { 
-    storage, 
-    fileFilter, 
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit per file
+  @UseInterceptors(FilesInterceptor('images', 10, {
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }
   }))
   async create(
     @Body() createCustomOrderDto: CreateCustomOrderDto,
@@ -97,15 +97,36 @@ export class CustomOrdersController {
     if (!createCustomOrderDto.items || createCustomOrderDto.items.length === 0) {
       throw new BadRequestException('At least one item is required');
     }
-    
-    // Log untuk debugging
+
     this.logger.log(`Creating custom order for user ${req.user.id}`);
-    this.logger.log(`Items: ${JSON.stringify(createCustomOrderDto.items)}`);
-    
+
     return this.customOrdersService.create(createCustomOrderDto, req.user, files);
   }
 
-  // ==================== FIND ALL (Admin only) ====================
+  // ==================== CREATE (ADMIN) ====================
+  @Post('admin')
+  @Access('CustomOrders', 'create')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FilesInterceptor('images', 10, {
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }
+  }))
+  async createAdminOrder(
+    @Body() createAdminCustomOrderDto: CreateAdminCustomOrderDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: RequestWithUser,
+  ) {
+    if (!createAdminCustomOrderDto.items || createAdminCustomOrderDto.items.length === 0) {
+      throw new BadRequestException('At least one item is required');
+    }
+
+    this.logger.log(`Creating admin custom order for user ${req.user.id}`);
+
+    return this.customOrdersService.createAdminOrder(createAdminCustomOrderDto, req.user, files);
+  }
+
+  // ==================== FIND ALL ====================
   @Get()
   @Access('CustomOrders', 'read')
   async findAll(@Req() req: RequestWithUser) {
@@ -132,7 +153,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin && req.user.id !== userId) {
-      throw new ForbiddenException('You can only view your own custom orders');
+      throw new HttpException('You can only view your own custom orders', HttpStatus.FORBIDDEN);
     }
     return this.customOrdersService.findByUser(userId, req.user.id);
   }
@@ -151,7 +172,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin && customOrder.user_id !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to view this order');
+      throw new HttpException('You do not have permission to view this order', HttpStatus.FORBIDDEN);
     }
     return customOrder;
   }
@@ -159,9 +180,9 @@ export class CustomOrdersController {
   // ==================== UPDATE ====================
   @Patch(':id')
   @Access('CustomOrders', 'update')
-  @UseInterceptors(FilesInterceptor('images', 10, { 
-    storage, 
-    fileFilter, 
+  @UseInterceptors(FilesInterceptor('images', 10, {
+    storage,
+    fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 }
   }))
   async update(
@@ -177,7 +198,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin && customOrder.user_id !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to update this order');
+      throw new HttpException('You do not have permission to update this order', HttpStatus.FORBIDDEN);
     }
     return this.customOrdersService.update(id, updateCustomOrderDto, req.user, files);
   }
@@ -196,7 +217,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin) {
-      throw new ForbiddenException('Only admin can change accept status');
+      throw new HttpException('Only admin can change accept status', HttpStatus.FORBIDDEN);
     }
     return this.customOrdersService.updateAcceptStatus(id, true, acceptData);
   }
@@ -214,7 +235,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin) {
-      throw new ForbiddenException('Only admin can reject orders');
+      throw new HttpException('Only admin can reject orders', HttpStatus.FORBIDDEN);
     }
     return this.customOrdersService.updateAcceptStatus(id, false);
   }
@@ -234,7 +255,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin && customOrder.user_id !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to delete this order');
+      throw new HttpException('You do not have permission to delete this order', HttpStatus.FORBIDDEN);
     }
     return this.customOrdersService.remove(id);
   }
@@ -253,7 +274,7 @@ export class CustomOrdersController {
     });
     const isAdmin = user?.role?.name === 'superadmin' || user?.role?.name === 'admin';
     if (!isAdmin && customOrder.user_id !== req.user.id) {
-      throw new ForbiddenException('You do not have permission to view this order');
+      throw new HttpException('You do not have permission to view this order', HttpStatus.FORBIDDEN);
     }
     const totalQuantity = await this.customOrdersService.getTotalQuantityForProject(id);
     return { custom_order_id: id, total_quantity: totalQuantity };

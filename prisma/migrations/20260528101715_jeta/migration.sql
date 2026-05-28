@@ -269,6 +269,11 @@ CREATE TABLE "custom_orders" (
     "total_amount" INTEGER,
     "accept_status" BOOLEAN NOT NULL DEFAULT false,
     "payment_status" BOOLEAN NOT NULL DEFAULT false,
+    "is_admin_order" BOOLEAN NOT NULL DEFAULT false,
+    "offline_customer_name" TEXT,
+    "offline_phone" TEXT,
+    "offline_address" TEXT,
+    "production_estimate" INTEGER DEFAULT 14,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -282,6 +287,7 @@ CREATE TABLE "custom_order_items" (
     "name" TEXT DEFAULT 'Produk',
     "quantity" INTEGER NOT NULL DEFAULT 0,
     "remaining_quantity" INTEGER NOT NULL,
+    "manual_price_per_pcs" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

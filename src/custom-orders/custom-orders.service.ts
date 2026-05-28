@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomOrderDto } from './dto/create-custom-order.dto';
 import { UpdateCustomOrderDto } from './dto/update-custom-order.dto';
+import { CreateAdminCustomOrderDto } from './dto/create-admin-custom-order.dto';
 import { AcceptCustomOrderDto } from './dto/accept-custom-order.dto';
 import { Prisma } from '@prisma/client';
 import { enrichCustomOrderItemsWithStages } from '../common/utils/remaining-quantity.helper';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class CustomOrdersService {
@@ -37,7 +39,7 @@ export class CustomOrdersService {
     }
   }
 
-  // ==================== CREATE ====================
+  // ==================== CREATE (USER) ====================
   async create(createCustomOrderDto: CreateCustomOrderDto, user: any, files?: Express.Multer.File[]) {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: user.id },
@@ -51,7 +53,7 @@ export class CustomOrdersService {
         createCustomOrderDto.remaining_amount !== undefined ||
         createCustomOrderDto.total_amount !== undefined
       ) {
-        throw new ForbiddenException('You are not allowed to set financial fields');
+        throw new HttpException('You are not allowed to set financial fields', HttpStatus.FORBIDDEN);
       }
     }
 
@@ -209,6 +211,280 @@ export class CustomOrdersService {
     }
   }
 
+  // ==================== CREATE (ADMIN) ====================
+  async createAdminOrder(createDto: CreateAdminCustomOrderDto, adminUser: any, files?: Express.Multer.File[]) {
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: adminUser.id },
+      include: { role: true },
+    });
+    const isAdmin = dbUser?.role?.name === 'superadmin' || dbUser?.role?.name === 'admin';
+
+    if (!isAdmin) {
+      throw new HttpException('Only admin can create admin custom orders', HttpStatus.FORBIDDEN);
+    }
+
+    // 1. Validasi deadline
+    const deadline = new Date(createDto.deadline);
+    if (!this.isDeadlineValid(deadline)) {
+      throw new BadRequestException('Deadline cannot be in the past');
+    }
+
+    // 2. Validasi customer (user_id atau offline data)
+    let customerId: number;
+    let customerName: string | null = null;
+    let customerPhone: string | null = null;
+    let customerEmail: string | null = null;
+
+    if (createDto.user_id) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: createDto.user_id },
+      });
+      if (!user) {
+        throw new BadRequestException(`User with ID ${createDto.user_id} not found`);
+      }
+      customerId = user.id;
+      customerName = user.name;
+      customerPhone = user.phone;
+      customerEmail = user.email;
+    } else if (createDto.offline_customer_name) {
+      const dummyEmail = `offline_${Date.now()}@temp.jeta.co.id`;
+      const dummyPassword = await bcrypt.hash('offline123', 10);
+
+      const newUser = await this.prisma.user.create({
+        data: {
+          name: createDto.offline_customer_name,
+          email: dummyEmail,
+          password: dummyPassword,
+          phone: createDto.offline_phone || null,
+          address: createDto.offline_address || '',
+          role_id: 4,
+        },
+      });
+      customerId = newUser.id;
+      customerName = createDto.offline_customer_name;
+      customerPhone = createDto.offline_phone || null;
+      customerEmail = dummyEmail;
+    } else {
+      throw new BadRequestException('Either user_id or offline_customer_name must be provided');
+    }
+
+    // 3. Validasi items
+    let items = createDto.items;
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (e) {
+        throw new BadRequestException('Invalid items format');
+      }
+    }
+
+    interface ValidatedItem {
+      variant_option_ids: number[];
+      quantity: number;
+      manual_price_per_pcs?: number;
+    }
+
+    const validatedItems: ValidatedItem[] = [];
+
+    for (const item of items) {
+      let variantOptionIds = item.variant_option_ids;
+      const quantity = Number(item.quantity);
+      const manualPricePerPcs = item.manual_price_per_pcs ? Number(item.manual_price_per_pcs) : undefined;
+
+      if (typeof variantOptionIds === 'string') {
+        try {
+          variantOptionIds = JSON.parse(variantOptionIds);
+        } catch (e) {
+          throw new BadRequestException('Invalid variant_option_ids format');
+        }
+      }
+
+      if (!Array.isArray(variantOptionIds) || variantOptionIds.length === 0) {
+        throw new BadRequestException('variant_option_ids must be a non-empty array');
+      }
+
+      if (isNaN(quantity) || quantity <= 0) {
+        throw new BadRequestException('Invalid quantity');
+      }
+
+      if (manualPricePerPcs !== undefined && (isNaN(manualPricePerPcs) || manualPricePerPcs < 0)) {
+        throw new BadRequestException('manual_price_per_pcs must be a positive number');
+      }
+
+      for (const optionId of variantOptionIds) {
+        const numericId = Number(optionId);
+        if (isNaN(numericId) || numericId <= 0) {
+          throw new BadRequestException(`Invalid variant_option_id: ${optionId}`);
+        }
+        const variantOption = await this.prisma.variantOption.findUnique({
+          where: { id: numericId },
+        });
+        if (!variantOption) {
+          throw new BadRequestException(`Variant option with ID ${numericId} not found`);
+        }
+      }
+
+      validatedItems.push({
+        variant_option_ids: variantOptionIds.map(id => Number(id)),
+        quantity,
+        manual_price_per_pcs: manualPricePerPcs,
+      });
+    }
+
+    // 4. Proses images
+    let imagePaths: string | null = null;
+    if (files && files.length > 0) {
+      imagePaths = JSON.stringify(files.map(file => `/uploads/custom-orders/${file.filename}`));
+    }
+
+    // 5. Hitung total amount
+    let itemsTotal = 0;
+    for (const item of validatedItems) {
+      let totalItemPrice = 0;
+      for (const optionId of item.variant_option_ids) {
+        const variantOption = await this.prisma.variantOption.findUnique({
+          where: { id: optionId },
+        });
+        if (variantOption && variantOption.price_adjustment) {
+          totalItemPrice += variantOption.price_adjustment;
+        }
+      }
+      const pricePerPcs = item.manual_price_per_pcs !== undefined
+        ? item.manual_price_per_pcs
+        : totalItemPrice;
+      itemsTotal += pricePerPcs * item.quantity;
+    }
+
+    const totalAmount = createDto.total_amount || itemsTotal;
+    const dpAmount = createDto.dp_amount || Math.floor(totalAmount * 0.3);
+    const remainingAmount = totalAmount - dpAmount;
+
+    // 6. Create data
+    const createdDate = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = Math.abs(deadlineDate.getTime() - createdDate.getTime());
+    const productionEstimate = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const data: Prisma.CustomOrderUncheckedCreateInput = {
+      user_id: customerId,
+      name: customerName || undefined,
+      phone: customerPhone || undefined,
+      email: customerEmail || undefined,
+      deadline,
+      catatan_tambahan: createDto.catatan_tambahan ?? '',
+      images: imagePaths,
+      accept_status: true,
+      payment_status: false,
+      dp_amount: dpAmount,
+      remaining_amount: remainingAmount,
+      total_amount: totalAmount,
+      is_admin_order: true,
+      production_estimate: productionEstimate,  // ← OTOMATIS dari deadline
+    };
+    try {
+      const customOrder = await this.prisma.$transaction(async (tx) => {
+        const order = await tx.customOrder.create({ data });
+
+        for (const item of validatedItems) {
+          let basePrice = 0;
+          for (const optionId of item.variant_option_ids) {
+            const variantOption = await tx.variantOption.findUnique({
+              where: { id: optionId },
+            });
+            if (variantOption && variantOption.price_adjustment) {
+              basePrice += variantOption.price_adjustment;
+            }
+          }
+
+          const finalPricePerPcs = item.manual_price_per_pcs !== undefined
+            ? item.manual_price_per_pcs
+            : basePrice;
+
+          const orderItem = await tx.customOrderItem.create({
+            data: {
+              custom_order_id: order.id,
+              quantity: item.quantity,
+              remaining_quantity: item.quantity,
+              manual_price_per_pcs: item.manual_price_per_pcs,
+            },
+          });
+
+          for (const optionId of item.variant_option_ids) {
+            await tx.customOrderItemOption.create({
+              data: {
+                custom_order_item_id: orderItem.id,
+                variant_option_id: optionId,
+              },
+            });
+          }
+        }
+
+        // Create Project langsung
+        await tx.project.create({
+          data: {
+            user_id: customerId,
+            custom_order_id: order.id,
+            status: true,
+          },
+        });
+
+        // Create Payment untuk DP
+        const defaultPaymentMethod = await tx.paymentMethod.findFirst({
+          where: { status_method: true },
+        });
+
+        await tx.payment.create({
+          data: {
+            custom_order_id: order.id,
+            order_type: 'custom_order',
+            payment_status: 'pending',
+            payment_method_id: defaultPaymentMethod?.id ?? null,
+            amount: dpAmount,
+            payment_stage: 'down_payment',
+          },
+        });
+
+        const result = await tx.customOrder.findUnique({
+          where: { id: order.id },
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true } },
+            payments: true,
+            items: {
+              include: {
+                selected_options: {
+                  include: {
+                    variant_option: {
+                      include: { custom_variant: true },
+                    },
+                  },
+                },
+              },
+            },
+            projects: true,
+          },
+        });
+
+        if (!result) {
+          throw new NotFoundException('Failed to retrieve created custom order');
+        }
+
+        const enriched = {
+          ...result,
+          images: this.parseImages(result.images),
+        };
+
+        const stageId = await this.getStageIdForUser(adminUser.id);
+        return enrichCustomOrderItemsWithStages(tx, enriched, stageId);
+      });
+      return customOrder;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('Duplicate entry (unique constraint)');
+      }
+      throw error;
+    }
+  }
+
   // ==================== FIND ALL ====================
   async findAll(userId?: number) {
     const customOrders = await this.prisma.customOrder.findMany({
@@ -304,6 +580,7 @@ export class CustomOrdersService {
     return enrichCustomOrderItemsWithStages(this.prisma, parsedOrders, stageId);
   }
 
+  // ==================== UPDATE ====================
   async update(id: number, updateCustomOrderDto: UpdateCustomOrderDto, currentUser: any, files?: Express.Multer.File[]) {
     await this.findOne(id);
     const dbUser = await this.prisma.user.findUnique({
@@ -317,7 +594,7 @@ export class CustomOrdersService {
     if (!isAdmin) {
       for (const field of protectedFields) {
         if ((updateCustomOrderDto as any)[field] !== undefined) {
-          throw new ForbiddenException(`You are not allowed to update ${field}`);
+          throw new HttpException(`You are not allowed to update ${field}`, HttpStatus.FORBIDDEN);
         }
       }
     }
