@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateStaffUserDto } from './dto/update-staff-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -207,6 +208,57 @@ export class UsersService {
     });
   }
 
+  // ==================== ENDPOINT UNTUK SATU STAFF DENGAN DETAIL LENGKAP ====================
+  async getStaffDetail(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        role: true,
+        staffs: {
+          include: {
+            staffStages: {
+              include: { stage: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan`);
+    }
+
+    if (user.role_id !== 2 && user.role_id !== 3) {
+      throw new BadRequestException(`User dengan ID ${id} bukan berstatus Staff atau Admin`);
+    }
+
+    const staff = user.staffs.length > 0 ? user.staffs[0] : null;
+
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        image: user.image,
+        role_id: user.role_id,
+        role: user.role,
+        staff: staff
+          ? {
+              id: staff.id,
+              user_id: staff.user_id,
+              tgl_masuk: staff.tgl_masuk,
+              salary: staff.salary,
+              stage_ids: staff.staffStages.map((ss) => ss.stage_id),
+              stages: staff.staffStages.map((ss) => ss.stage),
+            }
+          : null,
+      },
+    };
+  }
+
   // ==================== SIMPLE STAFF LIST (TANPA DETAIL) ====================
   async getStaffUsers() {
     return this.prisma.user.findMany({
@@ -348,7 +400,39 @@ export class UsersService {
   }
 
   async update(id: number, updateDto: UpdateUserDto) {
-    await this.findOne(id);
+    const user = await this.findOne(id);
+    
+    if (updateDto.email) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email: updateDto.email, NOT: { id } },
+      });
+      if (existing) throw new ConflictException('Email already taken');
+    }
+
+    // Mencegah pemberian role admin/staff lewat endpoint umum
+    if (updateDto.role_id === 2 || updateDto.role_id === 3) {
+      throw new BadRequestException('Pengubahan peran ke Admin atau Staff harus melalui endpoint pembaruan staf khusus (/users/staffs/:id)');
+    }
+
+    // Mencegah penurunan role staf dari endpoint umum (staf/admin -> non-staf)
+    if (updateDto.role_id !== undefined && (user.role_id === 2 || user.role_id === 3) && updateDto.role_id !== user.role_id) {
+      throw new BadRequestException('Penurunan peran dari Admin/Staff ke peran lain harus dilakukan melalui endpoint pembaruan staf khusus (/users/staffs/:id) karena membutuhkan penghapusan profil staf.');
+    }
+
+    if (updateDto.password) {
+      updateDto.password = await bcrypt.hash(updateDto.password, 10);
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: updateDto,
+      include: { role: true },
+    });
+  }
+
+  async updateStaff(id: number, updateDto: UpdateStaffUserDto) {
+    const user = await this.findOne(id);
+
     if (updateDto.email) {
       const existing = await this.prisma.user.findFirst({
         where: { email: updateDto.email, NOT: { id } },
@@ -363,7 +447,7 @@ export class UsersService {
         where: { id: { in: stageIds } },
       });
       if (stages.length !== stageIds.length) {
-        throw new BadRequestException('Some stage_id(s) not found');
+        throw new BadRequestException('Beberapa stage_id tidak ditemukan di database');
       }
     }
 
@@ -396,7 +480,7 @@ export class UsersService {
 
       if (isStaffOrAdmin) {
         if (!existingStaff) {
-          // Buat record staff baru jika belum ada
+          // Buat record staff baru jika belum ada (misal dipromosikan dari customer ke staf)
           const staff = await tx.staff.create({
             data: {
               user_id: id,
@@ -451,7 +535,25 @@ export class UsersService {
         }
       }
 
-      return updatedUser;
+      // Ambil data lengkap staff terbaru untuk dikembalikan
+      const completeStaff = await tx.staff.findUnique({
+        where: { user_id: id },
+        include: {
+          staffStages: { include: { stage: true } },
+        },
+      });
+
+      return {
+        ...updatedUser,
+        staff: completeStaff
+          ? {
+              id: completeStaff.id,
+              tgl_masuk: completeStaff.tgl_masuk,
+              salary: completeStaff.salary,
+              stages: completeStaff.staffStages.map((ss) => ss.stage),
+            }
+          : null,
+      };
     });
   }
 

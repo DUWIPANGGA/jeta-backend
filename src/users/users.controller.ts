@@ -14,6 +14,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateStaffUserDto } from './dto/update-staff-user.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
@@ -41,10 +42,17 @@ export class UsersController {
   }
 
   // ==================== GET STAFF WITH DETAILS ====================
-  @Get('staff')
+  @Get('staffs')
   @Access('Users', 'read')
   async getStaffWithDetails() {
     return this.usersService.getStaffWithDetails();
+  }
+
+  // ==================== GET SINGLE STAFF DETAIL ====================
+  @Get('staffs/:id')
+  @Access('Users', 'read')
+  async getStaffDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.getStaffDetail(id);
   }
 
   // ==================== GET CUSTOMER DETAIL WITH ORDER HISTORY ====================
@@ -73,6 +81,13 @@ export class UsersController {
   @Access('Users', 'create')
   createStaff(@Body() createStaffUserDto: CreateStaffUserDto) {
     return this.usersService.createStaff(createStaffUserDto);
+  }
+
+  // ==================== UPDATE STAFF USER ====================
+  @Patch('staffs/:id')
+  @Access('Users', 'update')
+  updateStaff(@Param('id', ParseIntPipe) id: number, @Body() updateStaffUserDto: UpdateStaffUserDto) {
+    return this.usersService.updateStaff(id, updateStaffUserDto);
   }
 
   // ==================== UPDATE USER ====================
