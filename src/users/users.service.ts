@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -14,7 +15,13 @@ export class UsersService {
     });
     if (existing) throw new ConflictException('Email already exists');
 
+    // Mencegah pembuatan admin/staff melalui endpoint umum
+    if (createDto.role_id === 2 || createDto.role_id === 3) {
+      throw new BadRequestException('Pembuatan Admin atau Staff harus menggunakan endpoint pendaftaran staf khusus (/users/staffs)');
+    }
+
     const hashedPassword = await bcrypt.hash(createDto.password, 10);
+
     return this.prisma.user.create({
       data: {
         name: createDto.name,
@@ -25,6 +32,82 @@ export class UsersService {
         role_id: createDto.role_id,
       },
       include: { role: true },
+    });
+  }
+
+  async createStaff(createDto: CreateStaffUserDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: createDto.email },
+    });
+    if (existing) throw new ConflictException('Email already exists');
+
+    // Validasi bahwa role adalah Admin (2) atau Staff (3)
+    if (createDto.role_id !== 2 && createDto.role_id !== 3) {
+      throw new BadRequestException('Role ID harus berupa Admin (2) atau Staff (3) untuk endpoint pendaftaran staf khusus');
+    }
+
+    // Validasi stage_ids jika disediakan
+    const stageIds = createDto.stage_ids ?? [];
+    if (stageIds.length) {
+      const stages = await this.prisma.stage.findMany({
+        where: { id: { in: stageIds } },
+      });
+      if (stages.length !== stageIds.length) {
+        throw new BadRequestException('Beberapa stage_id tidak ditemukan di database');
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(createDto.password, 10);
+
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name: createDto.name,
+          email: createDto.email,
+          password: hashedPassword,
+          phone: createDto.phone,
+          address: createDto.address,
+          role_id: createDto.role_id,
+        },
+        include: { role: true },
+      });
+
+      const staff = await tx.staff.create({
+        data: {
+          user_id: user.id,
+          tgl_masuk: createDto.tgl_masuk ? new Date(createDto.tgl_masuk) : new Date(),
+          salary: createDto.salary ?? 0,
+        },
+      });
+
+      if (stageIds.length) {
+        await tx.staffStage.createMany({
+          data: stageIds.map((stageId) => ({
+            staff_id: staff.id,
+            stage_id: stageId,
+          })),
+        });
+      }
+
+      // Ambil data staff yang sudah lengkap beserta hubungannya
+      const completeStaff = await tx.staff.findUnique({
+        where: { id: staff.id },
+        include: {
+          staffStages: { include: { stage: true } },
+        },
+      });
+
+      return {
+        ...user,
+        staff: completeStaff
+          ? {
+              id: completeStaff.id,
+              tgl_masuk: completeStaff.tgl_masuk,
+              salary: completeStaff.salary,
+              stages: completeStaff.staffStages.map((ss) => ss.stage),
+            }
+          : null,
+      };
     });
   }
 
@@ -88,7 +171,7 @@ export class UsersService {
   // ==================== ENDPOINT UNTUK STAFF DENGAN DETAIL STAGE ====================
   async getStaffWithDetails() {
     const users = await this.prisma.user.findMany({
-      where: { role_id: 3 },
+      where: { role_id: { in: [2, 3] } },
       include: {
         role: true,
         staffs: {
@@ -127,7 +210,7 @@ export class UsersService {
   // ==================== SIMPLE STAFF LIST (TANPA DETAIL) ====================
   async getStaffUsers() {
     return this.prisma.user.findMany({
-      where: { role_id: 3 },
+      where: { role_id: { in: [2, 3] } },
       select: {
         id: true,
         name: true,
@@ -272,13 +355,103 @@ export class UsersService {
       });
       if (existing) throw new ConflictException('Email already taken');
     }
+
+    // Validasi stage_ids jika disediakan
+    const stageIds = updateDto.stage_ids ?? [];
+    if (stageIds.length) {
+      const stages = await this.prisma.stage.findMany({
+        where: { id: { in: stageIds } },
+      });
+      if (stages.length !== stageIds.length) {
+        throw new BadRequestException('Some stage_id(s) not found');
+      }
+    }
+
     if (updateDto.password) {
       updateDto.password = await bcrypt.hash(updateDto.password, 10);
     }
-    return this.prisma.user.update({
-      where: { id },
-      data: updateDto,
-      include: { role: true },
+
+    const { salary, tgl_masuk, stage_ids, ...userUpdateData } = updateDto;
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id },
+        data: userUpdateData,
+        include: { role: true },
+      });
+
+      const isStaffOrAdmin = updatedUser.role_id === 2 || updatedUser.role_id === 3;
+      
+      const existingStaff = await tx.staff.findUnique({
+        where: { user_id: id },
+        include: {
+          _count: {
+            select: {
+              progressReports: true,
+              salaryPayments: true,
+            },
+          },
+        },
+      });
+
+      if (isStaffOrAdmin) {
+        if (!existingStaff) {
+          // Buat record staff baru jika belum ada
+          const staff = await tx.staff.create({
+            data: {
+              user_id: id,
+              tgl_masuk: tgl_masuk ? new Date(tgl_masuk) : new Date(),
+              salary: salary ?? 0,
+            },
+          });
+
+          if (stageIds.length) {
+            await tx.staffStage.createMany({
+              data: stageIds.map((stageId) => ({
+                staff_id: staff.id,
+                stage_id: stageId,
+              })),
+            });
+          }
+        } else {
+          // Update record staff yang sudah ada
+          const staffUpdateData: any = {};
+          if (tgl_masuk !== undefined) staffUpdateData.tgl_masuk = new Date(tgl_masuk);
+          if (salary !== undefined) staffUpdateData.salary = salary;
+
+          if (Object.keys(staffUpdateData).length) {
+            await tx.staff.update({
+              where: { id: existingStaff.id },
+              data: staffUpdateData,
+            });
+          }
+
+          if (stage_ids !== undefined) {
+            await tx.staffStage.deleteMany({ where: { staff_id: existingStaff.id } });
+            if (stageIds.length) {
+              await tx.staffStage.createMany({
+                data: stageIds.map((stageId) => ({
+                  staff_id: existingStaff.id,
+                  stage_id: stageId,
+                })),
+              });
+            }
+          }
+        }
+      } else {
+        // Jika didowngrade ke peran non-staff/non-admin
+        if (existingStaff) {
+          const hasHistory = existingStaff._count.progressReports > 0 || existingStaff._count.salaryPayments > 0;
+          if (hasHistory) {
+            throw new BadRequestException(
+              'Gagal mengubah role. User ini memiliki riwayat pekerjaan atau transaksi penggajian aktif di sistem staff.'
+            );
+          }
+          await tx.staff.delete({ where: { user_id: id } });
+        }
+      }
+
+      return updatedUser;
     });
   }
 

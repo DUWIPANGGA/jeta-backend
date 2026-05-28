@@ -21,5 +21,5 @@ export class CreateUserDto {
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  role_id: number;  // ← ganti dari 'role' jadi 'role_id'
+  role_id: number;
 }

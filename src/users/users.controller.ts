@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
@@ -65,6 +66,13 @@ export class UsersController {
   @Access('Users', 'create')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  // ==================== CREATE STAFF USER ====================
+  @Post('staffs')
+  @Access('Users', 'create')
+  createStaff(@Body() createStaffUserDto: CreateStaffUserDto) {
+    return this.usersService.createStaff(createStaffUserDto);
   }
 
   // ==================== UPDATE USER ====================

@@ -27,8 +27,8 @@ export class StaffService {
       where: { id: createDto.user_id },
     });
     if (!user) throw new NotFoundException(`User with ID ${createDto.user_id} not found`);
-    if (user.role_id !== 3) {
-      throw new BadRequestException(`User ID ${createDto.user_id} does not have role 'staff' (role_id=3)`);
+    if (user.role_id !== 2 && user.role_id !== 3) {
+      throw new BadRequestException(`User ID ${createDto.user_id} must have role 'admin' or 'staff'`);
     }
 
     // Validasi stage_ids
@@ -73,7 +73,7 @@ export class StaffService {
 
   async findAll() {
     return this.prisma.staff.findMany({
-      where: { user: { role_id: 3 } },
+      where: { user: { role_id: { in: [2, 3] } } },
       orderBy: { created_at: 'desc' },
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, address: true, role_id: true } },
@@ -107,7 +107,7 @@ export class StaffService {
       }
       const user = await this.prisma.user.findUnique({ where: { id: updateDto.user_id } });
       if (!user) throw new NotFoundException(`User with ID ${updateDto.user_id} not found`);
-      if (user.role_id !== 3) throw new BadRequestException(`User ID ${updateDto.user_id} is not a staff`);
+      if (user.role_id !== 2 && user.role_id !== 3) throw new BadRequestException(`User ID ${updateDto.user_id} does not have role 'admin' or 'staff'`);
     }
 
     // Update stage_ids jika disediakan (replace)
@@ -151,7 +151,7 @@ export class StaffService {
   async updateOrCreateByUserId(userId: number, updateDto: UpdateStaffDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException(`User with ID ${userId} not found`);
-    if (user.role_id !== 3) throw new BadRequestException(`User ID ${userId} is not a staff`);
+    if (user.role_id !== 2 && user.role_id !== 3) throw new BadRequestException(`User ID ${userId} does not have role 'admin' or 'staff'`);
 
     let staff = await this.prisma.staff.findFirst({ where: { user_id: userId } });
 
