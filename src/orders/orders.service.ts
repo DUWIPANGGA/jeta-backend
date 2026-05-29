@@ -78,8 +78,43 @@ export class OrdersService {
   }
 
   async update(id: number, dto: any) {
-    await this.findOne(id);
-    return this.prisma.order.update({ where: { id }, data: dto });
+    const order = await this.findOne(id);
+
+    return this.prisma.$transaction(async (tx) => {
+      // Jika status diubah menjadi 'cancelled' dan sebelumnya bukan 'cancelled'
+      if (dto.status === 'cancelled' && order.status !== 'cancelled') {
+        for (const item of order.order_items) {
+          if (item.variant_id) {
+            await tx.productVariant.update({
+              where: { id: item.variant_id },
+              data: { stock: { increment: item.quantity } },
+            });
+          }
+        }
+      }
+
+      // Jika status diubah DARI 'cancelled' menjadi status aktif kembali
+      if (dto.status && dto.status !== 'cancelled' && order.status === 'cancelled') {
+        for (const item of order.order_items) {
+          if (item.variant_id) {
+            const variant = await tx.productVariant.findUnique({
+              where: { id: item.variant_id },
+            });
+            if (!variant || variant.stock < item.quantity) {
+              throw new BadRequestException(
+                `Gagal memulihkan pesanan. Stok tidak mencukupi untuk varian produk ID ${item.variant_id}.`,
+              );
+            }
+            await tx.productVariant.update({
+              where: { id: item.variant_id },
+              data: { stock: { decrement: item.quantity } },
+            });
+          }
+        }
+      }
+
+      return tx.order.update({ where: { id }, data: dto });
+    });
   }
 
   async updateTracking(id: number, stageName: string) {
@@ -134,8 +169,23 @@ export class OrdersService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    await this.prisma.order.delete({ where: { id } });
-    return { message: `Order #${id} successfully deleted` };
+    const order = await this.findOne(id);
+
+    return this.prisma.$transaction(async (tx) => {
+      // Jika status order bukan 'cancelled', kembalikan stok terlebih dahulu sebelum dihapus
+      if (order.status !== 'cancelled') {
+        for (const item of order.order_items) {
+          if (item.variant_id) {
+            await tx.productVariant.update({
+              where: { id: item.variant_id },
+              data: { stock: { increment: item.quantity } },
+            });
+          }
+        }
+      }
+
+      await tx.order.delete({ where: { id } });
+      return { message: `Order #${id} successfully deleted` };
+    });
   }
 }
