@@ -19,7 +19,6 @@ export class OrdersService {
       offline_phone,
       offline_address,
       shipping_address,
-      shipping_cost,
       payment_method_id,
       payment_status, // true = Lunas Instan di Kasir, false/undefined = pending
       items,
@@ -175,10 +174,10 @@ export class OrdersService {
         paymentInstructions: isPaidInstantly
           ? { message: 'Pembayaran lunas seketika di Kasir.' }
           : {
-              bank: paymentMethod.bank_name,
-              accountNumber: paymentMethod.bank_account,
-              ownerName: paymentMethod.owner_name,
-            },
+            bank: paymentMethod.bank_name,
+            accountNumber: paymentMethod.bank_account,
+            ownerName: paymentMethod.owner_name,
+          },
       };
     });
   }
