@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -98,6 +98,57 @@ export class GuestService {
       success: true,
       message: 'Stages retrieved successfully',
       data: stages,
+    };
+  }
+
+  // ✅ Metode baru: Pelacakan pesanan kustom publik dengan verifikasi ganda email/no.telp
+  async trackCustomOrder(id: number, contact: string) {
+    const cleanContact = contact.trim().toLowerCase();
+
+    const customOrder = await this.prisma.customOrder.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        payments: true,
+        items: {
+          include: {
+            selected_options: {
+              include: {
+                variant_option: {
+                  include: { custom_variant: true },
+                },
+              },
+            },
+          },
+        },
+        tracking: {
+          include: {
+            tracking_histories: {
+              orderBy: { created_at: 'desc' },
+            },
+          },
+        },
+      },
+    });
+
+    if (!customOrder) {
+      throw new NotFoundException(`Custom Order dengan ID ${id} tidak ditemukan.`);
+    }
+
+    // Validasi silang kontak (Bisa mencocokkan email/no.telp pemesan langsung atau user terdaftar)
+    const matchDirectEmail = customOrder.email?.trim().toLowerCase() === cleanContact;
+    const matchDirectPhone = customOrder.phone?.trim() === contact.trim();
+    const matchUserEmail = customOrder.user?.email?.trim().toLowerCase() === cleanContact;
+    const matchUserPhone = customOrder.user?.phone?.trim() === contact.trim();
+
+    if (!matchDirectEmail && !matchDirectPhone && !matchUserEmail && !matchUserPhone) {
+      throw new BadRequestException('Verifikasi kontak gagal. Email atau nomor telepon tidak cocok dengan data pemesan.');
+    }
+
+    return {
+      success: true,
+      message: 'Pelacakan pesanan kustom berhasil ditemukan.',
+      data: customOrder,
     };
   }
 }

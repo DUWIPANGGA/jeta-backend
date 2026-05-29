@@ -1,5 +1,5 @@
 // src/guest/guest.controller.ts
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, BadRequestException } from '@nestjs/common';
 import { GuestService } from './guest.service';
 import { OrdersService } from '../orders/orders.service';
 
@@ -48,5 +48,17 @@ export class GuestController {
   @Get('track-order/:orderNumber')
   async trackOrderByNumber(@Param('orderNumber') orderNumber: string) {
     return this.ordersService.findByOrderNumber(orderNumber);
+  }
+
+  // ✅ Guest bisa melacak pesanan kustom berdasarkan ID + Email/Telepon secara publik (aman dari IDOR)
+  @Get('track-custom-order')
+  async trackCustomOrder(
+    @Query('id') id: string,
+    @Query('contact') contact: string,
+  ) {
+    if (!id || !contact) {
+      throw new BadRequestException('ID Pesanan dan Email/No. Telepon harus diisi.');
+    }
+    return this.guestService.trackCustomOrder(+id, contact);
   }
 }
