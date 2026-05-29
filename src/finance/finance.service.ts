@@ -1,11 +1,184 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CalculateSalaryDto } from './dto/calculate-salary.dto';
+import { ProcessSalaryDto } from './dto/process-salary.dto';
+import { SalaryPeriodType } from '@prisma/client';
 import * as fs from 'fs';
 
 @Injectable()
 export class FinanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
+
+  // ==================== HELPER: HITUNG PERIODE ====================
+  private getPeriodDates(periodType: SalaryPeriodType, year?: number, month?: number): { start: Date; end: Date; label: string } {
+    const now = new Date();
+    const currentYear = year || now.getFullYear();
+    const currentMonth = month !== undefined ? month - 1 : now.getMonth();
+
+    let start: Date;
+    let end: Date;
+    let label: string;
+
+    switch (periodType) {
+      case 'daily':
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        label = `${start.toLocaleDateString('id-ID')}`;
+        break;
+
+      case 'weekly':
+        const dayOfWeek = now.getDay();
+        const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        start = new Date(now);
+        start.setDate(now.getDate() - diffToMonday);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+        label = `${start.toLocaleDateString('id-ID')} - ${end.toLocaleDateString('id-ID')}`;
+        break;
+
+      case 'monthly':
+        start = new Date(currentYear, currentMonth, 1);
+        end = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+        label = `${start.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+        break;
+
+      default:
+        start = new Date(currentYear, currentMonth, 1);
+        end = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+        label = `${start.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+    }
+
+    return { start, end, label };
+  }
+
+  // ==================== HELPER: HITUNG GAJI STAFF PER PERIODE ====================
+  private async calculateStaffSalaryForPeriod(
+    staffId: number,
+    periodType: SalaryPeriodType,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+      include: {
+        user: true,
+        salaryProjects: true,
+      },
+    });
+
+    if (!staff) {
+      throw new NotFoundException(`Staff with ID ${staffId} not found`);
+    }
+
+    // Ambil WorkLogs dalam periode
+    const workLogs = await this.prisma.workLog.findMany({
+      where: {
+        user_id: staff.user_id,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        stage: true,
+        custom_order: true,
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
+    // Ambil ProgressReports dalam periode
+    const progressReports = await this.prisma.progressReport.findMany({
+      where: {
+        staff_id: staffId,
+        approval_status: true,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        stage: true,
+        project: {
+          include: {
+            custom_order: true,
+          },
+        },
+      },
+    });
+
+    // Gabungkan dan hitung total quantity
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    const workLogDetails: any[] = [];
+
+    // Proses WorkLogs
+    for (const log of workLogs) {
+      const adjustment = staff.salaryProjects.find(
+        (sp) => sp.project_id === log.custom_order_id,
+      );
+      const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
+      const amount = (log.quantity || 0) * ratePerUnit;
+
+      totalQuantity += log.quantity || 0;
+      totalAmount += amount;
+
+      workLogDetails.push({
+        date: log.created_at,
+        quantity: log.quantity,
+        amount: amount,
+        stage_name: log.stage?.stage_name,
+        project_name: log.custom_order?.name,
+        source: 'work_log',
+      });
+    }
+
+    // Proses ProgressReports
+    for (const report of progressReports) {
+      const adjustment = staff.salaryProjects.find(
+        (sp) => sp.project_id === report.project?.custom_order_id,
+      );
+      const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
+      const amount = (report.quantity || 0) * ratePerUnit;
+
+      totalQuantity += report.quantity || 0;
+      totalAmount += amount;
+
+      workLogDetails.push({
+        date: report.created_at,
+        quantity: report.quantity,
+        amount: amount,
+        stage_name: report.stage?.stage_name,
+        project_name: report.project?.custom_order?.name,
+        source: 'progress_report',
+      });
+    }
+
+    // Cek apakah sudah dibayar untuk periode ini
+    const existingPayment = await this.prisma.salaryPayment.findFirst({
+      where: {
+        staff_id: staffId,
+        period_start: startDate,
+        period_end: endDate,
+      },
+    });
+
+    return {
+      staff_id: staff.id,
+      name: staff.user.name,
+      email: staff.user.email,
+      base_salary: staff.salary,
+      total_quantity: totalQuantity,
+      total_salary: totalAmount,
+      rate_per_unit: totalQuantity > 0 ? totalAmount / totalQuantity : 0,
+      already_paid: !!existingPayment,
+      work_logs: workLogDetails,
+    };
+  }
 
   // ==================== STAFF RANKING ====================
   async getStaffRanking() {
@@ -101,11 +274,9 @@ export class FinanceService {
       const pId = report.project_id;
       const qty = report.quantity ?? 0;
 
-      // Total quantity
       const currentTotal = totalQuantityMap.get(pId) ?? 0;
       totalQuantityMap.set(pId, currentTotal + qty);
 
-      // Unpaid quantity
       if (!report.salaryPaymentDetail) {
         const currentUnpaid = unpaidQuantityMap.get(pId) ?? 0;
         unpaidQuantityMap.set(pId, currentUnpaid + qty);
@@ -127,8 +298,8 @@ export class FinanceService {
       const customOrder = pm.project?.custom_order;
       if (customOrder?.items && customOrder.items.length > 0) {
         deskripsiProduk = customOrder.items
-          .flatMap(item => 
-            item.selected_options?.map(opt => 
+          .flatMap(item =>
+            item.selected_options?.map(opt =>
               `${opt.variant_option?.custom_variant?.name || ''} ${opt.variant_option?.name || ''}`.trim()
             ) || []
           )
@@ -153,7 +324,7 @@ export class FinanceService {
     return projects;
   }
 
-  // ==================== PEMBAYARAN ====================
+  // ==================== PEMBAYARAN PER PROYEK (EXISTING) ====================
   async createPayment(
     createDto: CreatePaymentDto,
     financeUserId: number,
@@ -266,6 +437,245 @@ export class FinanceService {
       payment_id: payment.id,
       total_amount: totalAmount,
       proof: proofPath,
+    };
+  }
+
+  // ==================== PREVIEW GAJI PER PERIODE ====================
+  async previewSalaryByPeriod(dto: CalculateSalaryDto) {
+    const { period_type, year, month } = dto;
+
+    const { start, end, label } = this.getPeriodDates(period_type, year, month);
+
+    const staffs = await this.prisma.staff.findMany({
+      include: {
+        user: true,
+      },
+    });
+
+    const staffSalaries: {
+      staff_id: number;
+      name: string;
+      email: string;
+      base_salary: number | null;
+      total_quantity: number;
+      total_salary: number;
+      rate_per_unit: number;
+      already_paid: boolean;
+      work_logs: any[];
+    }[] = [];
+
+    let totalQuantity = 0;
+    let totalSalary = 0;
+
+    for (const staff of staffs) {
+      const calculation = await this.calculateStaffSalaryForPeriod(
+        staff.id,
+        period_type,
+        start,
+        end,
+      );
+
+      staffSalaries.push(calculation);
+      totalQuantity += calculation.total_quantity;
+      totalSalary += calculation.total_salary;
+    }
+
+    const filteredStaffSalaries = staffSalaries.filter(s => s.total_quantity > 0);
+
+    return {
+      period: {
+        type: period_type,
+        start_date: start,
+        end_date: end,
+        label: label,
+      },
+      summary: {
+        total_staff: filteredStaffSalaries.length,
+        total_quantity: totalQuantity,
+        total_salary: totalSalary,
+      },
+      staff_salaries: filteredStaffSalaries,
+    };
+  }
+
+  // ==================== PROSES GAJI PER PERIODE ====================
+  async processSalaryByPeriod(dto: ProcessSalaryDto, financeUserId: number) {
+    const { staff_ids, period_type, year, month, notes } = dto;
+
+    const { start, end, label } = this.getPeriodDates(period_type, year, month);
+
+    const finance = await this.prisma.user.findUnique({
+      where: { id: financeUserId },
+      include: { role: true },
+    });
+    const hasFinanceAccess =
+      finance?.role?.name === 'finance' ||
+      finance?.role?.name === 'admin' ||
+      finance?.role?.name === 'superadmin';
+    if (!finance || !hasFinanceAccess) {
+      throw new ForbiddenException('Only finance can make payments');
+    }
+
+    const results: {
+      staff_id: number;
+      staff_name: string;
+      status: string;
+      message?: string;
+      payment_id?: number;
+      total_amount?: number;
+      period_start?: Date;
+      period_end?: Date;
+    }[] = [];
+
+    for (const staffId of staff_ids) {
+      const calculation = await this.calculateStaffSalaryForPeriod(
+        staffId,
+        period_type,
+        start,
+        end,
+      );
+
+      if (calculation.already_paid) {
+        results.push({
+          staff_id: staffId,
+          staff_name: calculation.name,
+          status: 'skipped',
+          message: 'Already paid for this period',
+        });
+        continue;
+      }
+
+      if (calculation.total_salary === 0) {
+        results.push({
+          staff_id: staffId,
+          staff_name: calculation.name,
+          status: 'skipped',
+          message: 'No work log found for this period',
+        });
+        continue;
+      }
+
+      const payment = await this.prisma.$transaction(async (tx) => {
+        const salaryPayment = await tx.salaryPayment.create({
+          data: {
+            staff_id: staffId,
+            paid_by: financeUserId,
+            total_amount: calculation.total_salary,
+            period_type: period_type,
+            period_start: start,
+            period_end: end,
+            notes: notes || `Gaji ${label}`,
+          },
+        });
+
+        const progressReports = await tx.progressReport.findMany({
+          where: {
+            staff_id: staffId,
+            approval_status: true,
+            created_at: {
+              gte: start,
+              lte: end,
+            },
+          },
+        });
+
+        for (const report of progressReports) {
+          const adjustment = await tx.salaryProjects.findFirst({
+            where: {
+              staff_id: staffId,
+              project_id: report.project_id,
+            },
+          });
+          const ratePerUnit = (calculation.base_salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
+          const amount = (report.quantity ?? 0) * ratePerUnit;
+
+          await tx.salaryPaymentDetail.create({
+            data: {
+              salary_payment_id: salaryPayment.id,
+              progress_report_id: report.id,
+              amount: amount,
+            },
+          });
+        }
+
+        return salaryPayment;
+      });
+
+      results.push({
+        staff_id: staffId,
+        staff_name: calculation.name,
+        status: 'success',
+        payment_id: payment.id,
+        total_amount: calculation.total_salary,
+        period_start: start,
+        period_end: end,
+      });
+    }
+
+    return {
+      message: 'Salary payment processed',
+      results,
+    };
+  }
+
+  // ==================== GET GAJI STAFF BY PERIODE ====================
+  async getSalaryByPeriod(
+    staffId: number,
+    periodType: SalaryPeriodType,
+    year?: number,
+    month?: number,
+  ) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+      include: { user: true },
+    });
+
+    if (!staff) {
+      throw new NotFoundException(`Staff with ID ${staffId} not found`);
+    }
+
+    const { start, end, label } = this.getPeriodDates(periodType, year, month);
+
+    const payments = await this.prisma.salaryPayment.findMany({
+      where: {
+        staff_id: staffId,
+        period_start: { gte: start },
+        period_end: { lte: end },
+      },
+      include: {
+        details: true,
+        finance: { select: { name: true } },
+      },
+      orderBy: { payment_date: 'desc' },
+    });
+
+    const calculation = await this.calculateStaffSalaryForPeriod(
+      staffId,
+      periodType,
+      start,
+      end,
+    );
+
+    return {
+      staff: {
+        id: staff.id,
+        name: staff.user.name,
+        base_salary: staff.salary,
+      },
+      period: {
+        type: periodType,
+        start: start,
+        end: end,
+        label: label,
+      },
+      summary: {
+        total_quantity: calculation.total_quantity,
+        total_salary: calculation.total_salary,
+        paid_amount: payments.reduce((sum, p) => sum + (p.total_amount || 0), 0),
+        unpaid_amount: calculation.total_salary - payments.reduce((sum, p) => sum + (p.total_amount || 0), 0),
+      },
+      payments,
+      work_logs: calculation.work_logs,
     };
   }
 }

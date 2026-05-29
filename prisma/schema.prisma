@@ -58,6 +58,14 @@ enum ProgressStatus {
   selesai
 }
 
+// ==================== TAMBAHAN UNTUK GAJI PERIODE ====================
+enum SalaryPeriodType {
+  daily
+  weekly
+  monthly
+}
+// ============================================================================
+
 // ─────────────────────────────────────────────────────────────────────────────
 // USERS, ROLES & ACCESS CONTROL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -780,15 +788,18 @@ model ProgressReport {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model SalaryPayment {
-  id            Int       @id @default(autoincrement())
+  id            Int              @id @default(autoincrement())
   staff_id      Int
   paid_by       Int
   total_amount  Int?
-  payment_date  DateTime  @default(now())
+  period_type   SalaryPeriodType @default(monthly)  // ← TAMBAH: jenis periode
+  period_start  DateTime?                           // ← TAMBAH: awal periode
+  period_end    DateTime?                           // ← TAMBAH: akhir periode
+  payment_date  DateTime         @default(now())
   proof         String?
   notes         String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
 
   staff         Staff     @relation(fields: [staff_id], references: [id], onDelete: Cascade)
   finance       User      @relation(fields: [paid_by], references: [id], onDelete: Cascade)

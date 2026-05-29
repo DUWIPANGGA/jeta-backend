@@ -19,6 +19,9 @@ CREATE TYPE "ConsultationStatus" AS ENUM ('pending', 'completed', 'cancelled');
 -- CreateEnum
 CREATE TYPE "ProgressStatus" AS ENUM ('pending', 'proses', 'selesai');
 
+-- CreateEnum
+CREATE TYPE "SalaryPeriodType" AS ENUM ('daily', 'weekly', 'monthly');
+
 -- CreateTable
 CREATE TABLE "roles" (
     "id" SERIAL NOT NULL,
@@ -395,7 +398,8 @@ CREATE TABLE "transactions" (
 -- CreateTable
 CREATE TABLE "trackings" (
     "id" SERIAL NOT NULL,
-    "order_id" INTEGER NOT NULL,
+    "order_id" INTEGER,
+    "custom_order_id" INTEGER,
     "current_stage" TEXT NOT NULL,
     "progress_percentage" INTEGER NOT NULL,
     "estimated_completion" TIMESTAMP(3) NOT NULL,
@@ -582,6 +586,9 @@ CREATE TABLE "salary_payments" (
     "staff_id" INTEGER NOT NULL,
     "paid_by" INTEGER NOT NULL,
     "total_amount" INTEGER,
+    "period_type" "SalaryPeriodType" NOT NULL DEFAULT 'monthly',
+    "period_start" TIMESTAMP(3),
+    "period_end" TIMESTAMP(3),
     "payment_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "proof" TEXT,
     "notes" TEXT,
@@ -653,6 +660,9 @@ CREATE UNIQUE INDEX "logistics_alias_key" ON "logistics"("alias");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "payments_order_id_key" ON "payments"("order_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "trackings_custom_order_id_key" ON "trackings"("custom_order_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "staffs_user_id_key" ON "staffs"("user_id");
@@ -755,6 +765,9 @@ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_payment_id_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "trackings" ADD CONSTRAINT "trackings_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "trackings" ADD CONSTRAINT "trackings_custom_order_id_fkey" FOREIGN KEY ("custom_order_id") REFERENCES "custom_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tracking_histories" ADD CONSTRAINT "tracking_histories_tracking_id_fkey" FOREIGN KEY ("tracking_id") REFERENCES "trackings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
