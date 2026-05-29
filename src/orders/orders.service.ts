@@ -98,7 +98,7 @@ export class OrdersService {
         });
       }
 
-      const grandTotal = itemsTotal + (shipping_cost || 0);
+      const grandTotal = itemsTotal;
       const orderNumber = `ORD-ADM-${Date.now()}-${randomBytes(2).toString('hex').toUpperCase()}`;
 
       // 4. Tentukan status awal Order & Payment berdasarkan parameter `payment_status`
@@ -113,7 +113,7 @@ export class OrdersService {
           order_number: orderNumber,
           grand_total: grandTotal,
           shipping_address: finalShippingAddress,
-          shipping_cost: shipping_cost || 0,
+          shipping_cost: 0,
           payment_method: paymentMethod.bank_name,
           status: initialOrderStatus as any,
           is_admin_order: true,
@@ -293,6 +293,10 @@ export class OrdersService {
 
   async updateTracking(id: number, stageName: string) {
     const order = await this.findOne(id);
+
+    if (order.status === 'cancelled') {
+      throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
+    }
 
     return await this.prisma.$transaction(async (tx) => {
       // 1. Get or create tracking record

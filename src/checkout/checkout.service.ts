@@ -112,7 +112,7 @@ export class CheckoutService {
         });
       }
 
-      const grandTotal = itemsTotal + (Number(shippingCost) || 0);
+      const grandTotal = itemsTotal;
       const orderNumber = `ORD-${Date.now()}-${randomBytes(2).toString('hex').toUpperCase()}`;
 
       // 3. Simpan data Order baru
@@ -122,7 +122,7 @@ export class CheckoutService {
           order_number: orderNumber,
           grand_total: grandTotal,
           shipping_address: shippingAddress || 'N/A',
-          shipping_cost: Number(shippingCost) || 0,
+          shipping_cost: 0,
           payment_method: paymentMethod.bank_name,
           status: 'pending',
           order_items: {
