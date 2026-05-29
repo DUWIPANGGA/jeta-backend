@@ -9,41 +9,80 @@ export class TrackingsService {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(createDto: CreateTrackingDto) {
-    // Validasi order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: createDto.order_id },
-    });
-    if (!order) {
-      throw new BadRequestException(`Order with ID ${createDto.order_id} not found`);
+    const { order_id, custom_order_id, current_stage, progress_percentage, estimated_completion } = createDto;
+
+    if ((!order_id && !custom_order_id) || (order_id && custom_order_id)) {
+      throw new BadRequestException('Harus menentukan salah satu dari order_id atau custom_order_id.');
     }
 
-    if (order.status === 'cancelled') {
-      throw new BadRequestException('Tidak dapat membuat pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
-    }
-    if (order.status === 'pending') {
-      throw new BadRequestException('Tidak dapat membuat pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
-    }
+    const dataToCreate: any = {
+      current_stage,
+      progress_percentage,
+      estimated_completion: new Date(estimated_completion),
+    };
 
-    // Cek apakah tracking sudah ada untuk order ini
-    const existingTracking = await this.prisma.tracking.findFirst({
-      where: { order_id: createDto.order_id },
-    });
-    if (existingTracking) {
-      throw new BadRequestException(`Tracking already exists for order ID ${createDto.order_id}`);
+    if (order_id) {
+      const order = await this.prisma.order.findUnique({
+        where: { id: order_id },
+      });
+      if (!order) {
+        throw new BadRequestException(`Order with ID ${order_id} not found`);
+      }
+      if (order.status === 'cancelled') {
+        throw new BadRequestException('Tidak dapat membuat pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
+      }
+      if (order.status === 'pending') {
+        throw new BadRequestException('Tidak dapat membuat pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
+      }
+
+      const existingTracking = await this.prisma.tracking.findFirst({
+        where: { order_id },
+      });
+      if (existingTracking) {
+        throw new BadRequestException(`Tracking already exists for order ID ${order_id}`);
+      }
+
+      dataToCreate.order_id = order_id;
+    } else if (custom_order_id) {
+      const customOrder = await this.prisma.customOrder.findUnique({
+        where: { id: custom_order_id },
+      });
+      if (!customOrder) {
+        throw new BadRequestException(`Custom Order with ID ${custom_order_id} not found`);
+      }
+      if (!customOrder.accept_status) {
+        throw new BadRequestException('Tidak dapat membuat pelacakan pengiriman untuk pesanan kustom yang belum disetujui.');
+      }
+
+      const existingTracking = await this.prisma.tracking.findFirst({
+        where: { custom_order_id },
+      });
+      if (existingTracking) {
+        throw new BadRequestException(`Tracking already exists for custom order ID ${custom_order_id}`);
+      }
+
+      dataToCreate.custom_order_id = custom_order_id;
     }
 
     return this.prisma.tracking.create({
-      data: {
-        order_id: createDto.order_id,
-        current_stage: createDto.current_stage,
-        progress_percentage: createDto.progress_percentage,
-        estimated_completion: new Date(createDto.estimated_completion),
-      },
+      data: dataToCreate,
       include: {
         order: {
           select: {
             id: true,
             order_number: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
             user: {
               select: {
                 id: true,
@@ -74,6 +113,18 @@ export class TrackingsService {
             },
           },
         },
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
         tracking_histories: {
           orderBy: { created_at: 'desc' },
           take: 5,
@@ -92,6 +143,19 @@ export class TrackingsService {
             id: true,
             order_number: true,
             status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
+            accept_status: true,
             user: {
               select: {
                 id: true,
@@ -132,14 +196,41 @@ export class TrackingsService {
     return tracking;
   }
 
+  async findByCustomOrder(customOrderId: number) {
+    const tracking = await this.prisma.tracking.findFirst({
+      where: { custom_order_id: customOrderId },
+      include: {
+        custom_order: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tracking_histories: {
+          orderBy: { created_at: 'desc' },
+        },
+      },
+    });
+    if (!tracking) {
+      throw new NotFoundException(`Tracking for custom order ID ${customOrderId} not found`);
+    }
+    return tracking;
+  }
+
   async update(id: number, updateDto: UpdateTrackingDto) {
     const tracking = await this.findOne(id);
 
-    if (tracking.order.status === 'cancelled') {
-      throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
-    }
-    if (tracking.order.status === 'pending') {
-      throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
+    if (tracking.order) {
+      if (tracking.order.status === 'cancelled') {
+        throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
+      }
+      if (tracking.order.status === 'pending') {
+        throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
+      }
+    } else if (tracking.custom_order) {
+      if (!tracking.custom_order.accept_status) {
+        throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan kustom yang belum disetujui.');
+      }
     }
 
     const updateData: any = {};
@@ -170,15 +261,21 @@ export class TrackingsService {
               order_number: true,
             },
           },
+          custom_order: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           tracking_histories: {
             orderBy: { created_at: 'desc' },
           },
         },
       });
 
-      if (nextOrderStatus && tracking.order.status !== nextOrderStatus) {
+      if (nextOrderStatus && tracking.order && tracking.order.status !== nextOrderStatus) {
         await tx.order.update({
-          where: { id: tracking.order_id },
+          where: { id: tracking.order.id },
           data: { status: nextOrderStatus as any },
         });
       }
@@ -190,11 +287,17 @@ export class TrackingsService {
   async updateStage(id: number, stageName: string, progressPercentage?: number) {
     const tracking = await this.findOne(id);
 
-    if (tracking.order.status === 'cancelled') {
-      throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
-    }
-    if (tracking.order.status === 'pending') {
-      throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
+    if (tracking.order) {
+      if (tracking.order.status === 'cancelled') {
+        throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
+      }
+      if (tracking.order.status === 'pending') {
+        throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
+      }
+    } else if (tracking.custom_order) {
+      if (!tracking.custom_order.accept_status) {
+        throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan kustom yang belum disetujui.');
+      }
     }
 
     const mapping = TRACKING_STAGE_MAP[stageName];
@@ -219,6 +322,7 @@ export class TrackingsService {
         },
         include: {
           order: true,
+          custom_order: true,
           tracking_histories: {
             orderBy: { created_at: 'desc' },
           },
@@ -226,9 +330,9 @@ export class TrackingsService {
       });
 
       // 3. Update order status if mapped and changed
-      if (nextOrderStatus && tracking.order.status !== nextOrderStatus) {
+      if (nextOrderStatus && tracking.order && tracking.order.status !== nextOrderStatus) {
         await tx.order.update({
-          where: { id: tracking.order_id },
+          where: { id: tracking.order.id },
           data: { status: nextOrderStatus as any },
         });
       }

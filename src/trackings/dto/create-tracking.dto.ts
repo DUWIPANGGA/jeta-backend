@@ -3,8 +3,14 @@ import { Type } from 'class-transformer';
 
 export class CreateTrackingDto {
   @IsInt()
+  @IsOptional()
   @Type(() => Number)
-  order_id: number;
+  order_id?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  custom_order_id?: number;
 
   @IsString()
   current_stage: string;

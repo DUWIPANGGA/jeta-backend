@@ -23,6 +23,12 @@ export class TrackingsController {
     return this.trackingsService.findByOrder(+orderId);
   }
 
+  @Get('custom-order/:customOrderId')
+  // @Access('Trackings', 'read')
+  findByCustomOrder(@Param('customOrderId') customOrderId: string) {
+    return this.trackingsService.findByCustomOrder(+customOrderId);
+  }
+
   @Get(':id')
   // @Access('Trackings', 'read')
   findOne(@Param('id') id: string) {
