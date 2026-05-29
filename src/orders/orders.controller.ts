@@ -5,6 +5,8 @@ import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
 
+import { CreateAdminOrderDto } from './dto/create-admin-order.dto';
+
 @Controller('orders')
 @UseGuards(JwtAuthGuard, AccessGuard)
 export class OrdersController {
@@ -14,6 +16,13 @@ export class OrdersController {
   @Access('Orders', 'create')
   create(@Body() createDto: any) {
     return this.ordersService.create(createDto);
+  }
+
+  @Post('admin')
+  @Access('Orders', 'create')
+  createAdminOrder(@Body() createAdminOrderDto: CreateAdminOrderDto, @Request() req) {
+    const adminUserId = req.user.id;
+    return this.ordersService.createAdminOrder(createAdminOrderDto, adminUserId);
   }
 
   @Get()

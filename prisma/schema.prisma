@@ -325,6 +325,14 @@ model Order {
   shipping_cost    Int
   payment_method   String
   tracking_code    String?
+  
+  // ==================== FIELD UNTUK ADMIN ORDER KATALOG ====================
+  is_admin_order        Boolean  @default(false)
+  offline_customer_name String?
+  offline_phone         String?
+  offline_address       String?
+  // ============================================================================
+  
   created_at       DateTime        @default(now())
   updated_at       DateTime        @updatedAt
 
