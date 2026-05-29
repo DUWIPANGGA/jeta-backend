@@ -1,12 +1,25 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdminOrderDto } from './dto/create-admin-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import { randomBytes } from 'crypto';
 import { PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) { }
+
+  // ==================== STATE MACHINE: Transisi Status Order ====================
+  // Menentukan transisi status yang diizinkan untuk mencegah bypass lifecycle.
+  // Contoh: 'pending' hanya boleh ke 'processing' atau 'cancelled'.
+  private readonly VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+    pending: ['processing', 'cancelled'],
+    processing: ['shipped', 'completed', 'cancelled'],
+    shipped: ['completed', 'cancelled'],
+    completed: [],    // Status final — tidak boleh diubah
+    cancelled: ['processing'],  // Bisa dipulihkan dengan validasi stok
+  };
+  // ==============================================================================
 
   create(dto: any) {
     return this.prisma.order.create({ data: dto });
@@ -250,8 +263,20 @@ export class OrdersService {
     return item;
   }
 
-  async update(id: number, dto: any) {
+  async update(id: number, dto: UpdateOrderDto) {
     const order = await this.findOne(id);
+
+    // Validasi transisi status (State Machine)
+    if (dto.status && dto.status !== order.status) {
+      const currentStatus = order.status as string;
+      const allowedTransitions = this.VALID_STATUS_TRANSITIONS[currentStatus] || [];
+      if (!allowedTransitions.includes(dto.status)) {
+        throw new BadRequestException(
+          `Transisi status tidak diizinkan: '${currentStatus}' → '${dto.status}'. ` +
+          `Transisi yang diizinkan dari '${currentStatus}': [${allowedTransitions.join(', ') || 'tidak ada'}].`
+        );
+      }
+    }
 
     return this.prisma.$transaction(async (tx) => {
       // Jika status diubah menjadi 'cancelled' dan sebelumnya bukan 'cancelled'
@@ -295,6 +320,10 @@ export class OrdersService {
 
     if (order.status === 'cancelled') {
       throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang sudah dibatalkan.');
+    }
+
+    if (order.status === 'pending') {
+      throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
     }
 
     return await this.prisma.$transaction(async (tx) => {
@@ -365,4 +394,68 @@ export class OrdersService {
       return { message: `Order #${id} successfully deleted` };
     });
   }
+
+  // ==================== AUTO-CANCEL: Pesanan Pending yang Expired ====================
+  // Membatalkan pesanan pending yang sudah melewati batas waktu tertentu dan
+  // mengembalikan stok serta mengubah payment status ke 'failed'.
+  // Bisa dipanggil via endpoint admin atau dijadwalkan via cron job (@nestjs/schedule).
+  async cancelExpiredPendingOrders(expirationHours: number = 48): Promise<{
+    cancelledCount: number;
+    cancelledOrderIds: number[];
+  }> {
+    const expirationDate = new Date(Date.now() - expirationHours * 60 * 60 * 1000);
+
+    const expiredOrders = await this.prisma.order.findMany({
+      where: {
+        status: 'pending',
+        created_at: { lt: expirationDate },
+      },
+      include: {
+        order_items: true,
+      },
+    });
+
+    if (expiredOrders.length === 0) {
+      return { cancelledCount: 0, cancelledOrderIds: [] };
+    }
+
+    const cancelledOrderIds: number[] = [];
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const order of expiredOrders) {
+        // 1. Kembalikan stok untuk setiap item
+        for (const item of order.order_items) {
+          if (item.variant_id) {
+            await tx.productVariant.update({
+              where: { id: item.variant_id },
+              data: { stock: { increment: item.quantity } },
+            });
+          }
+        }
+
+        // 2. Update status order ke cancelled
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: 'cancelled' },
+        });
+
+        // 3. Update payment status ke failed
+        await tx.payment.updateMany({
+          where: {
+            order_id: order.id,
+            payment_status: PaymentStatus.pending,
+          },
+          data: { payment_status: PaymentStatus.failed },
+        });
+
+        cancelledOrderIds.push(order.id);
+      }
+    });
+
+    return {
+      cancelledCount: cancelledOrderIds.length,
+      cancelledOrderIds,
+    };
+  }
+  // ==============================================================================
 }

@@ -30,10 +30,6 @@ export class CreateAdminOrderDto {
   @IsString()
   shipping_address?: string;
 
-  @IsOptional()
-  @IsNumber()
-  shipping_cost?: number;
-
   @IsNumber()
   payment_method_id: number;
 
