@@ -4,20 +4,19 @@ import { CreateAdminOrderDto } from './dto/create-admin-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { randomBytes } from 'crypto';
 import { PaymentStatus } from '@prisma/client';
+import { TRACKING_STAGE_MAP } from '../common/constants/tracking.constants';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) { }
 
   // ==================== STATE MACHINE: Transisi Status Order ====================
-  // Menentukan transisi status yang diizinkan untuk mencegah bypass lifecycle.
-  // Contoh: 'pending' hanya boleh ke 'processing' atau 'cancelled'.
   private readonly VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
     pending: ['processing', 'cancelled'],
     processing: ['shipped', 'completed', 'cancelled'],
     shipped: ['completed', 'cancelled'],
-    completed: [],    // Status final — tidak boleh diubah
-    cancelled: ['processing'],  // Bisa dipulihkan dengan validasi stok
+    completed: [],
+    cancelled: ['processing'],
   };
   // ==============================================================================
 
@@ -25,6 +24,7 @@ export class OrdersService {
     return this.prisma.order.create({ data: dto });
   }
 
+  // ==================== CREATE ADMIN ORDER ====================
   async createAdminOrder(dto: CreateAdminOrderDto, adminUserId: number) {
     const {
       user_id,
@@ -32,8 +32,7 @@ export class OrdersService {
       offline_phone,
       offline_address,
       shipping_address,
-      payment_method_id,
-      payment_status, // true = Lunas Instan di Kasir, false/undefined = pending
+      payment_status,
       items,
     } = dto;
 
@@ -42,7 +41,7 @@ export class OrdersService {
     }
 
     // 1. Validasi customer
-    let customerId = adminUserId; // Default jika pelanggan offline
+    let customerId = adminUserId;
     let finalShippingAddress = shipping_address || 'Ambil di Toko';
 
     if (user_id) {
@@ -58,14 +57,6 @@ export class OrdersService {
       }
     }
 
-    // 2. Ambil metode pembayaran
-    const paymentMethod = await this.prisma.paymentMethod.findUnique({
-      where: { id: payment_method_id },
-    });
-    if (!paymentMethod) {
-      throw new NotFoundException(`Metode pembayaran dengan ID ${payment_method_id} tidak ditemukan.`);
-    }
-
     return this.prisma.$transaction(async (tx) => {
       let itemsTotal = 0;
       const orderItemsToCreate: Array<{
@@ -75,7 +66,7 @@ export class OrdersService {
         price: number;
       }> = [];
 
-      // 3. Validasi stok dan hitung total harga
+      // 2. Validasi stok dan hitung total harga
       for (const item of items) {
         const variant = await tx.productVariant.findUnique({
           where: { id: item.product_variant_id },
@@ -92,7 +83,6 @@ export class OrdersService {
           );
         }
 
-        // Kurangi stok secara aman
         await tx.productVariant.update({
           where: { id: variant.id },
           data: { stock: { decrement: item.quantity } },
@@ -113,12 +103,12 @@ export class OrdersService {
       const grandTotal = itemsTotal;
       const orderNumber = `ORD-ADM-${Date.now()}-${randomBytes(2).toString('hex').toUpperCase()}`;
 
-      // 4. Tentukan status awal Order & Payment berdasarkan parameter `payment_status`
+      // 3. Tentukan status awal Order & Payment
       const isPaidInstantly = !!payment_status;
       const initialOrderStatus = isPaidInstantly ? 'processing' : 'pending';
       const initialPaymentStatus = isPaidInstantly ? PaymentStatus.completed : PaymentStatus.pending;
 
-      // 5. Buat Order
+      // 4. Buat Order
       const order = await tx.order.create({
         data: {
           user_id: customerId,
@@ -126,7 +116,7 @@ export class OrdersService {
           grand_total: grandTotal,
           shipping_address: finalShippingAddress,
           shipping_cost: 0,
-          payment_method: paymentMethod.bank_name,
+          payment_method: 'Admin Input',
           status: initialOrderStatus as any,
           is_admin_order: true,
           offline_customer_name: user_id ? null : offline_customer_name,
@@ -151,26 +141,26 @@ export class OrdersService {
         },
       });
 
-      // 6. Buat Payment
+      // 5. Buat Payment (tanpa payment_method_id)
       const payment = await tx.payment.create({
         data: {
           order_id: order.id,
           order_type: 'order',
-          payment_method_id: paymentMethod.id,
+          payment_method_id: null,
           amount: grandTotal,
           payment_status: initialPaymentStatus,
           paid_at: isPaidInstantly ? new Date() : null,
         },
       });
 
-      // 7. Jika lunas instan, buat inisialisasi pelacakan pengiriman (Tracking)
+      // 6. Jika lunas instan, buat inisialisasi pelacakan pengiriman (Tracking)
       if (isPaidInstantly) {
         const tracking = await tx.tracking.create({
           data: {
             order_id: order.id,
             current_stage: 'Pembayaran Diterima',
             progress_percentage: 10,
-            estimated_completion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Default 3 hari
+            estimated_completion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
           },
         });
         await tx.trackingHistory.create({
@@ -186,17 +176,13 @@ export class OrdersService {
         payment,
         paymentInstructions: isPaidInstantly
           ? { message: 'Pembayaran lunas seketika di Kasir.' }
-          : {
-            bank: paymentMethod.bank_name,
-            accountNumber: paymentMethod.bank_account,
-            ownerName: paymentMethod.owner_name,
-          },
+          : { message: 'Pembayaran akan diproses manual oleh Admin.' },
       };
     });
   }
 
+  // ==================== FIND BY USER ====================
   async findByUser(userId: number, loggedInUserId: number, loggedInUserRoleId: number) {
-    // 1. Dapatkan role dari pengguna yang login
     const role = await this.prisma.role.findUnique({
       where: { id: loggedInUserRoleId }
     });
@@ -225,6 +211,7 @@ export class OrdersService {
     });
   }
 
+  // ==================== FIND ALL ====================
   async findAll() {
     return this.prisma.order.findMany({
       include: {
@@ -243,6 +230,7 @@ export class OrdersService {
     });
   }
 
+  // ==================== FIND ONE ====================
   async findOne(id: number) {
     const item = await this.prisma.order.findUnique({
       where: { id },
@@ -262,7 +250,41 @@ export class OrdersService {
     if (!item) throw new NotFoundException(`Order #${id} not found`);
     return item;
   }
+  // ==================== FIND BY ORDER NUMBER (untuk tracking) ====================
+  async findByOrderNumber(orderNumber: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { order_number: orderNumber },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        order_items: {
+          include: {
+            product: { select: { name: true, price: true, image: true } },
+            variant: {
+              include: {
+                size: true,
+                color: true,
+              },
+            },
+          },
+        },
+        trackings: {
+          include: {
+            tracking_histories: {
+              orderBy: { created_at: 'desc' },
+            },
+          },
+        },
+        payment: true,
+      },
+    });
 
+    if (!order) {
+      throw new NotFoundException(`Order with number ${orderNumber} not found`);
+    }
+
+    return order;
+  }
+  // ==================== UPDATE ====================
   async update(id: number, dto: UpdateOrderDto) {
     const order = await this.findOne(id);
 
@@ -315,6 +337,7 @@ export class OrdersService {
     });
   }
 
+  // ==================== UPDATE TRACKING ====================
   async updateTracking(id: number, stageName: string) {
     const order = await this.findOne(id);
 
@@ -325,6 +348,10 @@ export class OrdersService {
     if (order.status === 'pending') {
       throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
     }
+
+    const mapping = TRACKING_STAGE_MAP[stageName];
+    const progress = mapping ? mapping.progress : 0;
+    const nextOrderStatus = mapping?.orderStatus;
 
     return await this.prisma.$transaction(async (tx) => {
       // 1. Get or create tracking record
@@ -337,14 +364,17 @@ export class OrdersService {
           data: {
             order_id: id,
             current_stage: stageName,
-            progress_percentage: 0,
-            estimated_completion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Default 7 days
+            progress_percentage: progress,
+            estimated_completion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           }
         });
       } else {
         tracking = await tx.tracking.update({
           where: { id: tracking.id },
-          data: { current_stage: stageName }
+          data: {
+            current_stage: stageName,
+            progress_percentage: progress,
+          }
         });
       }
 
@@ -356,17 +386,11 @@ export class OrdersService {
         }
       });
 
-      // 3. Update Order Status if final stage
-      const finalStages = ['Selesai', 'Diterima', 'Completed'];
-      if (finalStages.includes(stageName)) {
+      // 3. Update Order Status if mapped and changed
+      if (nextOrderStatus && order.status !== nextOrderStatus) {
         await tx.order.update({
           where: { id },
-          data: { status: 'completed' }
-        });
-      } else if (order.status === 'pending') {
-        await tx.order.update({
-          where: { id },
-          data: { status: 'processing' }
+          data: { status: nextOrderStatus as any }
         });
       }
 
@@ -374,6 +398,7 @@ export class OrdersService {
     });
   }
 
+  // ==================== REMOVE ====================
   async remove(id: number) {
     const order = await this.findOne(id);
 
@@ -396,9 +421,6 @@ export class OrdersService {
   }
 
   // ==================== AUTO-CANCEL: Pesanan Pending yang Expired ====================
-  // Membatalkan pesanan pending yang sudah melewati batas waktu tertentu dan
-  // mengembalikan stok serta mengubah payment status ke 'failed'.
-  // Bisa dipanggil via endpoint admin atau dijadwalkan via cron job (@nestjs/schedule).
   async cancelExpiredPendingOrders(expirationHours: number = 48): Promise<{
     cancelledCount: number;
     cancelledOrderIds: number[];
@@ -457,5 +479,4 @@ export class OrdersService {
       cancelledOrderIds,
     };
   }
-  // ==============================================================================
 }

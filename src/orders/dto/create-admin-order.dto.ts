@@ -30,9 +30,6 @@ export class CreateAdminOrderDto {
   @IsString()
   shipping_address?: string;
 
-  @IsNumber()
-  payment_method_id: number;
-
   @IsOptional()
   @IsBoolean()
   payment_status?: boolean; // true = Lunas Instan di Kasir

@@ -1,5 +1,4 @@
-// src/tracking-histories/tracking-histories.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { TrackingHistoriesService } from './tracking-histories.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
@@ -12,7 +11,7 @@ export class TrackingHistoriesController {
 
   @Post()
   @Access('TrackingHistories', 'create')
-  create(@Body() createDto: any) {
+  create(@Body() createDto: { tracking_id: number; status: string }) {
     return this.trackingHistoriesService.create(createDto);
   }
 
@@ -20,6 +19,12 @@ export class TrackingHistoriesController {
   @Access('TrackingHistories', 'read')
   findAll() {
     return this.trackingHistoriesService.findAll();
+  }
+
+  @Get('tracking/:trackingId')
+  @Access('TrackingHistories', 'read')
+  findByTracking(@Param('trackingId') trackingId: string) {
+    return this.trackingHistoriesService.findByTracking(+trackingId);
   }
 
   @Get(':id')
@@ -30,7 +35,7 @@ export class TrackingHistoriesController {
 
   @Patch(':id')
   @Access('TrackingHistories', 'update')
-  update(@Param('id') id: string, @Body() updateDto: any) {
+  update(@Param('id') id: string, @Body() updateDto: { status?: string }) {
     return this.trackingHistoriesService.update(+id, updateDto);
   }
 

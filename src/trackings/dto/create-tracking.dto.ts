@@ -1,13 +1,18 @@
-import { IsString, IsNumber, IsDateString } from 'class-validator';
+import { IsInt, IsString, IsOptional, Min, Max, IsDateString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateTrackingDto {
-  @IsNumber()
+  @IsInt()
+  @Type(() => Number)
   order_id: number;
 
   @IsString()
   current_stage: string;
 
-  @IsNumber()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @Type(() => Number)
   progress_percentage: number;
 
   @IsDateString()

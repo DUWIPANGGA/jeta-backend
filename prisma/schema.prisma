@@ -318,12 +318,12 @@ model Cart {
 model Order {
   id               Int             @id @default(autoincrement())
   user_id          Int
-  order_number     String          @unique
+  order_number     String?         @unique
   status           OrderStatus     @default(pending)
   grand_total      Int
   shipping_address String
   shipping_cost    Int
-  payment_method   String
+  payment_method   String?
   tracking_code    String?
   
   // ==================== FIELD UNTUK ADMIN ORDER KATALOG ====================

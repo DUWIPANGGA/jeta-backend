@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class WorkLogsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(userId: number, data: {
     stage_id: number;
@@ -229,7 +229,7 @@ export class WorkLogsService {
 
   async getTotalEarnedByUser(userId: number, startDate?: Date, endDate?: Date) {
     const where: any = { user_id: userId };
-    
+
     if (startDate && endDate) {
       where.created_at = {
         gte: startDate,
@@ -256,7 +256,7 @@ export class WorkLogsService {
       orderBy: { order_index: 'asc' },
     });
 
-    let orderIdLabel = '';
+    let orderIdLabel: string = '';
     let overallTotalQty = 0;
     const progressData: any[] = [];
 
@@ -267,7 +267,8 @@ export class WorkLogsService {
       });
       if (!order) throw new NotFoundException(`Order SPORT #${id} not found`);
 
-      orderIdLabel = order.order_number;
+      // ✅ PERBAIKAN: gunakan fallback jika order_number null
+      orderIdLabel = order.order_number || `ORD-${order.id}`;
       overallTotalQty = order.order_items.reduce((acc, curr) => acc + curr.quantity, 0);
 
       // Agregasi work_logs untuk SPORT
@@ -298,11 +299,11 @@ export class WorkLogsService {
       });
       if (!customOrder) throw new NotFoundException(`Custom Order #${id} not found`);
 
-      orderIdLabel = customOrder.name || `Custom #${id}`;
+      // ✅ PERBAIKAN: gunakan fallback jika name null
+      orderIdLabel = customOrder.name || `CUSTOM-${customOrder.id}`;
       overallTotalQty = customOrder.items.reduce((acc, curr) => acc + curr.quantity, 0);
 
       // Ambil progress dari ProgressReports (milik custom order)
-      // Kita asumsikan relasinya lewat custom_order_item_id atau project.custom_order_id
       const project = await this.prisma.project.findUnique({
         where: { custom_order_id: id },
         include: { progressReports: true }
@@ -311,7 +312,6 @@ export class WorkLogsService {
       const progressReports = project ? project.progressReports : [];
 
       for (const stage of stages) {
-        // Asumsi progressReport.quantity mencatat barang selesai, atau kita hitung berdasarkan approval_status jika mau lebih strict
         const logsForStage = progressReports.filter(pr => pr.stage_id === stage.id && (pr.approval_status === true || pr.status === 'selesai'));
         const completedQuantity = logsForStage.reduce((acc, curr) => acc + (curr.quantity || 0), 0);
         const totalQuantity = overallTotalQty;
