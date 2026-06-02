@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
 import { ProductSalesQueryDto } from './dto/product-sales-query.dto';
+import { ReportQueryDto, PeriodType } from './dto/report-query.dto';
 
 @Injectable()
 export class ReportsService {
@@ -278,5 +279,424 @@ export class ReportsService {
       bottomItems: [],
       details: [],
     };
+  }
+
+  // ==================== NEW REPORT FITUR ====================
+
+  private parsePeriodDates(query: ReportQueryDto) {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    const periodType = query.periodType ?? PeriodType.ALL;
+
+    switch (periodType) {
+      case PeriodType.DAILY:
+        const targetDate = query.date ? new Date(query.date) : now;
+        startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
+        endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+        break;
+
+      case PeriodType.WEEKLY:
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(now.setDate(diff));
+        startDate = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 0, 0, 0, 0);
+        
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        endDate = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate(), 23, 59, 59, 999);
+        break;
+
+      case PeriodType.MONTHLY:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        break;
+
+      case PeriodType.CUSTOM:
+        if (query.startDate && query.endDate) {
+          startDate = new Date(query.startDate);
+          endDate = new Date(query.endDate);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+        } else {
+          startDate = new Date(2000, 0, 1);
+          endDate = new Date(2100, 11, 31);
+        }
+        break;
+
+      case PeriodType.ALL:
+      default:
+        startDate = new Date(2000, 0, 1);
+        endDate = new Date(2100, 11, 31);
+        break;
+    }
+
+    return { startDate, endDate };
+  }
+
+  async getSalesReport(query: ReportQueryDto, userRoleId: number) {
+    if (userRoleId !== 1 && userRoleId !== 5) {
+      throw new ForbiddenException('Access denied. Only admin or finance can view reports.');
+    }
+
+    const { startDate, endDate } = this.parsePeriodDates(query);
+
+    const catalogOrders = await this.prisma.order.findMany({
+      where: {
+        status: 'completed',
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        order_items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    const customOrders = await this.prisma.customOrder.findMany({
+      where: {
+        payment_status: true,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        items: true,
+        user: true,
+      },
+    });
+
+    const catalogTransactionsCount = catalogOrders.length;
+    const catalogRevenueSum = catalogOrders.reduce((sum, o) => sum + (o.grand_total ?? 0), 0);
+
+    const customTransactionsCount = customOrders.length;
+    const customRevenueSum = customOrders.reduce((sum, o) => sum + (o.total_amount ?? 0), 0);
+
+    const totalTransactions = catalogTransactionsCount + customTransactionsCount;
+    const totalRevenue = catalogRevenueSum + customRevenueSum;
+
+    const productSalesMap = new Map<number, { productId: number; name: string; quantitySold: number; revenue: number }>();
+    for (const order of catalogOrders) {
+      for (const item of order.order_items) {
+        if (!item.product) continue;
+        const existing = productSalesMap.get(item.product_id);
+        const itemPrice = item.price ?? item.product.price ?? 0;
+        const itemRevenue = itemPrice * item.quantity;
+        if (existing) {
+          existing.quantitySold += item.quantity;
+          existing.revenue += itemRevenue;
+        } else {
+          productSalesMap.set(item.product_id, {
+            productId: item.product_id,
+            name: item.product.name ?? 'Produk Tanpa Nama',
+            quantitySold: item.quantity,
+            revenue: itemRevenue,
+          });
+        }
+      }
+    }
+    const bestSellingProducts = Array.from(productSalesMap.values())
+      .sort((a, b) => b.quantitySold - a.quantitySold)
+      .slice(0, 5);
+
+    const topCustomOrders = customOrders.map(co => {
+      const totalQuantity = co.items.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+      return {
+        customOrderId: co.id,
+        name: co.name ?? `Custom Order #${co.id}`,
+        customerName: co.user?.name ?? co.offline_customer_name ?? 'Customer',
+        totalQuantity,
+        totalAmount: co.total_amount ?? 0,
+      };
+    })
+    .sort((a, b) => b.totalQuantity - a.totalQuantity)
+    .slice(0, 5);
+
+    return {
+      meta: {
+        periodType: query.periodType ?? PeriodType.ALL,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+      },
+      summary: {
+        totalTransactions,
+        totalRevenue,
+        totalCompletedOrders: totalTransactions,
+        catalogOrders: {
+          transactions: catalogTransactionsCount,
+          revenue: catalogRevenueSum,
+        },
+        customOrders: {
+          transactions: customTransactionsCount,
+          revenue: customRevenueSum,
+        },
+      },
+      bestSellingProducts,
+      topCustomOrders,
+    };
+  }
+
+  async exportSalesReport(query: ReportQueryDto, userRoleId: number) {
+    const reportData = await this.getSalesReport(query, userRoleId);
+    const workbook = new ExcelJS.Workbook();
+    
+    const summarySheet = workbook.addWorksheet('Rangkuman Penjualan');
+    summarySheet.columns = [
+      { header: 'Parameter', key: 'param', width: 25 },
+      { header: 'Nilai', key: 'val', width: 35 },
+    ];
+    summarySheet.addRow({ param: 'Periode', val: `${reportData.meta.startDate} s/d ${reportData.meta.endDate}` });
+    summarySheet.addRow({ param: 'Tipe Periode', val: reportData.meta.periodType.toUpperCase() });
+    summarySheet.addRow({});
+    
+    summarySheet.addRow({ param: 'METRIK PENJUALAN', val: '' });
+    summarySheet.addRow({ param: 'Total Transaksi', val: reportData.summary.totalTransactions });
+    summarySheet.addRow({ param: 'Total Pendapatan', val: `Rp ${reportData.summary.totalRevenue.toLocaleString()}` });
+    summarySheet.addRow({ param: 'Total Pesanan Selesai', val: reportData.summary.totalCompletedOrders });
+    summarySheet.addRow({});
+
+    summarySheet.addRow({ param: 'KATALOG ORDER', val: '' });
+    summarySheet.addRow({ param: 'Jumlah Transaksi', val: reportData.summary.catalogOrders.transactions });
+    summarySheet.addRow({ param: 'Pendapatan', val: `Rp ${reportData.summary.catalogOrders.revenue.toLocaleString()}` });
+    summarySheet.addRow({});
+
+    summarySheet.addRow({ param: 'CUSTOM ORDER', val: '' });
+    summarySheet.addRow({ param: 'Jumlah Transaksi', val: reportData.summary.customOrders.transactions });
+    summarySheet.addRow({ param: 'Pendapatan', val: `Rp ${reportData.summary.customOrders.revenue.toLocaleString()}` });
+    
+    const topSheet = workbook.addWorksheet('Produk & Custom Terpopuler');
+    topSheet.addRow(['PRODUK KATALOG TERLARIS']);
+    topSheet.addRow(['ID Produk', 'Nama Produk', 'Unit Terjual', 'Pendapatan']);
+    for (const item of reportData.bestSellingProducts) {
+      topSheet.addRow([item.productId, item.name, item.quantitySold, `Rp ${item.revenue.toLocaleString()}`]);
+    }
+    
+    topSheet.addRow([]);
+    topSheet.addRow(['CUSTOM ORDER TERPOPULER']);
+    topSheet.addRow(['ID Custom Order', 'Nama Kustom', 'Pelanggan', 'Total Unit', 'Total Nilai']);
+    for (const item of reportData.topCustomOrders) {
+      topSheet.addRow([item.customOrderId, item.name, item.customerName, item.totalQuantity, `Rp ${item.totalAmount.toLocaleString()}`]);
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as any;
+  }
+
+  async getProductionReport(query: ReportQueryDto, userRoleId: number) {
+    if (userRoleId !== 1 && userRoleId !== 5) {
+      throw new ForbiddenException('Access denied. Only admin or finance can view reports.');
+    }
+
+    const { startDate, endDate } = this.parsePeriodDates(query);
+
+    const projects = await this.prisma.project.findMany({
+      where: {
+        custom_order_id: { not: null },
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        custom_order: {
+          include: {
+            items: true,
+            user: true,
+          },
+        },
+        members: {
+          include: {
+            user: true,
+          },
+        },
+        progressReports: {
+          include: {
+            stage: true,
+            staff: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const stages = await this.prisma.stage.findMany({
+      orderBy: { order_index: 'asc' },
+    });
+    const finalStageId = stages[stages.length - 1]?.id;
+
+    let totalCompleted = 0;
+    let totalInProgress = 0;
+    let totalPending = 0;
+    let totalItemsProducedSum = 0;
+
+    const ordersDetails: any[] = [];
+
+    for (const project of projects) {
+      const customOrder = project.custom_order;
+      if (!customOrder) continue;
+
+      const totalQuantity = customOrder.items.reduce((sum, i) => sum + (i.quantity ?? 0), 0);
+
+      const finalStageReports = project.progressReports.filter(
+        pr => pr.stage_id === finalStageId && pr.status === 'selesai' && pr.approval_status === true
+      );
+      const completedFinalQty = finalStageReports.reduce((sum, pr) => sum + (pr.quantity ?? 0), 0);
+
+      let status = 'Pending';
+      if (project.status === false || (totalQuantity > 0 && completedFinalQty >= totalQuantity)) {
+        status = 'Selesai';
+        totalCompleted++;
+      } else if (project.progressReports.some(pr => pr.status === 'proses' || pr.status === 'selesai')) {
+        status = 'On Progress';
+        totalInProgress++;
+      } else {
+        status = 'Pending';
+        totalPending++;
+      }
+
+      const approvedReports = project.progressReports.filter(pr => pr.status === 'selesai' && pr.approval_status === true);
+      const itemsProduced = approvedReports.reduce((sum, pr) => sum + (pr.quantity ?? 0), 0);
+      totalItemsProducedSum += itemsProduced;
+
+      let estimateDays = customOrder.production_estimate ?? 14;
+      if (customOrder.deadline && customOrder.created_at) {
+        const diffMs = new Date(customOrder.deadline).getTime() - new Date(customOrder.created_at).getTime();
+        estimateDays = Math.max(1, Math.ceil(diffMs / (1000 * 3600 * 24)));
+      }
+
+      let actualDays: string | number = '-';
+      if (status === 'Selesai') {
+        const approvedDates = approvedReports.map(pr => new Date(pr.created_at).getTime());
+        if (approvedDates.length > 0) {
+          const lastApprovedDate = new Date(Math.max(...approvedDates));
+          const startProdDate = new Date(project.created_at);
+          const diffMs = lastApprovedDate.getTime() - startProdDate.getTime();
+          actualDays = Math.max(1, Math.ceil(diffMs / (1000 * 3600 * 24)));
+        } else {
+          actualDays = 1;
+        }
+      } else {
+        actualDays = 'Dalam Proses';
+      }
+
+      const staffSet = new Set<string>();
+      project.members.forEach(m => {
+        if (m.user?.name) staffSet.add(m.user.name);
+      });
+      project.progressReports.forEach(pr => {
+        if (pr.staff?.user?.name) staffSet.add(pr.staff.user.name);
+      });
+      const staffMembers = Array.from(staffSet);
+
+      ordersDetails.push({
+        customOrderId: customOrder.id,
+        name: customOrder.name ?? `Custom Order #${customOrder.id}`,
+        customerName: customOrder.user?.name ?? customOrder.offline_customer_name ?? 'Customer',
+        totalQuantity,
+        status,
+        createdAt: customOrder.created_at.toISOString().split('T')[0],
+        deadline: customOrder.deadline ? customOrder.deadline.toISOString().split('T')[0] : '-',
+        productionEstimateDays: estimateDays,
+        actualProductionDays: actualDays,
+        staffMembers,
+      });
+    }
+
+    const topProductionCustomOrders = [...ordersDetails]
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+      .slice(0, 5)
+      .map(o => ({
+        customOrderId: o.customOrderId,
+        name: o.name,
+        totalQuantity: o.totalQuantity,
+        status: o.status,
+      }));
+
+    return {
+      meta: {
+        periodType: query.periodType ?? PeriodType.ALL,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+      },
+      summary: {
+        totalCustomOrdersEnteringProduction: projects.length,
+        totalCustomOrdersCompleted: totalCompleted,
+        totalCustomOrdersInProgress: totalInProgress,
+        totalCustomOrdersPending: totalPending,
+        totalItemsProduced: totalItemsProducedSum,
+      },
+      topProductionCustomOrders,
+      orders: ordersDetails,
+    };
+  }
+
+  async exportProductionReport(query: ReportQueryDto, userRoleId: number) {
+    const reportData = await this.getProductionReport(query, userRoleId);
+    const workbook = new ExcelJS.Workbook();
+
+    const summarySheet = workbook.addWorksheet('Rangkuman Produksi');
+    summarySheet.columns = [
+      { header: 'Parameter', key: 'param', width: 25 },
+      { header: 'Nilai', key: 'val', width: 35 },
+    ];
+    summarySheet.addRow({ param: 'Periode', val: `${reportData.meta.startDate} s/d ${reportData.meta.endDate}` });
+    summarySheet.addRow({ param: 'Tipe Periode', val: reportData.meta.periodType.toUpperCase() });
+    summarySheet.addRow({});
+
+    summarySheet.addRow({ param: 'RINGKASAN KINERJA', val: '' });
+    summarySheet.addRow({ param: 'Total Custom Order Diproduksi', val: reportData.summary.totalCustomOrdersEnteringProduction });
+    summarySheet.addRow({ param: 'Total Selesai', val: reportData.summary.totalCustomOrdersCompleted });
+    summarySheet.addRow({ param: 'Total Sedang Berjalan', val: reportData.summary.totalCustomOrdersInProgress });
+    summarySheet.addRow({ param: 'Total Pending', val: reportData.summary.totalCustomOrdersPending });
+    summarySheet.addRow({ param: 'Total Item Diproduksi', val: reportData.summary.totalItemsProduced });
+    summarySheet.addRow({});
+
+    summarySheet.addRow({ param: 'PRODUKSI TERBANYAK', val: '' });
+    reportData.topProductionCustomOrders.forEach((item, idx) => {
+      summarySheet.addRow({ param: `#${idx+1}`, val: `${item.name} — ${item.totalQuantity} unit (${item.status})` });
+    });
+
+    const detailSheet = workbook.addWorksheet('Detail Pengerjaan');
+    detailSheet.columns = [
+      { header: 'ID Custom Order', key: 'id', width: 15 },
+      { header: 'Nama Kustom', key: 'name', width: 25 },
+      { header: 'Customer', key: 'customer', width: 20 },
+      { header: 'Total Qty', key: 'qty', width: 10 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Tanggal Dibuat', key: 'created', width: 15 },
+      { header: 'Deadline', key: 'deadline', width: 15 },
+      { header: 'Estimasi (Hari)', key: 'est', width: 15 },
+      { header: 'Realisasi (Hari)', key: 'act', width: 15 },
+      { header: 'Staff Terlibat', key: 'staff', width: 35 },
+    ];
+
+    for (const order of reportData.orders) {
+      detailSheet.addRow({
+        id: order.customOrderId,
+        name: order.name,
+        customer: order.customerName,
+        qty: order.totalQuantity,
+        status: order.status,
+        created: order.createdAt,
+        deadline: order.deadline,
+        est: order.productionEstimateDays,
+        act: order.actualProductionDays,
+        staff: order.staffMembers.join(', ') || '-',
+      });
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as any;
   }
 }

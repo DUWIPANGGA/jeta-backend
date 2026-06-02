@@ -22,7 +22,8 @@ async function main() {
         'stages.js',
         'orders.js',
         'custom-orders.js',
-        'projects.js'
+        'projects.js',
+        'finance-data.js'
     ];
 
     for (const file of seeders) {
