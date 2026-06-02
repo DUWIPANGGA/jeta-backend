@@ -20,6 +20,7 @@ import { FinanceService } from './finance.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CalculateSalaryDto } from './dto/calculate-salary.dto';
 import { ProcessSalaryDto } from './dto/process-salary.dto';
+import { WeeklyTutupBukuQueryDto } from './dto/weekly-tutup-buku.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
@@ -119,5 +120,12 @@ export class FinanceController {
       year ? parseInt(year) : undefined,
       month ? parseInt(month) : undefined,
     );
+  }
+
+  // ==================== PELAPORAN TUTUP BUKU DINAMIS ====================
+  @Get('tutup-buku')
+  @Access('Finance', 'read')
+  async getTutupBukuReport(@Query() query: WeeklyTutupBukuQueryDto) {
+    return this.financeService.getTutupBukuReport(query);
   }
 }

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CalculateSalaryDto } from './dto/calculate-salary.dto';
 import { ProcessSalaryDto } from './dto/process-salary.dto';
+import { WeeklyTutupBukuQueryDto } from './dto/weekly-tutup-buku.dto';
 import { SalaryPeriodType } from '@prisma/client';
 import * as fs from 'fs';
 
@@ -677,5 +678,176 @@ export class FinanceService {
       payments,
       work_logs: calculation.work_logs,
     };
+  }
+
+  // ==================== PELAPORAN TUTUP BUKU DINAMIS ====================
+  async getTutupBukuReport(queryDto: WeeklyTutupBukuQueryDto) {
+    const now = new Date();
+    const period = queryDto.period_type || 'weekly';
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (queryDto.start_date) {
+      startDate = new Date(queryDto.start_date);
+      startDate.setHours(0, 0, 0, 0);
+    } else {
+      startDate = new Date();
+      if (period === 'daily') {
+        startDate.setDate(now.getDate() - 14); // 15 days total
+      } else if (period === 'weekly') {
+        startDate.setDate(now.getDate() - 7 * 7); // 8 weeks total
+        // Adjust to Monday
+        const day = startDate.getDay();
+        const diff = day === 0 ? 6 : day - 1;
+        startDate.setDate(startDate.getDate() - diff);
+      } else {
+        startDate.setMonth(now.getMonth() - 5); // 6 months total
+        startDate.setDate(1);
+      }
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    if (queryDto.end_date) {
+      endDate = new Date(queryDto.end_date);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      endDate = new Date();
+      if (period === 'weekly') {
+        // Adjust to Sunday
+        const day = endDate.getDay();
+        const diff = day === 0 ? 0 : 7 - day;
+        endDate.setDate(endDate.getDate() + diff);
+      } else if (period === 'monthly') {
+        // Adjust to last day of month
+        endDate.setMonth(endDate.getMonth() + 1);
+        endDate.setDate(0);
+      }
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    // Fetch progress reports approved in the range
+    const progressReports = await this.prisma.progressReport.findMany({
+      where: {
+        approval_status: true,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        salaryPaymentDetail: true,
+        staff: {
+          include: {
+            salaryProjects: true,
+          },
+        },
+      },
+    });
+
+    // Fetch payments made in the range
+    const salaryPayments = await this.prisma.salaryPayment.findMany({
+      where: {
+        payment_date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    });
+
+    // Generate slots
+    const slots: { start: Date; end: Date; label: string }[] = [];
+    const current = new Date(startDate);
+
+    while (current <= endDate) {
+      const slotStart = new Date(current);
+      const slotEnd = new Date(current);
+      let label = '';
+
+      if (period === 'daily') {
+        slotStart.setHours(0, 0, 0, 0);
+        slotEnd.setHours(23, 59, 59, 999);
+        label = slotStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        current.setDate(current.getDate() + 1);
+      } else if (period === 'weekly') {
+        slotStart.setHours(0, 0, 0, 0);
+        slotEnd.setDate(slotStart.getDate() + 6);
+        slotEnd.setHours(23, 59, 59, 999);
+        label = `${slotStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - ${slotEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+        current.setDate(current.getDate() + 7);
+      } else { // monthly
+        slotStart.setDate(1);
+        slotStart.setHours(0, 0, 0, 0);
+        slotEnd.setMonth(slotStart.getMonth() + 1);
+        slotEnd.setDate(0);
+        slotEnd.setHours(23, 59, 59, 999);
+        label = slotStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        current.setMonth(current.getMonth() + 1);
+        current.setDate(1);
+      }
+
+      slots.push({ start: slotStart, end: slotEnd, label });
+    }
+
+    const reportData = slots.map(slot => {
+      const sTime = slot.start.getTime();
+      const eTime = slot.end.getTime();
+
+      // Find reports approved in this slot
+      const reportsInSlot = progressReports.filter(r => {
+        const time = r.created_at.getTime();
+        return time >= sTime && time <= eTime;
+      });
+
+      let totalObligation = 0;
+      let totalPaidForWork = 0;
+      const staffEarnedIds = new Set<number>();
+
+      for (const report of reportsInSlot) {
+        staffEarnedIds.add(report.staff_id);
+
+        const adjustment = report.staff.salaryProjects.find(sp => sp.project_id === report.project_id);
+        const ratePerUnit = (report.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
+        const earned = (report.quantity ?? 0) * ratePerUnit;
+        totalObligation += earned;
+
+        if (report.salaryPaymentDetail) {
+          totalPaidForWork += report.salaryPaymentDetail.amount ?? 0;
+        }
+      }
+
+      // Find payments made in this slot
+      const paymentsInSlot = salaryPayments.filter(p => {
+        const time = p.payment_date.getTime();
+        return time >= sTime && time <= eTime;
+      });
+      const totalRealized = paymentsInSlot.reduce((sum, p) => sum + (p.total_amount ?? 0), 0);
+      const staffPaidIds = new Set(paymentsInSlot.map(p => p.staff_id));
+
+      let status = 'Lunas';
+      if (totalObligation === 0) {
+        status = 'Tidak Ada Kewajiban';
+      } else if (totalPaidForWork === 0) {
+        status = 'Belum Dibayar';
+      } else if (totalPaidForWork < totalObligation) {
+        status = 'Sebagian Dibayar';
+      }
+
+      return {
+        periode: slot.label,
+        start_date: slot.start,
+        end_date: slot.end,
+        total_kewajiban: totalObligation,
+        total_realisasi: totalRealized,
+        total_terbayar_untuk_kerja: totalPaidForWork,
+        status_pembayaran: status,
+        jumlah_staf_bekerja: staffEarnedIds.size,
+        jumlah_staf_terbayar: staffPaidIds.size,
+        selisih_cashflow: totalObligation - totalRealized,
+        sisa_kewajiban_belum_terbayar: Math.max(0, totalObligation - totalPaidForWork),
+      };
+    });
+
+    return reportData.reverse();
   }
 }

@@ -9,29 +9,30 @@ import { Access } from 'src/common/decorator/access/access.decorator';
 export class TrackingHistoriesController {
   constructor(private readonly trackingHistoriesService: TrackingHistoriesService) { }
 
+  @Get()
+  // @Access('TrackingHistories', 'read')
+  findAll() {
+    return this.trackingHistoriesService.findAll();
+  }
+
+  @Get('tracking/:trackingId')
+  // @Access('TrackingHistories', 'read')
+  findByTracking(@Param('trackingId') trackingId: string) {
+    return this.trackingHistoriesService.findByTracking(+trackingId);
+  }
+
+  @Get(':id')
+  // @Access('TrackingHistories', 'read')
+  findOne(@Param('id') id: string) {
+    return this.trackingHistoriesService.findOne(+id);
+  }
+
   @Post()
   @Access('TrackingHistories', 'create')
   create(@Body() createDto: { tracking_id: number; status: string }) {
     return this.trackingHistoriesService.create(createDto);
   }
 
-  @Get()
-  @Access('TrackingHistories', 'read')
-  findAll() {
-    return this.trackingHistoriesService.findAll();
-  }
-
-  @Get('tracking/:trackingId')
-  @Access('TrackingHistories', 'read')
-  findByTracking(@Param('trackingId') trackingId: string) {
-    return this.trackingHistoriesService.findByTracking(+trackingId);
-  }
-
-  @Get(':id')
-  @Access('TrackingHistories', 'read')
-  findOne(@Param('id') id: string) {
-    return this.trackingHistoriesService.findOne(+id);
-  }
 
   @Patch(':id')
   @Access('TrackingHistories', 'update')

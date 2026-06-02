@@ -1,10 +1,11 @@
-import { IsString, IsInt, IsOptional, Min } from 'class-validator';
+import { IsString, IsOptional, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateStageDto {
   @IsString()
   stage_name: string;
 
-  @IsInt()
+  @Type(() => Number)
   @Min(0)
   order_index: number;
 
