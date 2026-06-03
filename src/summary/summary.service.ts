@@ -204,6 +204,7 @@ export class SummaryService {
 
   private getStatusText(status: any, orderType: string): string {
     if (orderType === 'custom') {
+      if (typeof status === 'string') return status;
       return status === true ? 'Diproses' : 'Menunggu ACC';
     }
     
