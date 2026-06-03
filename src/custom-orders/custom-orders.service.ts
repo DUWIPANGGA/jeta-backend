@@ -39,6 +39,41 @@ export class CustomOrdersService {
     }
   }
 
+  private async enrichWithVirtualStatus(order: any) {
+    if (!order) return order;
+
+    let virtualStatus = 'Menunggu ACC';
+    if (order.accept_status) {
+      const tracking = await this.prisma.tracking.findFirst({
+        where: { custom_order_id: order.id },
+      });
+
+      const hasDpVerified = order.payments?.some(
+        (p: any) => p.payment_stage === 'down_payment' && p.payment_status === 'completed',
+      );
+
+      if (!hasDpVerified) {
+        virtualStatus = 'Menunggu DP';
+      } else if (order.payment_status) {
+        virtualStatus = 'Selesai';
+      } else if (tracking) {
+        const stage = tracking.current_stage;
+        if (stage === 'Dalam Perjalanan' || stage === 'Pesanan Dikirim') {
+          virtualStatus = 'Dikirim';
+        } else if (stage === 'Selesai' || stage === 'Diterima' || stage === 'Completed') {
+          virtualStatus = 'Selesai';
+        } else {
+          virtualStatus = 'Diproses';
+        }
+      } else {
+        virtualStatus = 'Diproses';
+      }
+    }
+
+    order.virtual_status = virtualStatus;
+    return order;
+  }
+
   // ==================== CREATE (USER) ====================
   async create(createCustomOrderDto: CreateCustomOrderDto, user: any, files?: Express.Multer.File[]) {
     const dbUser = await this.prisma.user.findUnique({
@@ -202,7 +237,7 @@ export class CustomOrdersService {
         const stageId = await this.getStageIdForUser(user.id);
         return enrichCustomOrderItemsWithStages(tx, enriched, stageId);
       });
-      return customOrder;
+      return this.enrichWithVirtualStatus(customOrder);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new BadRequestException('Duplicate entry (unique constraint)');
@@ -471,7 +506,7 @@ export class CustomOrdersService {
         const stageId = await this.getStageIdForUser(adminUser.id);
         return enrichCustomOrderItemsWithStages(tx, enriched, stageId);
       });
-      return customOrder;
+      return this.enrichWithVirtualStatus(customOrder);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new BadRequestException('Duplicate entry (unique constraint)');
@@ -507,8 +542,12 @@ export class CustomOrdersService {
       images: this.parseImages(order.images),
     }));
 
+    const withStatus = await Promise.all(
+      parsedOrders.map(order => this.enrichWithVirtualStatus(order))
+    );
+
     const stageId = await this.getStageIdForUser(userId);
-    return enrichCustomOrderItemsWithStages(this.prisma, parsedOrders, stageId);
+    return enrichCustomOrderItemsWithStages(this.prisma, withStatus, stageId);
   }
 
   // ==================== FIND ONE ====================
@@ -539,8 +578,9 @@ export class CustomOrdersService {
       ...customOrder,
       images: this.parseImages(customOrder.images),
     };
+    const withStatus = await this.enrichWithVirtualStatus(enriched);
     const stageId = await this.getStageIdForUser(userId);
-    return enrichCustomOrderItemsWithStages(this.prisma, enriched, stageId);
+    return enrichCustomOrderItemsWithStages(this.prisma, withStatus, stageId);
   }
 
   // ==================== FIND BY USER ====================
@@ -571,8 +611,11 @@ export class CustomOrdersService {
       ...order,
       images: this.parseImages(order.images),
     }));
+    const withStatus = await Promise.all(
+      parsedOrders.map(order => this.enrichWithVirtualStatus(order))
+    );
     const stageId = await this.getStageIdForUser(currentUserId);
-    return enrichCustomOrderItemsWithStages(this.prisma, parsedOrders, stageId);
+    return enrichCustomOrderItemsWithStages(this.prisma, withStatus, stageId);
   }
 
   // ==================== UPDATE ====================
@@ -741,8 +784,9 @@ export class CustomOrdersService {
         images: this.parseImages(result.images),
       };
 
+      const withStatus = await this.enrichWithVirtualStatus(enriched);
       const stageId = await this.getStageIdForUser(currentUser.id);
-      return enrichCustomOrderItemsWithStages(tx, enriched, stageId);
+      return enrichCustomOrderItemsWithStages(tx, withStatus, stageId);
     });
   }
 
@@ -813,8 +857,9 @@ export class CustomOrdersService {
         },
       });
 
+      const withStatus = await this.enrichWithVirtualStatus(result);
       return {
-        ...result,
+        ...withStatus,
         images: this.parseImages(result.images),
       };
     } else {
@@ -835,8 +880,9 @@ export class CustomOrdersService {
           },
         },
       });
+      const withStatus = await this.enrichWithVirtualStatus(result);
       return {
-        ...result,
+        ...withStatus,
         images: this.parseImages(result.images),
       };
     }

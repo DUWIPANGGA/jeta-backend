@@ -112,10 +112,20 @@ export class UsersService {
     });
   }
 
-  async findAll() {
+  async findAll(search?: string) {
+    const whereClause: any = {};
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     return this.prisma.user.findMany({
+      where: whereClause,
       include: { role: true },
-      orderBy: { id: 'asc' },
+      orderBy: { name: 'asc' },
     });
   }
 

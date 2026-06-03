@@ -23,7 +23,10 @@ async function main() {
         'orders.js',
         'custom-orders.js',
         'projects.js',
-        'finance-data.js'
+        'finance-data.js',
+        'logistics.js',
+        'portofolio.js',
+        'consultation.js'
     ];
 
     for (const file of seeders) {

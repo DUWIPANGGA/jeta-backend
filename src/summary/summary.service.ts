@@ -20,10 +20,17 @@ export class SummaryService {
       },
       select: {
         amount: true,
+        order_type: true,
       },
     });
 
     const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const revenueCatalogOrders = payments
+      .filter((p) => p.order_type === 'order')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    const revenueCustomOrders = payments
+      .filter((p) => p.order_type === 'custom_order')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
 
     // 2. Pesanan Baru (hari ini)
     const newCustomOrders = await this.prisma.customOrder.count({
@@ -127,6 +134,17 @@ export class SummaryService {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
 
+    // 6. Produk Terbaru (5 data terakhir)
+    const recentProducts = await this.prisma.product.findMany({
+      take: 5,
+      orderBy: { created_at: 'desc' },
+      include: {
+        category: {
+          select: { name: true },
+        },
+      },
+    });
+
     // Format response
     const formatRupiah = (amount: number) => {
       return new Intl.NumberFormat('id-ID', {
@@ -141,6 +159,10 @@ export class SummaryService {
       cards: {
         total_revenue: totalRevenue,
         total_revenue_formatted: formatRupiah(totalRevenue),
+        revenue_catalog_orders: revenueCatalogOrders,
+        revenue_catalog_orders_formatted: formatRupiah(revenueCatalogOrders),
+        revenue_custom_orders: revenueCustomOrders,
+        revenue_custom_orders_formatted: formatRupiah(revenueCustomOrders),
         new_orders: newOrders,
         active_products: activeProducts,
         new_users: newUsers,
@@ -153,6 +175,16 @@ export class SummaryService {
         total: order.total,
         total_formatted: formatRupiah(order.total),
         created_at: order.created_at,
+      })),
+      recent_products: recentProducts.map(product => ({
+        id: product.id,
+        name: product.name,
+        category: product.category?.name || 'Uncategorized',
+        price: product.price || 0,
+        price_formatted: formatRupiah(product.price || 0),
+        image: product.image,
+        status: product.status,
+        created_at: product.created_at,
       })),
     };
   }

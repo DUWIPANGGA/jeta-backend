@@ -169,7 +169,12 @@ async function main() {
         const details = [];
 
         for (const report of reports) {
-            const adjustment = report.staff.salaryProjects.find(sp => sp.project_id === report.project_id);
+            const adjustment = await prisma.salaryProjects.findFirst({
+                where: {
+                    staff_id: report.staff_id,
+                    project_id: report.project_id
+                }
+            });
             const ratePerUnit = (report.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
             const amount = report.quantity * ratePerUnit;
             totalAmount += amount;
@@ -209,7 +214,12 @@ async function main() {
         const details = [];
 
         for (const report of staff0Reports) {
-            const adjustment = report.staff.salaryProjects.find(sp => sp.project_id === report.project_id);
+            const adjustment = await prisma.salaryProjects.findFirst({
+                where: {
+                    staff_id: report.staff_id,
+                    project_id: report.project_id
+                }
+            });
             const ratePerUnit = (report.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
             const amount = report.quantity * ratePerUnit;
             totalAmount += amount;
