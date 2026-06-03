@@ -101,54 +101,121 @@ export class GuestService {
     };
   }
 
-  // ✅ Metode baru: Pelacakan pesanan kustom publik dengan verifikasi ganda email/no.telp
-  async trackCustomOrder(id: number, contact: string) {
-    const cleanContact = contact.trim().toLowerCase();
+  private async enrichWithVirtualStatus(order: any) {
+    if (!order) return order;
 
-    const customOrder = await this.prisma.customOrder.findUnique({
-      where: { id },
-      include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
-        payments: true,
-        items: {
-          include: {
-            selected_options: {
-              include: {
-                variant_option: {
-                  include: { custom_variant: true },
+    let virtualStatus = 'Menunggu ACC';
+    if (order.accept_status) {
+      const tracking = order.tracking || await this.prisma.tracking.findFirst({
+        where: { custom_order_id: order.id },
+      });
+
+      const hasDpVerified = order.payments?.some(
+        (p: any) => p.payment_stage === 'down_payment' && p.payment_status === 'completed',
+      );
+
+      if (!hasDpVerified) {
+        virtualStatus = 'Menunggu DP';
+      } else if (order.payment_status) {
+        virtualStatus = 'Selesai';
+      } else if (tracking) {
+        const stage = tracking.current_stage;
+        if (stage === 'Dalam Perjalanan' || stage === 'Pesanan Dikirim') {
+          virtualStatus = 'Dikirim';
+        } else if (stage === 'Selesai' || stage === 'Diterima' || stage === 'Completed') {
+          virtualStatus = 'Selesai';
+        } else {
+          virtualStatus = 'Diproses';
+        }
+      } else {
+        virtualStatus = 'Diproses';
+      }
+    }
+
+    order.virtual_status = virtualStatus;
+    return order;
+  }
+
+  // ✅ Metode baru: Pelacakan pesanan terpadu (katalog & kustom) untuk guest
+  async trackOrder(code: string) {
+    const cleanCode = code.trim();
+
+    if (cleanCode.startsWith('ORD-')) {
+      const order = await this.prisma.order.findUnique({
+        where: { order_number: cleanCode },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          order_items: {
+            include: {
+              product: { select: { name: true, price: true, image: true } },
+              variant: {
+                include: {
+                  size: true,
+                  color: true,
                 },
               },
             },
           },
+          trackings: {
+            include: {
+              tracking_histories: {
+                orderBy: { created_at: 'desc' },
+              },
+            },
+          },
+          payment: true,
         },
-        tracking: {
-          include: {
-            tracking_histories: {
-              orderBy: { created_at: 'desc' },
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Pesanan katalog dengan nomor ${cleanCode} tidak ditemukan.`);
+      }
+
+      return {
+        success: true,
+        type: 'catalog',
+        data: order,
+      };
+    } else if (cleanCode.startsWith('CSO-')) {
+      const customOrder = await this.prisma.customOrder.findUnique({
+        where: { custom_order_number: cleanCode },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          payments: true,
+          items: {
+            include: {
+              selected_options: {
+                include: {
+                  variant_option: {
+                    include: { custom_variant: true },
+                  },
+                },
+              },
+            },
+          },
+          tracking: {
+            include: {
+              tracking_histories: {
+                orderBy: { created_at: 'desc' },
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!customOrder) {
-      throw new NotFoundException(`Custom Order dengan ID ${id} tidak ditemukan.`);
+      if (!customOrder) {
+        throw new NotFoundException(`Pesanan kustom dengan nomor ${cleanCode} tidak ditemukan.`);
+      }
+
+      const withStatus = await this.enrichWithVirtualStatus(customOrder);
+
+      return {
+        success: true,
+        type: 'custom',
+        data: withStatus,
+      };
+    } else {
+      throw new BadRequestException('Format nomor pelacakan tidak valid. Harus dimulai dengan ORD- atau CSO-');
     }
-
-    // Validasi silang kontak (Bisa mencocokkan email/no.telp pemesan langsung atau user terdaftar)
-    const matchDirectEmail = customOrder.email?.trim().toLowerCase() === cleanContact;
-    const matchDirectPhone = customOrder.phone?.trim() === contact.trim();
-    const matchUserEmail = customOrder.user?.email?.trim().toLowerCase() === cleanContact;
-    const matchUserPhone = customOrder.user?.phone?.trim() === contact.trim();
-
-    if (!matchDirectEmail && !matchDirectPhone && !matchUserEmail && !matchUserPhone) {
-      throw new BadRequestException('Verifikasi kontak gagal. Email atau nomor telepon tidak cocok dengan data pemesan.');
-    }
-
-    return {
-      success: true,
-      message: 'Pelacakan pesanan kustom berhasil ditemukan.',
-      data: customOrder,
-    };
   }
 }

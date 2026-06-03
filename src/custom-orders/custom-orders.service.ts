@@ -114,6 +114,7 @@ export class CustomOrdersService {
     interface ValidatedItem {
       variant_option_ids: number[];
       quantity: number;
+      name?: string;
     }
 
     const validatedItems: ValidatedItem[] = [];
@@ -155,7 +156,8 @@ export class CustomOrdersService {
 
       validatedItems.push({
         variant_option_ids: variantOptionIds.map(id => Number(id)),
-        quantity
+        quantity,
+        name: item.name,
       });
     }
 
@@ -186,6 +188,12 @@ export class CustomOrdersService {
     try {
       const customOrder = await this.prisma.$transaction(async (tx) => {
         const order = await tx.customOrder.create({ data });
+        const dateStr = new Date(order.created_at || new Date()).toISOString().slice(0, 10).replace(/-/g, '');
+        const generatedCode = `CSO-${dateStr}-${order.id.toString().padStart(4, '0')}`;
+        await tx.customOrder.update({
+          where: { id: order.id },
+          data: { custom_order_number: generatedCode },
+        });
 
         for (const item of validatedItems) {
           const orderItem = await tx.customOrderItem.create({
@@ -193,6 +201,7 @@ export class CustomOrdersService {
               custom_order_id: order.id,
               quantity: item.quantity,
               remaining_quantity: item.quantity,
+              name: item.name,
             },
           });
 
@@ -309,6 +318,7 @@ export class CustomOrdersService {
       variant_option_ids: number[];
       quantity: number;
       manual_price_per_pcs?: number;
+      name?: string;
     }
 
     const validatedItems: ValidatedItem[] = [];
@@ -355,6 +365,7 @@ export class CustomOrdersService {
         variant_option_ids: variantOptionIds.map(id => Number(id)),
         quantity,
         manual_price_per_pcs: manualPricePerPcs,
+        name: item.name,
       });
     }
 
@@ -414,6 +425,12 @@ export class CustomOrdersService {
     try {
       const customOrder = await this.prisma.$transaction(async (tx) => {
         const order = await tx.customOrder.create({ data });
+        const dateStr = new Date(order.created_at || new Date()).toISOString().slice(0, 10).replace(/-/g, '');
+        const generatedCode = `CSO-${dateStr}-${order.id.toString().padStart(4, '0')}`;
+        await tx.customOrder.update({
+          where: { id: order.id },
+          data: { custom_order_number: generatedCode },
+        });
 
         for (const item of validatedItems) {
           let basePrice = 0;
@@ -436,6 +453,7 @@ export class CustomOrdersService {
               quantity: item.quantity,
               remaining_quantity: item.quantity,
               manual_price_per_pcs: item.manual_price_per_pcs,
+              name: item.name,
             },
           });
 

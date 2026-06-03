@@ -51,6 +51,10 @@ export class AdminCustomOrderItemDto {
     @Min(0, { message: 'manual_price_per_pcs must be at least 0' })
     @IsOptional()
     manual_price_per_pcs?: number;
+
+    @IsString()
+    @IsOptional()
+    name?: string;
 }
 
 export class CreateAdminCustomOrderDto {

@@ -377,8 +377,9 @@ model OrderItem {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model CustomOrder {
-  id               Int              @id @default(autoincrement())
-  user_id          Int
+  id                  Int              @id @default(autoincrement())
+  custom_order_number String?          @unique
+  user_id             Int
   name             String?
   phone            String?
   email            String?
