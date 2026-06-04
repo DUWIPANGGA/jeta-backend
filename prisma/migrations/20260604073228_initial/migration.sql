@@ -264,6 +264,7 @@ CREATE TABLE "order_items" (
 -- CreateTable
 CREATE TABLE "custom_orders" (
     "id" SERIAL NOT NULL,
+    "custom_order_number" TEXT,
     "user_id" INTEGER NOT NULL,
     "name" TEXT,
     "phone" TEXT,
@@ -534,12 +535,40 @@ CREATE TABLE "salary_logs" (
 );
 
 -- CreateTable
+CREATE TABLE "carousels" (
+    "id" SERIAL NOT NULL,
+    "text" TEXT,
+    "title" TEXT,
+    "link" TEXT,
+    "image" TEXT NOT NULL,
+    "video_url" TEXT,
+    "order" INTEGER,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "carousels_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "recommended_products" (
+    "id" SERIAL NOT NULL,
+    "product_id" INTEGER NOT NULL,
+    "order" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "recommended_products_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "portofolios" (
     "id" SERIAL NOT NULL,
     "name" TEXT,
     "image" TEXT,
     "description" TEXT,
     "order" INTEGER,
+    "active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -641,6 +670,9 @@ CREATE UNIQUE INDEX "carts_user_id_product_variant_id_key" ON "carts"("user_id",
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "custom_orders_custom_order_number_key" ON "custom_orders"("custom_order_number");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "custom_order_item_options_custom_order_item_id_variant_opti_key" ON "custom_order_item_options"("custom_order_item_id", "variant_option_id");
 
 -- CreateIndex
@@ -672,6 +704,9 @@ CREATE UNIQUE INDEX "salary_projects_staff_id_project_id_key" ON "salary_project
 
 -- CreateIndex
 CREATE UNIQUE INDEX "stages_stage_name_key" ON "stages"("stage_name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "recommended_products_product_id_key" ON "recommended_products"("product_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "salary_payment_details_progress_report_id_key" ON "salary_payment_details"("progress_report_id");
@@ -804,6 +839,9 @@ ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_user_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "salary_logs" ADD CONSTRAINT "salary_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "recommended_products" ADD CONSTRAINT "recommended_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
