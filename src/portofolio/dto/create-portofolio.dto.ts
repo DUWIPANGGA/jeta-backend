@@ -1,5 +1,5 @@
 // src/portofolio/dto/create-portofolio.dto.ts
-import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt, IsBoolean, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePortofolioDto {
@@ -9,7 +9,7 @@ export class CreatePortofolioDto {
 
   @IsString()
   @IsOptional()
-  image?: string; // Biasanya berisi path/URL gambar
+  image?: string;
 
   @IsString()
   @IsOptional()
@@ -20,5 +20,9 @@ export class CreatePortofolioDto {
   @IsOptional()
   @Type(() => Number)
   order?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
 }
 

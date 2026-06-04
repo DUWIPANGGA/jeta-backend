@@ -53,6 +53,8 @@ import { VariantOptionsModule } from './variant-options/variant-options.module';
 
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { SummaryModule } from './summary/summary.module';
+import { CarouselsModule } from './carousels/carousels.module';
+import { RecommendedProductsModule } from './recommended-products/recommended-products.module';
 
 @Module({
   imports: [
@@ -131,6 +133,8 @@ import { SummaryModule } from './summary/summary.module';
     CustomVariantsModule,
     VariantOptionsModule,
     SummaryModule,
+    CarouselsModule,
+    RecommendedProductsModule,
   ],
 
   controllers: [AppController],

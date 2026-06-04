@@ -274,8 +274,9 @@ model Product {
   category    Category         @relation(fields: [category_id], references: [id], onDelete: Cascade)
   material    Material?        @relation(fields: [material_id], references: [id], onDelete: SetNull)
   variants    ProductVariant[]
-  carts       Cart[]
-  order_items OrderItem[]
+  carts              Cart[]
+  order_items        OrderItem[]
+  recommended_product RecommendedProduct?
 
   @@map("products")
 }
@@ -721,12 +722,45 @@ model SalaryLog {
   @@map("salary_logs")
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CMS: CAROUSEL & RECOMMENDED PRODUCTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Carousel {
+  id         Int      @id @default(autoincrement())
+  text       String?
+  title      String?
+  link       String?
+  image      String
+  video_url  String?
+  order      Int?
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("carousels")
+}
+
+model RecommendedProduct {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  order      Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id])
+  @@map("recommended_products")
+}
+
 model Portofolio {
   id          Int      @id @default(autoincrement())
   name        String?
   image       String?
   description String?
   order       Int?
+  active      Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

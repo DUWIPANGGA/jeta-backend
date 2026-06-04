@@ -45,6 +45,8 @@ const pages = [
   { id: 37, nomor: 37, name: 'CustomVariants' },
   { id: 38, nomor: 38, name: 'VariantOptions' },
   { id: 39, nomor: 39, name: 'Summary' },
+  { id: 40, nomor: 40, name: 'Carousels' },
+  { id: 41, nomor: 41, name: 'RecommendedProducts' },
 ];
 
 async function main() {

@@ -79,6 +79,7 @@ export class GuestService {
 
   async getAllPortofolios() {
     const portofolios = await this.prisma.portofolio.findMany({
+      where: { active: true },
       orderBy: { order: 'asc' },
     });
 
