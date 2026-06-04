@@ -3,13 +3,18 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesService } from '../roles/roles.service';
 
@@ -24,6 +29,10 @@ export class AuthService {
   ) { }
 
   async register(dto: RegisterDto) {
+    if (dto.password !== dto.confirm_password) {
+      throw new BadRequestException('Password dan konfirmasi password tidak cocok');
+    }
+
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('Email already registered');
@@ -32,9 +41,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const defaultRole = await this.prisma.role.findFirst({
-      orderBy: {
-        level: 'desc',
-      },
+      where: { name: 'user' },
     });
 
     if (!defaultRole) {
@@ -135,6 +142,61 @@ export class AuthService {
     } catch (error) {
       console.error('Error logging out:', error);
     }
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user) {
+      throw new NotFoundException('Email tidak ditemukan');
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+
+    await this.prisma.passwordResetToken.upsert({
+      where: { email: dto.email },
+      update: { token, created_at: new Date() },
+      create: { email: dto.email, token, created_at: new Date() },
+    });
+
+    await this.emailService.sendPasswordResetEmail(dto.email, token);
+
+    return { message: 'Link reset password telah dikirim ke email Anda' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    if (dto.password !== dto.confirm_password) {
+      throw new BadRequestException('Password dan konfirmasi password tidak cocok');
+    }
+
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: { token: dto.token },
+    });
+
+    if (!resetToken) {
+      throw new BadRequestException('Token reset password tidak valid');
+    }
+
+    const oneHour = 60 * 60 * 1000;
+    const createdAt = resetToken.created_at?.getTime() ?? 0;
+    if (Date.now() - createdAt > oneHour) {
+      await this.prisma.passwordResetToken.delete({
+        where: { token: dto.token },
+      });
+      throw new BadRequestException('Token reset password sudah kedaluwarsa');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    await this.prisma.user.update({
+      where: { email: resetToken.email },
+      data: { password: hashedPassword },
+    });
+
+    await this.prisma.passwordResetToken.delete({
+      where: { token: dto.token },
+    });
+
+    return { message: 'Password berhasil direset' };
   }
 
   // ✅ TAMBAHKAN METHOD INI

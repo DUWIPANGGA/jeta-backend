@@ -1,10 +1,12 @@
-import { IsEmail, IsString, MinLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsEmail()
+  @IsNotEmpty()
   email: string;
 
   @IsString()
@@ -16,13 +18,10 @@ export class RegisterDto {
   confirm_password: string;
 
   @IsString()
+  @IsNotEmpty()
   address: string;
 
-  @nullable
+  @IsOptional()
   @IsString()
   phone?: string;
-}
-
-function nullable(target: Object, propertyKey: string | symbol): void {
-  ValidateIf((obj, value) => value !== null && value !== undefined)(target, propertyKey);
 }

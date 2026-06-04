@@ -159,7 +159,7 @@ model Session {
 
 model PasswordResetToken {
   email      String    @id
-  token      String
+  token      String    @unique
   created_at DateTime?
 
   @@map("password_reset_tokens")
