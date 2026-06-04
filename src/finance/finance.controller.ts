@@ -25,18 +25,28 @@ import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 
-const uploadDir = './uploads/payments';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const paymentDir = './uploads/payments';
+if (!fs.existsSync(paymentDir)) {
+  fs.mkdirSync(paymentDir, { recursive: true });
+}
+const salaryDir = './uploads/salary';
+if (!fs.existsSync(salaryDir)) {
+  fs.mkdirSync(salaryDir, { recursive: true });
 }
 
-const storage = diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
+const paymentStorage = diskStorage({
+  destination: (req, file, cb) => cb(null, paymentDir),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, `payment-${uniqueSuffix}${extname(file.originalname)}`);
+  },
+});
+
+const salaryStorage = diskStorage({
+  destination: (req, file, cb) => cb(null, salaryDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `salary-${uniqueSuffix}${extname(file.originalname)}`);
   },
 });
 
@@ -76,7 +86,7 @@ export class FinanceController {
   // ==================== PEMBAYARAN PER PROYEK (EXISTING) ====================
   @Post('payments')
   @Access('Finance', 'create')
-  @UseInterceptors(FileInterceptor('proof', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor('proof', { storage: paymentStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async createPayment(
     @Body() createDto: CreatePaymentDto,
     @UploadedFile() file: Express.Multer.File,
@@ -98,11 +108,16 @@ export class FinanceController {
   // ==================== PROSES GAJI PER PERIODE (BARU) ====================
   @Post('salary/pay')
   @Access('Finance', 'create')
+  @UseInterceptors(FileInterceptor('proof', { storage: salaryStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async processSalaryByPeriod(
+    @UploadedFile() file: Express.Multer.File,
     @Body() dto: ProcessSalaryDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.financeService.processSalaryByPeriod(dto, req.user.id);
+    if (!file) {
+      throw new BadRequestException('Bukti pembayaran gaji (proof) wajib diupload');
+    }
+    return this.financeService.processSalaryByPeriod(dto, req.user.id, file);
   }
 
   // ==================== GET GAJI STAFF BY PERIODE (BARU) ====================

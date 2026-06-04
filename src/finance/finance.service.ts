@@ -541,10 +541,23 @@ export class FinanceService {
   }
 
   // ==================== PROSES GAJI PER PERIODE ====================
-  async processSalaryByPeriod(dto: ProcessSalaryDto, financeUserId: number) {
+  async processSalaryByPeriod(
+    dto: ProcessSalaryDto,
+    financeUserId: number,
+    proofFile?: Express.Multer.File,
+  ) {
     const { staff_ids, period_type, year, month, notes } = dto;
 
     const { start, end, label } = this.getPeriodDates(period_type, year, month);
+
+    let proofPath: string | null = null;
+    if (proofFile) {
+      proofPath = `/uploads/salary/${proofFile.filename}`;
+      const uploadDir = './uploads/salary';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    }
 
     const finance = await this.prisma.user.findUnique({
       where: { id: financeUserId },
@@ -606,6 +619,7 @@ export class FinanceService {
             period_type: period_type,
             period_start: start,
             period_end: end,
+            proof: proofPath,
             notes: notes || `Gaji ${label}`,
           },
         });
