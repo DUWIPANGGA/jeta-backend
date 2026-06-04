@@ -17,8 +17,8 @@ export class UsersService {
     if (existing) throw new ConflictException('Email already exists');
 
     // Mencegah pembuatan admin/staff melalui endpoint umum
-    if (createDto.role_id === 2 || createDto.role_id === 3) {
-      throw new BadRequestException('Pembuatan Admin atau Staff harus menggunakan endpoint pendaftaran staf khusus (/users/staffs)');
+    if (createDto.role_id === 2 || createDto.role_id === 3 || createDto.role_id === 5) {
+      throw new BadRequestException('Pembuatan Admin, Staff, atau Finance harus menggunakan endpoint pendaftaran staf khusus (/users/staffs)');
     }
 
     const hashedPassword = await bcrypt.hash(createDto.password, 10);
@@ -43,8 +43,8 @@ export class UsersService {
     if (existing) throw new ConflictException('Email already exists');
 
     // Validasi bahwa role adalah Admin (2) atau Staff (3)
-    if (createDto.role_id !== 2 && createDto.role_id !== 3) {
-      throw new BadRequestException('Role ID harus berupa Admin (2) atau Staff (3) untuk endpoint pendaftaran staf khusus');
+    if (createDto.role_id !== 2 && createDto.role_id !== 3 && createDto.role_id !== 5) {
+      throw new BadRequestException('Role ID harus berupa Admin (2), Staff (3), atau Finance (5) untuk endpoint pendaftaran staf khusus');
     }
 
     // Validasi stage_ids jika disediakan
@@ -182,7 +182,7 @@ export class UsersService {
   // ==================== ENDPOINT UNTUK STAFF DENGAN DETAIL STAGE ====================
   async getStaffWithDetails() {
     const users = await this.prisma.user.findMany({
-      where: { role_id: { in: [2, 3] } },
+      where: { role_id: { in: [2, 3, 5] } },
       include: {
         role: true,
         staffs: {
@@ -238,8 +238,8 @@ export class UsersService {
       throw new NotFoundException(`User dengan ID ${id} tidak ditemukan`);
     }
 
-    if (user.role_id !== 2 && user.role_id !== 3) {
-      throw new BadRequestException(`User dengan ID ${id} bukan berstatus Staff atau Admin`);
+    if (user.role_id !== 2 && user.role_id !== 3 && user.role_id !== 5) {
+      throw new BadRequestException(`User dengan ID ${id} bukan berstatus Staff, Admin, atau Finance`);
     }
 
     const staff = user.staffs.length > 0 ? user.staffs[0] : null;
@@ -272,7 +272,7 @@ export class UsersService {
   // ==================== SIMPLE STAFF LIST (TANPA DETAIL) ====================
   async getStaffUsers() {
     return this.prisma.user.findMany({
-      where: { role_id: { in: [2, 3] } },
+      where: { role_id: { in: [2, 3, 5] } },
       select: {
         id: true,
         name: true,
@@ -420,13 +420,13 @@ export class UsersService {
     }
 
     // Mencegah pemberian role admin/staff lewat endpoint umum
-    if (updateDto.role_id === 2 || updateDto.role_id === 3) {
-      throw new BadRequestException('Pengubahan peran ke Admin atau Staff harus melalui endpoint pembaruan staf khusus (/users/staffs/:id)');
+    if (updateDto.role_id === 2 || updateDto.role_id === 3 || updateDto.role_id === 5) {
+      throw new BadRequestException('Pengubahan peran ke Admin, Staff, atau Finance harus melalui endpoint pembaruan staf khusus (/users/staffs/:id)');
     }
 
     // Mencegah penurunan role staf dari endpoint umum (staf/admin -> non-staf)
-    if (updateDto.role_id !== undefined && (user.role_id === 2 || user.role_id === 3) && updateDto.role_id !== user.role_id) {
-      throw new BadRequestException('Penurunan peran dari Admin/Staff ke peran lain harus dilakukan melalui endpoint pembaruan staf khusus (/users/staffs/:id) karena membutuhkan penghapusan profil staf.');
+    if (updateDto.role_id !== undefined && (user.role_id === 2 || user.role_id === 3 || user.role_id === 5) && updateDto.role_id !== user.role_id) {
+      throw new BadRequestException('Penurunan peran dari Admin/Staff/Finance ke peran lain harus dilakukan melalui endpoint pembaruan staf khusus (/users/staffs/:id) karena membutuhkan penghapusan profil staf.');
     }
 
     if (updateDto.password) {
@@ -474,7 +474,7 @@ export class UsersService {
         include: { role: true },
       });
 
-      const isStaffOrAdmin = updatedUser.role_id === 2 || updatedUser.role_id === 3;
+      const isStaffOrAdmin = updatedUser.role_id === 2 || updatedUser.role_id === 3 || updatedUser.role_id === 5;
       
       const existingStaff = await tx.staff.findUnique({
         where: { user_id: id },

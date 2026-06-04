@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 async function main() {
     console.log('🌱 Seeding staff users and staff records...');
-
+ 
     // Cari role staff (asumsi name = 'staff')
     let staffRole = await prisma.role.findFirst({ where: { name: 'staff' } });
     if (!staffRole) {
