@@ -137,7 +137,6 @@ model User {
   projects           Project[]
   project_members    ProjectMember[]
   production_logs    ProductionLog[]
-  salary_logs        SalaryLog[]
   work_logs          WorkLog[]
   staffs             Staff[]
   salaryPayments     SalaryPayment[]
@@ -705,23 +704,6 @@ model ProductionLog {
   @@map("production_logs")
 }
 
-model SalaryLog {
-  id           Int      @id @default(autoincrement())
-  user_id      Int
-  amount       Int
-  bonus        Int      @default(0)
-  deduction    Int      @default(0)
-  total_salary Int
-  period_start DateTime @db.Date
-  period_end   DateTime @db.Date
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
-  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@map("salary_logs")
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // CMS: CAROUSEL & RECOMMENDED PRODUCTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -783,10 +765,11 @@ model WorkLog {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  user            User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  stage           Stage         @relation(fields: [stage_id], references: [id], onDelete: Cascade)
-  custom_order    CustomOrder?  @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
-  sport_order     Order?        @relation(fields: [sport_order_id], references: [id], onDelete: Cascade)
+  user                 User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  stage                Stage                 @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  custom_order         CustomOrder?          @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  sport_order          Order?                @relation(fields: [sport_order_id], references: [id], onDelete: Cascade)
+  salaryPaymentDetail  SalaryPaymentDetail?
 
   @@map("work_logs")
 }
@@ -846,13 +829,15 @@ model SalaryPayment {
 model SalaryPaymentDetail {
   id                 Int            @id @default(autoincrement())
   salary_payment_id  Int
-  progress_report_id Int            @unique
+  progress_report_id Int?           @unique
+  work_log_id        Int?           @unique
   amount             Int?
   created_at         DateTime       @default(now())
   updated_at         DateTime       @updatedAt
 
   salaryPayment      SalaryPayment  @relation(fields: [salary_payment_id], references: [id], onDelete: Cascade)
-  progressReport     ProgressReport @relation(fields: [progress_report_id], references: [id], onDelete: Cascade)
+  progressReport     ProgressReport? @relation(fields: [progress_report_id], references: [id], onDelete: Cascade)
+  workLog            WorkLog?        @relation(fields: [work_log_id], references: [id], onDelete: Cascade)
 
   @@map("salary_payment_details")
 }

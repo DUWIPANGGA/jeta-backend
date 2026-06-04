@@ -102,6 +102,19 @@ export class GuestService {
     };
   }
 
+  async getRecommendedProducts() {
+    const items = await this.prisma.recommendedProduct.findMany({
+      include: { product: true },
+      orderBy: { order: 'asc' },
+    });
+
+    return {
+      success: true,
+      message: 'Recommended products retrieved successfully',
+      data: items,
+    };
+  }
+
   private async enrichWithVirtualStatus(order: any) {
     if (!order) return order;
 

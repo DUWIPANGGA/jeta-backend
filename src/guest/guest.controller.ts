@@ -44,6 +44,12 @@ export class GuestController {
     return this.guestService.getAllStages();
   }
 
+  // Guest bisa lihat recommended products
+  @Get('recommended-products')
+  async getRecommendedProducts() {
+    return this.guestService.getRecommendedProducts();
+  }
+
   // ✅ Guest bisa melacak pesanan (katalog maupun kustom) menggunakan satu API terpadu
   @Get('track/:code')
   async trackOrder(@Param('code') code: string) {

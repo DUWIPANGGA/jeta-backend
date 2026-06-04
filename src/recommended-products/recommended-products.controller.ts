@@ -17,29 +17,28 @@ import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('recommended-products')
-@UseGuards(JwtAuthGuard, AccessGuard)
 export class RecommendedProductsController {
   constructor(private readonly service: RecommendedProductsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('RecommendedProducts', 'create')
   create(@Body() createDto: CreateRecommendedProductDto) {
     return this.service.create(createDto);
   }
 
   @Get()
-  @Access('RecommendedProducts', 'read')
   findAll() {
     return this.service.findAll();
   }
 
   @Get(':id')
-  @Access('RecommendedProducts', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('RecommendedProducts', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -49,6 +48,7 @@ export class RecommendedProductsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('RecommendedProducts', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);

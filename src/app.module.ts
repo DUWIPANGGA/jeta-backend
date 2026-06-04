@@ -25,7 +25,6 @@ import { ConsultationFilesModule } from './consultation-files/consultation-files
 import { ConsultationMaterialsModule } from './consultation-materials/consultation-materials.module';
 import { CustomOrdersModule } from './custom-orders/custom-orders.module';
 import { ProductionLogsModule } from './production-logs/production-logs.module';
-import { SalaryLogsModule } from './salary-logs/salary-logs.module';
 import { GuestModule } from './guest/guest.module';
 import { StagesModule } from './stages/stages.module';
 import { EmailModule } from './email/email.module';
@@ -107,7 +106,6 @@ import { RecommendedProductsModule } from './recommended-products/recommended-pr
     ConsultationMaterialsModule,
     CustomOrdersModule,
     ProductionLogsModule,
-    SalaryLogsModule,
     GuestModule,
     StagesModule,
     EmailModule,

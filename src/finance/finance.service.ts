@@ -76,10 +76,11 @@ export class FinanceService {
       throw new NotFoundException(`Staff with ID ${staffId} not found`);
     }
 
-    // Ambil WorkLogs dalam periode
+    // Ambil WorkLogs dalam periode (kecuali yang sudah dibayar)
     const workLogs = await this.prisma.workLog.findMany({
       where: {
         user_id: staff.user_id,
+        salaryPaymentDetail: null,
         created_at: {
           gte: startDate,
           lte: endDate,
@@ -87,7 +88,16 @@ export class FinanceService {
       },
       include: {
         stage: true,
-        custom_order: true,
+        custom_order: {
+          include: {
+            projects: { select: { id: true } },
+          },
+        },
+        sport_order: {
+          include: {
+            projects: { select: { id: true } },
+          },
+        },
       },
       orderBy: { created_at: 'asc' },
     });
@@ -119,8 +129,9 @@ export class FinanceService {
 
     // Proses WorkLogs
     for (const log of workLogs) {
+      const workLogProjectId = log.custom_order?.projects?.[0]?.id ?? log.sport_order?.projects?.[0]?.id;
       const adjustment = staff.salaryProjects.find(
-        (sp) => sp.project_id === log.custom_order_id,
+        (sp) => sp.project_id === workLogProjectId,
       );
       const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
       const amount = (log.quantity || 0) * ratePerUnit;
@@ -141,7 +152,7 @@ export class FinanceService {
     // Proses ProgressReports
     for (const report of progressReports) {
       const adjustment = staff.salaryProjects.find(
-        (sp) => sp.project_id === report.project?.custom_order_id,
+        (sp) => sp.project_id === report.project_id,
       );
       const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
       const amount = (report.quantity || 0) * ratePerUnit;
@@ -163,8 +174,9 @@ export class FinanceService {
     const existingPayment = await this.prisma.salaryPayment.findFirst({
       where: {
         staff_id: staffId,
-        period_start: startDate,
-        period_end: endDate,
+        period_type: periodType,
+        period_start: { gte: startDate },
+        period_end: { lte: endDate },
       },
     });
 
@@ -194,6 +206,27 @@ export class FinanceService {
       },
     });
 
+    // Ambil workLogs untuk semua staff
+    const staffIds = staffs.map(s => s.id);
+    const staffUserIds = staffs.map(s => s.user_id);
+    const workLogs = await this.prisma.workLog.findMany({
+      where: {
+        user_id: { in: staffUserIds },
+        salaryPaymentDetail: null,
+      },
+      select: {
+        user_id: true,
+        quantity: true,
+      },
+    });
+
+    // Group workLogs by user_id
+    const workLogsByUser: Record<number, { quantity: number }[]> = {};
+    for (const wl of workLogs) {
+      if (!workLogsByUser[wl.user_id]) workLogsByUser[wl.user_id] = [];
+      workLogsByUser[wl.user_id].push(wl);
+    }
+
     const ranking = staffs.map((staff) => {
       let totalQuantity = 0;
       let totalAmount = 0;
@@ -206,6 +239,14 @@ export class FinanceService {
         );
         const ratePerUnit = (staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
         totalAmount += quantity * ratePerUnit;
+      }
+
+      // Tambah WorkLogs
+      const staffWorkLogs = workLogsByUser[staff.user_id] || [];
+      for (const wl of staffWorkLogs) {
+        const quantity = wl.quantity ?? 0;
+        totalQuantity += quantity;
+        totalAmount += quantity * (staff.salary ?? 0); // base rate, no adjustment
       }
 
       return {
@@ -569,10 +610,12 @@ export class FinanceService {
           },
         });
 
+        // Mark ProgressReports as paid
         const progressReports = await tx.progressReport.findMany({
           where: {
             staff_id: staffId,
             approval_status: true,
+            salaryPaymentDetail: null,
             created_at: {
               gte: start,
               lte: end,
@@ -597,6 +640,52 @@ export class FinanceService {
               amount: amount,
             },
           });
+        }
+
+        // Mark WorkLogs as paid
+        const staffRec = await tx.staff.findUnique({
+          where: { id: staffId },
+          include: { salaryProjects: true },
+        });
+        if (staffRec) {
+          const unpaidWorkLogs = await tx.workLog.findMany({
+            where: {
+              user_id: staffRec.user_id,
+              salaryPaymentDetail: null,
+              created_at: {
+                gte: start,
+                lte: end,
+              },
+            },
+            include: {
+              custom_order: {
+                include: {
+                  projects: { select: { id: true } },
+                },
+              },
+              sport_order: {
+                include: {
+                  projects: { select: { id: true } },
+                },
+              },
+            },
+          });
+          for (const wl of unpaidWorkLogs) {
+            const wlProjectId = wl.custom_order?.projects?.[0]?.id ?? wl.sport_order?.projects?.[0]?.id;
+            const wlAdjustment = staffRec.salaryProjects.find(
+              (sp) => sp.project_id === wlProjectId,
+            );
+            const wlRate = (staffRec.salary ?? 0) + (wlAdjustment?.adjustment_salary ?? 0);
+            const wlAmount = (wl.quantity ?? 0) * wlRate;
+
+            await tx.salaryPaymentDetail.create({
+              data: {
+                salary_payment_id: salaryPayment.id,
+                work_log_id: wl.id,
+                amount: wlAmount,
+              },
+            });
+          }
         }
 
         return salaryPayment;
