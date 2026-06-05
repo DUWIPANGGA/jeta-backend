@@ -10,7 +10,7 @@ async function main() {
   const superadminRole = await prisma.role.findFirst({ where: { name: 'superadmin' } });
   const adminRole = await prisma.role.findFirst({ where: { name: 'admin' } });
   const staffRole = await prisma.role.findFirst({ where: { name: 'staff' } });
-  const userRole = await prisma.role.findFirst({ where: { name: 'user' } });
+  const userRole = await prisma.role.findFirst({ where: { name: 'customer' } });
   const financeRole = await prisma.role.findFirst({ where: { name: 'finance' } });
 
   if (!superadminRole || !adminRole || !staffRole || !userRole || !financeRole) {

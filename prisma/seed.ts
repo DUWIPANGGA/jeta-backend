@@ -38,16 +38,17 @@ async function main() {
         }
 
         console.log(`\n-----------------------------------------`);
-        console.log(`📦 Menjalankan: node prisma/seeders/${file}`);
+        console.log(`📦 Menjalankan: npx tsx prisma/seeders/${file}`);
         
         try {
             // Jalankan sebagai proses terpisah agar tidak bentrok
-            const output = execSync(`node "${seederPath}"`, { 
+            const output = execSync(`npx tsx "${seederPath}"`, { 
                 stdio: 'inherit',
                 env: { ...process.env, NODE_ENV: 'development' }
             });
         } catch (error) {
-            console.error(`❌ Gagal menjalankan ${file}. Melanjutkan ke seeder berikutnya...`);
+            console.error(`❌ Gagal menjalankan ${file}:`, error.stderr?.toString() || error.message);
+            console.error('   Melanjutkan ke seeder berikutnya...');
         }
     }
 
