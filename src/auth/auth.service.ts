@@ -57,8 +57,20 @@ export class AuthService {
       role_id: defaultRole.id,
     });
 
-    const { password, ...result } = user;
-    return result;
+    const role = await this.prisma.role.findUnique({
+      where: { id: user.role_id },
+    });
+
+    const payload = { sub: user.id, email: user.email, role_id: user.role_id };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: role,
+      },
+    };
   }
 
   async verifyEmail(token: string) {
