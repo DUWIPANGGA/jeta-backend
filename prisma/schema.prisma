@@ -713,7 +713,7 @@ model Carousel {
   text       String?
   title      String?
   link       String?
-  image      String
+  media      String?
   video_url  String?
   order      Int?
   active     Boolean  @default(true)

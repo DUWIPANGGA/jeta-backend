@@ -9,18 +9,19 @@ import * as path from 'path';
 export class CarouselsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createDto: CreateCarouselDto, file: Express.Multer.File) {
-    const imageUrl = `/uploads/carousels/${file.filename}`;
+  async create(createDto: CreateCarouselDto, file?: Express.Multer.File) {
+    const data: any = {
+      text: createDto.text,
+      title: createDto.title,
+      link: createDto.link,
+      order: createDto.order,
+    };
 
-    const carousel = await this.prisma.carousel.create({
-      data: {
-        text: createDto.text,
-        title: createDto.title,
-        link: createDto.link,
-        image: imageUrl,
-        order: createDto.order,
-      },
-    });
+    if (file) {
+      data.media = `/uploads/carousels/${file.filename}`;
+    }
+
+    const carousel = await this.prisma.carousel.create({ data });
 
     return {
       success: true,
@@ -70,14 +71,14 @@ export class CarouselsService {
     const updateData: any = { ...updateDto };
 
     if (file) {
-      if (existing.image) {
-        const oldImagePath = path.join(process.cwd(), 'uploads', 'carousels',
-          path.basename(existing.image));
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+      if (existing.media) {
+        const oldMediaPath = path.join(process.cwd(), 'uploads', 'carousels',
+          path.basename(existing.media));
+        if (fs.existsSync(oldMediaPath)) {
+          fs.unlinkSync(oldMediaPath);
         }
       }
-      updateData.image = `/uploads/carousels/${file.filename}`;
+      updateData.media = `/uploads/carousels/${file.filename}`;
     }
 
     const updated = await this.prisma.carousel.update({
@@ -101,11 +102,11 @@ export class CarouselsService {
       throw new NotFoundException(`Carousel with ID ${id} not found`);
     }
 
-    if (existing.image) {
-      const imagePath = path.join(process.cwd(), 'uploads', 'carousels',
-        path.basename(existing.image));
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+    if (existing.media) {
+      const mediaPath = path.join(process.cwd(), 'uploads', 'carousels',
+        path.basename(existing.media));
+      if (fs.existsSync(mediaPath)) {
+        fs.unlinkSync(mediaPath);
       }
     }
 

@@ -39,8 +39,8 @@ const storage = diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-    return cb(new BadRequestException('Only image files are allowed!'), false);
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm)$/i)) {
+    return cb(new BadRequestException('Only image and video files are allowed!'), false);
   }
   cb(null, true);
 };
@@ -62,21 +62,18 @@ export class CarouselsController {
   @Post()
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Carousels', 'create')
-  @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor('media', { storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async create(
     @Body() createDto: CreateCarouselDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (!file) {
-      throw new BadRequestException('Carousel image is required');
-    }
     return this.carouselsService.create(createDto, file);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Carousels', 'update')
-  @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor('media', { storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateCarouselDto,
