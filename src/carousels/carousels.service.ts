@@ -10,12 +10,7 @@ export class CarouselsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateCarouselDto, file?: Express.Multer.File) {
-    const data: any = {
-      text: createDto.text,
-      title: createDto.title,
-      link: createDto.link,
-      order: createDto.order,
-    };
+    const data: any = { ...createDto };
 
     if (file) {
       data.media = `/uploads/carousels/${file.filename}`;
