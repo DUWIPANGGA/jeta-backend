@@ -31,9 +31,9 @@ interface RequestWithUser extends Request {
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-  @HttpCode(HttpStatus.OK)
-  @Post('login')
-  async login(
+  // @HttpCode(HttpStatus.OK)
+  @Post('login/customer')
+  async loginCustomer(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: any,
   ) {

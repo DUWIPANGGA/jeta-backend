@@ -38,10 +38,8 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
     const defaultRole = await this.prisma.role.findFirst({
-      where: { name: 'user' },
+      where: { name: 'customer' },
     });
 
     if (!defaultRole) {
@@ -53,7 +51,7 @@ export class AuthService {
       email: dto.email,
       phone: dto.phone,
       address: dto.address,
-      password: hashedPassword,
+      password: dto.password,
       role_id: defaultRole.id,
     });
 
@@ -88,14 +86,13 @@ export class AuthService {
       throw new UnauthorizedException('Kredensial salah');
     }
 
-    // Hanya izinkan pengguna biasa (role_id = 4)
-    if (user.role_id !== 4) {
-      throw new UnauthorizedException('Akses ditolak. Akun staf harus login melalui portal khusus.');
-    }
-
     const role = await this.prisma.role.findUnique({
       where: { id: user.role_id },
     });
+
+    if (!role || (role.name !== 'user' && role.name !== 'customer')) {
+      throw new UnauthorizedException('Akses ditolak. Akun staf harus login melalui portal khusus.');
+    }
 
     const payload = { sub: user.id, email: user.email, role_id: user.role_id };
     return {
