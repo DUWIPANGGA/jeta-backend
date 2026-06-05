@@ -9,7 +9,7 @@ export class CreatePortofolioDto {
 
   @IsString()
   @IsOptional()
-  image?: string;
+  link?: string;
 
   @IsString()
   @IsOptional()

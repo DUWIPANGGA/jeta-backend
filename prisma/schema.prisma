@@ -739,6 +739,7 @@ model RecommendedProduct {
 model Portofolio {
   id          Int      @id @default(autoincrement())
   name        String?
+  link        String?
   image       String?
   description String?
   order       Int?
