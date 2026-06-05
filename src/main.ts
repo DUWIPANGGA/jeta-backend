@@ -33,7 +33,8 @@ async function bootstrap() {
       'https://jetaindonesia.com',
       'https://www.jetaindonesia.com',
       'http://localhost:5173',
-      'http://192.168.1.35:5173'
+      'http://192.168.1.35:5173',
+      'http://localhost:3000',
     ],
     credentials: true,
   });
