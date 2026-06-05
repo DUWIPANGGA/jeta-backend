@@ -519,22 +519,6 @@ CREATE TABLE "production_logs" (
 );
 
 -- CreateTable
-CREATE TABLE "salary_logs" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "amount" INTEGER NOT NULL,
-    "bonus" INTEGER NOT NULL DEFAULT 0,
-    "deduction" INTEGER NOT NULL DEFAULT 0,
-    "total_salary" INTEGER NOT NULL,
-    "period_start" DATE NOT NULL,
-    "period_end" DATE NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "salary_logs_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "carousels" (
     "id" SERIAL NOT NULL,
     "text" TEXT,
@@ -631,7 +615,8 @@ CREATE TABLE "salary_payments" (
 CREATE TABLE "salary_payment_details" (
     "id" SERIAL NOT NULL,
     "salary_payment_id" INTEGER NOT NULL,
-    "progress_report_id" INTEGER NOT NULL,
+    "progress_report_id" INTEGER,
+    "work_log_id" INTEGER,
     "amount" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -644,6 +629,9 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_verification_token_key" ON "users"("verification_token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "custom_variants_name_key" ON "custom_variants"("name");
@@ -710,6 +698,9 @@ CREATE UNIQUE INDEX "recommended_products_product_id_key" ON "recommended_produc
 
 -- CreateIndex
 CREATE UNIQUE INDEX "salary_payment_details_progress_report_id_key" ON "salary_payment_details"("progress_report_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "salary_payment_details_work_log_id_key" ON "salary_payment_details"("work_log_id");
 
 -- AddForeignKey
 ALTER TABLE "accesses" ADD CONSTRAINT "accesses_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -838,9 +829,6 @@ ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_order_id_fkey" FOR
 ALTER TABLE "production_logs" ADD CONSTRAINT "production_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "salary_logs" ADD CONSTRAINT "salary_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "recommended_products" ADD CONSTRAINT "recommended_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -878,3 +866,6 @@ ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_sala
 
 -- AddForeignKey
 ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_progress_report_id_fkey" FOREIGN KEY ("progress_report_id") REFERENCES "progress_reports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "salary_payment_details" ADD CONSTRAINT "salary_payment_details_work_log_id_fkey" FOREIGN KEY ("work_log_id") REFERENCES "work_logs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
