@@ -8,9 +8,13 @@ import {
   Delete,
   ParseIntPipe,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ForbiddenException,
   Req,
   Query,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
@@ -19,6 +23,7 @@ import { UpdateStaffUserDto } from './dto/update-staff-user.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { storage, fileFilter } from '../common/utils/file-upload.utils';
 
 interface RequestWithUser extends Request {
   user: { id: number; role_id: number };
@@ -93,9 +98,17 @@ export class UsersController {
 
   // ==================== UPDATE USER ====================
   @Patch(':id')
-  @Access('Users', 'update')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @UseInterceptors(FileInterceptor('image', { storage: storage('users'), fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: RequestWithUser,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (req.user.id !== id && req.user.role_id === 4) {
+      throw new ForbiddenException('Anda hanya dapat mengubah data akun Anda sendiri');
+    }
+    return this.usersService.update(id, updateUserDto, file);
   }
 
   // ==================== DELETE USER ====================

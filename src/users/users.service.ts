@@ -5,6 +5,8 @@ import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateStaffUserDto } from './dto/update-staff-user.dto';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UsersService {
@@ -409,7 +411,7 @@ export class UsersService {
     };
   }
 
-  async update(id: number, updateDto: UpdateUserDto) {
+  async update(id: number, updateDto: UpdateUserDto, file?: Express.Multer.File) {
     const user = await this.findOne(id);
     
     if (updateDto.email) {
@@ -433,9 +435,21 @@ export class UsersService {
       updateDto.password = await bcrypt.hash(updateDto.password, 10);
     }
 
+    const data: any = { ...updateDto };
+
+    if (file) {
+      if (user.image) {
+        const oldPath = path.join(process.cwd(), 'uploads', 'users', path.basename(user.image));
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+      data.image = `/uploads/users/${file.filename}`;
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: updateDto,
+      data,
       include: { role: true },
     });
   }
@@ -568,7 +582,15 @@ export class UsersService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const user = await this.findOne(id);
+
+    if (user.image) {
+      const imagePath = path.join(process.cwd(), 'uploads', 'users', path.basename(user.image));
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
     await this.prisma.user.delete({ where: { id } });
     return { message: `User ${id} deleted successfully` };
   }
