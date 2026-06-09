@@ -7,10 +7,40 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomJerseyDto } from './dto/create-custom-jersey.dto';
+import { CalculatePemainDto } from './dto/calculate-pemain.dto';
 
 @Injectable()
 export class CustomJerseyService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async calculatePemain(dto: CalculatePemainDto) {
+    const grouped = dto.pemain.reduce(
+      (acc, p) => {
+        acc[p.ukuran_option_id] = (acc[p.ukuran_option_id] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>,
+    );
+
+    const ukuranIds = Object.keys(grouped).map(Number);
+    const options = await this.prisma.variantOption.findMany({
+      where: { id: { in: ukuranIds } },
+      select: { id: true, name: true },
+    });
+
+    const optionMap = new Map(options.map((o) => [o.id, o.name]));
+
+    const perUkuran = ukuranIds.map((id) => ({
+      ukuran_option_id: id,
+      nama: optionMap.get(id) ?? 'Unknown',
+      jumlah: grouped[id],
+    }));
+
+    return {
+      total: dto.pemain.length,
+      per_ukuran: perUkuran,
+    };
+  }
 
   async createOrder(
     createDto: CreateCustomJerseyDto,

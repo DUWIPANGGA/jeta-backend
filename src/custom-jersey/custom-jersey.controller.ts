@@ -16,6 +16,7 @@ import { extname } from 'path';
 import * as fs from 'fs';
 import { CustomJerseyService } from './custom-jersey.service';
 import { CreateCustomJerseyDto } from './dto/create-custom-jersey.dto';
+import { CalculatePemainDto } from './dto/calculate-pemain.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
@@ -78,5 +79,12 @@ export class CustomJerseyController {
     @Req() req: RequestWithUser,
   ) {
     return this.customJerseyService.createOrder(createDto, req.user, logoFile);
+  }
+
+  @Post('calculate')
+  @Access('CustomOrders', 'create')
+  @HttpCode(HttpStatus.OK)
+  async calculate(@Body() dto: CalculatePemainDto) {
+    return this.customJerseyService.calculatePemain(dto);
   }
 }
