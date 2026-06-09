@@ -17,6 +17,7 @@ async function main() {
         'categories.js',
         'products.js',
         'custom-variants.js',
+        'jersey-templates.js',
         'product-variants.js',
         'payment_methods.js',
         'stages.js',
