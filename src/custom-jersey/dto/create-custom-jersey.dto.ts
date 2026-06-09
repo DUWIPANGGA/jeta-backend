@@ -4,34 +4,11 @@ import {
   IsNotEmpty,
   IsOptional,
   IsInt,
-  IsArray,
-  ValidateNested,
   Min,
-  ArrayMinSize,
   MaxLength,
   IsDate,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-
-export class PemainDto {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @Transform(({ value }) => {
-    const num = typeof value === 'string' ? parseInt(value, 10) : value;
-    return isNaN(num) ? value : num;
-  })
-  @IsInt()
-  nomor_punggung: number;
-
-  @Transform(({ value }) => {
-    const num = typeof value === 'string' ? parseInt(value, 10) : value;
-    return isNaN(num) ? value : num;
-  })
-  @IsInt()
-  ukuran_option_id: number;
-}
 
 export class CreateCustomJerseyDto {
   @IsString()
@@ -108,11 +85,8 @@ export class CreateCustomJerseyDto {
     }
     return value;
   })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PemainDto)
   @IsOptional()
-  pemain?: PemainDto[];
+  pemain?: any[];
 
   @IsInt()
   @IsOptional()

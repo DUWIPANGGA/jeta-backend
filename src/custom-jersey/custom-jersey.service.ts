@@ -9,6 +9,27 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomJerseyDto } from './dto/create-custom-jersey.dto';
 import { CalculatePemainDto } from './dto/calculate-pemain.dto';
 
+function validatePemain(pemain: any[]): { name: string; nomor_punggung: number; ukuran_option_id: number }[] {
+  if (!pemain || !Array.isArray(pemain)) return [];
+  return pemain.map((p: any, idx: number) => {
+    if (!p.name || p.nomor_punggung == null || p.ukuran_option_id == null) {
+      throw new BadRequestException(
+        `Pemain[${idx}]: name, nomor_punggung, dan ukuran_option_id wajib diisi`,
+      );
+    }
+    if (isNaN(Number(p.nomor_punggung)) || isNaN(Number(p.ukuran_option_id))) {
+      throw new BadRequestException(
+        `Pemain[${idx}]: nomor_punggung dan ukuran_option_id harus angka`,
+      );
+    }
+    return {
+      name: String(p.name),
+      nomor_punggung: Number(p.nomor_punggung),
+      ukuran_option_id: Number(p.ukuran_option_id),
+    };
+  });
+}
+
 @Injectable()
 export class CustomJerseyService {
   constructor(private readonly prisma: PrismaService) {}
@@ -117,6 +138,8 @@ export class CustomJerseyService {
       throw new BadRequestException('Deadline cannot be in the past');
     }
 
+    const pemainList = validatePemain(createDto.pemain || []);
+
     let logoPath: string | null = null;
     if (logoFile) {
       logoPath = `/uploads/custom-jersey/${logoFile.filename}`;
@@ -181,7 +204,7 @@ export class CustomJerseyService {
         ],
       });
 
-      if (createDto.team_name || logoPath || (createDto.pemain && createDto.pemain.length > 0)) {
+      if (createDto.team_name || logoPath || pemainList.length > 0) {
         const timJersey = await tx.timJersey.create({
           data: {
             custom_order_id: order.id,
@@ -190,9 +213,9 @@ export class CustomJerseyService {
           },
         });
 
-        if (createDto.pemain && createDto.pemain.length > 0) {
+        if (pemainList.length > 0) {
           await tx.pemain.createMany({
-            data: createDto.pemain.map((p) => ({
+            data: pemainList.map((p) => ({
               tim_jersey_id: timJersey.id,
               name: p.name,
               nomor_punggung: p.nomor_punggung,
