@@ -49,6 +49,8 @@ import { AttributesModule } from './attributes/attributes.module';
 import { MaterialsModule } from './materials/materials.module';
 import { CustomVariantsModule } from './custom-variants/custom-variants.module';
 import { VariantOptionsModule } from './variant-options/variant-options.module';
+import { JerseyTemplatesModule } from './jersey-templates/jersey-templates.module';
+import { CustomJerseyModule } from './custom-jersey/custom-jersey.module';
 
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { SummaryModule } from './summary/summary.module';
@@ -130,6 +132,8 @@ import { RecommendedProductsModule } from './recommended-products/recommended-pr
     MaterialsModule,
     CustomVariantsModule,
     VariantOptionsModule,
+    JerseyTemplatesModule,
+    CustomJerseyModule,
     SummaryModule,
     CarouselsModule,
     RecommendedProductsModule,

@@ -166,6 +166,69 @@ model PasswordResetToken {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// JERSEY TEMPLATE CATALOG
+// ─────────────────────────────────────────────────────────────────────────────
+
+model JerseyTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  image       String?
+  description String?
+  status      Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  combinations TemplateCombination[]
+
+  @@map("jersey_templates")
+}
+
+model TemplateCombination {
+  id                  Int      @id @default(autoincrement())
+  jersey_template_id  Int
+  color_option_id     Int       // → VariantOption (warna)
+  size_option_id      Int       // → VariantOption (ukuran)
+  material_option_id  Int       // → VariantOption (bahan)
+  created_at          DateTime @default(now())
+
+  template JerseyTemplate @relation(fields: [jersey_template_id], references: [id], onDelete: Cascade)
+  color    VariantOption  @relation("TemplateColor", fields: [color_option_id], references: [id])
+  size     VariantOption  @relation("TemplateSize", fields: [size_option_id], references: [id])
+  material VariantOption  @relation("TemplateMaterial", fields: [material_option_id], references: [id])
+
+  @@unique([jersey_template_id, color_option_id, size_option_id, material_option_id])
+  @@map("template_combinations")
+}
+
+model TimJersey {
+  id              Int      @id @default(autoincrement())
+  custom_order_id Int      @unique
+  team_name       String?
+  logo            String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  custom_order CustomOrder @relation(fields: [custom_order_id], references: [id], onDelete: Cascade)
+  pemains      Pemain[]
+
+  @@map("tim_jerseys")
+}
+
+model Pemain {
+  id               Int      @id @default(autoincrement())
+  tim_jersey_id    Int
+  name             String
+  nomor_punggung   Int
+  ukuran_option_id Int
+  created_at       DateTime @default(now())
+
+  tim_jersey TimJersey     @relation(fields: [tim_jersey_id], references: [id], onDelete: Cascade)
+  ukuran     VariantOption @relation("PemainUkuran", fields: [ukuran_option_id], references: [id])
+
+  @@map("pemains")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CUSTOM ORDER CATALOG (untuk Custom Order)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -193,6 +256,10 @@ model VariantOption {
 
   custom_variant    CustomVariant @relation(fields: [custom_variant_id], references: [id], onDelete: Cascade)
   customOrderItemOptions CustomOrderItemOption[]
+  templateColors    TemplateCombination[] @relation("TemplateColor")
+  templateSizes     TemplateCombination[] @relation("TemplateSize")
+  templateMaterials TemplateCombination[] @relation("TemplateMaterial")
+  pemainUkuran      Pemain[]             @relation("PemainUkuran")
 
   @@map("variant_options")
 }
@@ -403,12 +470,13 @@ model CustomOrder {
   created_at       DateTime         @default(now())
   updated_at       DateTime         @updatedAt
 
-  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  payments Payment[]
-  items    CustomOrderItem[]
-  projects Project[]
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  payments  Payment[]
+  items     CustomOrderItem[]
+  projects  Project[]
   work_logs WorkLog[]
-  tracking Tracking?
+  tracking  Tracking?
+  tim_jersey TimJersey?
 
   @@map("custom_orders")
 }

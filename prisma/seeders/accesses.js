@@ -29,6 +29,7 @@ const accessConfig = {
       'Staffs',
       'Stages',
       'WorkLogs',
+      'JerseyTemplates',
     ]);
 
     if (!staffPages.has(pageName)) return noAccess;
@@ -53,6 +54,9 @@ const accessConfig = {
     }
     if (pageName === 'WorkLogs') {
       return { create: true, read: true, update: true, delete: false };
+    }
+    if (pageName === 'JerseyTemplates') {
+      return { create: false, read: true, update: false, delete: false };
     }
 
     return { create: false, read: true, update: false, delete: false };
