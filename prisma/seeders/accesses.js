@@ -62,7 +62,7 @@ const accessConfig = {
     return { create: false, read: true, update: false, delete: false };
   },
 
-  user: (pageName) => {
+  customer: (pageName) => {
     const userPages = new Set([
       'Auth',
       'Carts',

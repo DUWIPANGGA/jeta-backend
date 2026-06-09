@@ -34,6 +34,7 @@ export class CustomVariantsController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.customVariantsService.findOne(id);
   }
+  
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Post()
   @Access('CustomVariants', 'create')
