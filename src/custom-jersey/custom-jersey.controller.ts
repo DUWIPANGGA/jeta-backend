@@ -59,10 +59,17 @@ interface RequestWithUser extends Request {
 }
 
 @Controller('custom-jersey')
-@UseGuards(JwtAuthGuard, AccessGuard)
 export class CustomJerseyController {
   constructor(private readonly customJerseyService: CustomJerseyService) {}
-
+  
+  @Post('calculate')
+  @Access('CustomOrders', 'create')
+  @HttpCode(HttpStatus.OK)
+  async calculate(@Body() dto: CalculatePemainDto) {
+    return this.customJerseyService.calculatePemain(dto);
+  }
+  
+  @UseGuards(JwtAuthGuard, AccessGuard)
   @Post('order')
   @Access('CustomOrders', 'create')
   @HttpCode(HttpStatus.CREATED)
@@ -81,10 +88,4 @@ export class CustomJerseyController {
     return this.customJerseyService.createOrder(createDto, req.user, logoFile);
   }
 
-  @Post('calculate')
-  @Access('CustomOrders', 'create')
-  @HttpCode(HttpStatus.OK)
-  async calculate(@Body() dto: CalculatePemainDto) {
-    return this.customJerseyService.calculatePemain(dto);
-  }
 }

@@ -19,23 +19,15 @@ import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('variant-options')
-@UseGuards(JwtAuthGuard, AccessGuard)
 export class VariantOptionsController {
   constructor(private readonly variantOptionsService: VariantOptionsService) {}
-
-  @Post()
-  @Access('VariantOptions', 'create')
-  create(@Body() createDto: CreateVariantOptionDto) {
-    return this.variantOptionsService.create(createDto);
-  }
-
   @Get()
   @Access('VariantOptions', 'read')
   findAll(@Query('include_inactive') includeInactive?: string) {
     const includeInactiveBool = includeInactive === 'false' ? false : true;
     return this.variantOptionsService.findAll(includeInactiveBool);
   }
-
+  
   @Get('by-custom-variant/:customVariantId')
   @Access('VariantOptions', 'read')
   findByCustomVariant(
@@ -45,12 +37,21 @@ export class VariantOptionsController {
     const includeInactiveBool = includeInactive === 'true';
     return this.variantOptionsService.findByCustomVariant(customVariantId, includeInactiveBool);
   }
-
+  
   @Get(':id')
   @Access('VariantOptions', 'read')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.variantOptionsService.findOne(id);
   }
+
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Post()
+  @Access('VariantOptions', 'create')
+  create(@Body() createDto: CreateVariantOptionDto) {
+    return this.variantOptionsService.create(createDto);
+  }
+  
+  
 
   @Patch(':id')
   @Access('VariantOptions', 'update')
