@@ -25,14 +25,14 @@ const variantOptions = [
   { custom_variant_name: 'Lengan', name: 'Tanpa Lengan', status: true },
   
   // Warna options
-  { custom_variant_name: 'Warna', name: 'Hitam', status: true },
-  { custom_variant_name: 'Warna', name: 'Putih', status: true },
-  { custom_variant_name: 'Warna', name: 'Merah', status: true },
-  { custom_variant_name: 'Warna', name: 'Biru', status: true },
-  { custom_variant_name: 'Warna', name: 'Kuning', status: true },
-  { custom_variant_name: 'Warna', name: 'Hijau', status: true },
-  { custom_variant_name: 'Warna', name: 'Navy', status: true },
-  { custom_variant_name: 'Warna', name: 'Abu-abu', status: true },
+  { custom_variant_name: 'Warna', name: 'Hitam', description: '#000000', status: true },
+  { custom_variant_name: 'Warna', name: 'Putih', description: '#FFFFFF', status: true },
+  { custom_variant_name: 'Warna', name: 'Merah', description: '#FF0000', status: true },
+  { custom_variant_name: 'Warna', name: 'Biru', description: '#0000FF', status: true },
+  { custom_variant_name: 'Warna', name: 'Kuning', description: '#FFFF00', status: true },
+  { custom_variant_name: 'Warna', name: 'Hijau', description: '#008000', status: true },
+  { custom_variant_name: 'Warna', name: 'Navy', description: '#000080', status: true },
+  { custom_variant_name: 'Warna', name: 'Abu-abu', description: '#808080', status: true },
   
   // Ukuran options
   { custom_variant_name: 'Ukuran', name: 'S', status: true },
@@ -120,10 +120,13 @@ async function main() {
     });
 
     if (existing) {
-      if (existing.status !== option.status) {
+      if (existing.status !== option.status || existing.description !== (option.description || null)) {
         await prisma.variantOption.update({
           where: { id: existing.id },
-          data: { status: option.status },
+          data: { 
+            status: option.status,
+            description: option.description || null,
+          },
         });
         updatedOptions++;
         console.log(`  🔄 Updated variant option: ${option.name} (${option.custom_variant_name})`);
