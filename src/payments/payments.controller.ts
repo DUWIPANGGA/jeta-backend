@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -85,7 +86,8 @@ export class PaymentsController {
     @Param('id', ParseIntPipe) id: number, 
     @UploadedFile() file: Express.Multer.File,
     @Body('amount') amount?: string,
-    @Body('payment_method_id') paymentMethodId?: string
+    @Body('payment_method_id') paymentMethodId?: string,
+    @Req() req?: any,
   ) {
     if (!file) {
       throw new BadRequestException('File is required');
@@ -95,7 +97,8 @@ export class PaymentsController {
       id, 
       filePath,
       amount ? parseInt(amount) : undefined,
-      paymentMethodId ? parseInt(paymentMethodId) : undefined
+      paymentMethodId ? parseInt(paymentMethodId) : undefined,
+      req?.user?.id,
     );
   }
 

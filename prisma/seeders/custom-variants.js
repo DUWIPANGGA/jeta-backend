@@ -14,15 +14,15 @@ const customVariants = [
 // Data Variant Option (pilihan dari setiap custom variant) - tanpa description
 const variantOptions = [
   // Neck options
-  { custom_variant_name: 'Neck', name: 'V-Neck', status: true },
-  { custom_variant_name: 'Neck', name: 'O-Neck', status: true },
-  { custom_variant_name: 'Neck', name: 'Polo Collar', status: true },
-  { custom_variant_name: 'Neck', name: 'Turtleneck', status: true },
+  { custom_variant_name: 'Neck', name: 'V-Neck', description: '', status: true },
+  { custom_variant_name: 'Neck', name: 'O-Neck', description: '', status: true },
+  { custom_variant_name: 'Neck', name: 'Polo Collar', description: '', status: true },
+  { custom_variant_name: 'Neck', name: 'Turtleneck', description: '', status: true },
   
   // Lengan options
-  { custom_variant_name: 'Lengan', name: 'Lengan Pendek', status: true },
-  { custom_variant_name: 'Lengan', name: 'Lengan Panjang', status: true },
-  { custom_variant_name: 'Lengan', name: 'Tanpa Lengan', status: true },
+  { custom_variant_name: 'Lengan', name: 'Lengan Pendek', description: '', status: true },
+  { custom_variant_name: 'Lengan', name: 'Lengan Panjang', description: '', status: true },
+  { custom_variant_name: 'Lengan', name: 'Tanpa Lengan', description: '', status: true },
   
   // Warna options
   { custom_variant_name: 'Warna', name: 'Hitam', description: '#000000', status: true },
@@ -35,27 +35,27 @@ const variantOptions = [
   { custom_variant_name: 'Warna', name: 'Abu-abu', description: '#808080', status: true },
   
   // Ukuran options
-  { custom_variant_name: 'Ukuran', name: 'S', status: true },
-  { custom_variant_name: 'Ukuran', name: 'M', status: true },
-  { custom_variant_name: 'Ukuran', name: 'L', status: true },
-  { custom_variant_name: 'Ukuran', name: 'XL', status: true },
-  { custom_variant_name: 'Ukuran', name: 'XXL', status: true },
+  { custom_variant_name: 'Ukuran', name: 'S', description: '', status: true },
+  { custom_variant_name: 'Ukuran', name: 'M', description: '', status: true },
+  { custom_variant_name: 'Ukuran', name: 'L', description: '', status: true },
+  { custom_variant_name: 'Ukuran', name: 'XL', description: '', status: true },
+  { custom_variant_name: 'Ukuran', name: 'XXL', description: '', status: true },
   
   // Bahan options
-  { custom_variant_name: 'Bahan', name: 'Combed 20s', status: true },
-  { custom_variant_name: 'Bahan', name: 'Combed 24s', status: true },
-  { custom_variant_name: 'Bahan', name: 'Combed 30s', status: true },
-  { custom_variant_name: 'Bahan', name: 'Cotton Bamboo', status: true },
-  { custom_variant_name: 'Bahan', name: 'Spandex', status: true },
-  { custom_variant_name: 'Bahan', name: 'Polyester', status: true },
+  { custom_variant_name: 'Bahan', name: 'Combed 20s', description: '', status: true },
+  { custom_variant_name: 'Bahan', name: 'Combed 24s', description: '', status: true },
+  { custom_variant_name: 'Bahan', name: 'Combed 30s', description: '', status: true },
+  { custom_variant_name: 'Bahan', name: 'Cotton Bamboo', description: '', status: true },
+  { custom_variant_name: 'Bahan', name: 'Spandex', description: '', status: true },
+  { custom_variant_name: 'Bahan', name: 'Polyester', description: '', status: true },
   
   // Sablon options
-  { custom_variant_name: 'Sablon', name: 'Sablon Plastisol', status: true },
-  { custom_variant_name: 'Sablon', name: 'Sablon Waterbase', status: true },
-  { custom_variant_name: 'Sablon', name: 'Sablon Foil', status: true },
-  { custom_variant_name: 'Sablon', name: 'Sablon Glow in the Dark', status: true },
-  { custom_variant_name: 'Sablon', name: 'Bordir', status: true },
-  { custom_variant_name: 'Sablon', name: 'Sublim', status: true },
+  { custom_variant_name: 'Sablon', name: 'Sablon Plastisol', description: '', status: true },
+  { custom_variant_name: 'Sablon', name: 'Sablon Waterbase', description: '', status: true },
+  { custom_variant_name: 'Sablon', name: 'Sablon Foil', description: '', status: true },
+  { custom_variant_name: 'Sablon', name: 'Sablon Glow in the Dark', description: '', status: true },
+  { custom_variant_name: 'Sablon', name: 'Bordir', description: '', status: true },
+  { custom_variant_name: 'Sablon', name: 'Sublim', description: '', status: true },
 ];
 
 async function getCustomVariantIdByName(name) {
@@ -120,12 +120,12 @@ async function main() {
     });
 
     if (existing) {
-      if (existing.status !== option.status || existing.description !== (option.description || null)) {
+      if (existing.status !== option.status || existing.description !== (option.description ?? '')) {
         await prisma.variantOption.update({
           where: { id: existing.id },
           data: { 
             status: option.status,
-            description: option.description || null,
+            description: option.description ?? '',
           },
         });
         updatedOptions++;
@@ -139,6 +139,7 @@ async function main() {
           name: option.name,
           custom_variant_id: customVariantId,
           status: option.status,
+          description: option.description ?? '',
         },
       });
       createdOptions++;

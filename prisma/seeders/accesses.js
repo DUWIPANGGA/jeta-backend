@@ -71,6 +71,8 @@ const accessConfig = {
       'CustomOrders',
       'CustomerData',
       'Guest',
+      'PaymentMethods',
+      'Payments',
     ]);
 
     if (!userPages.has(pageName)) return noAccess;
@@ -78,7 +80,7 @@ const accessConfig = {
     return {
       create: pageName === 'Carts' || pageName === 'CustomOrders',
       read: true,
-      update: pageName === 'Carts',
+      update: pageName === 'Carts' || pageName === 'Payments',
       delete: pageName === 'Carts',
     };
   },

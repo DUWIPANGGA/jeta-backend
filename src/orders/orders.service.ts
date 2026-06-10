@@ -203,6 +203,9 @@ export class OrdersService {
             variant: { select: { size: true, color: true } }
           }
         },
+        payment: {
+          include: { payment_method: true }
+        },
         trackings: {
           include: { tracking_histories: { orderBy: { created_at: 'desc' } } }
         }

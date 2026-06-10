@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
@@ -130,11 +130,18 @@ export class PaymentsService {
     return payment;
   }
 
-  async uploadProof(id: number, filePath: string, amount?: number, paymentMethodId?: number) {
+  async uploadProof(id: number, filePath: string, amount?: number, paymentMethodId?: number, userId?: number) {
     const payment = await this.findOne(id);
 
     if (payment.payment_status === PaymentStatus.completed) {
       throw new BadRequestException('Payment already completed');
+    }
+
+    if (userId && payment.order?.user?.id && payment.order.user.id !== userId) {
+      throw new ForbiddenException('You are not allowed to upload proof for this payment');
+    }
+    if (userId && payment.custom_order?.user?.id && payment.custom_order.user.id !== userId) {
+      throw new ForbiddenException('You are not allowed to upload proof for this payment');
     }
 
     const dataToUpdate: any = {

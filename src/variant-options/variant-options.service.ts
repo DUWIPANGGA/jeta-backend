@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVariantOptionDto } from './dto/create-variant-option.dto';
 import { UpdateVariantOptionDto } from './dto/update-variant-option.dto';
@@ -13,6 +13,15 @@ export class VariantOptionsService {
     });
     if (!customVariant) {
       throw new NotFoundException(`Custom variant with ID ${createDto.custom_variant_id} not found`);
+    }
+
+    if (customVariant.name === 'Warna') {
+      if (!createDto.description) {
+        throw new BadRequestException('Description (hex code) is required for Warna variant options');
+      }
+      if (!/^#[0-9A-Fa-f]{6}$/.test(createDto.description)) {
+        throw new BadRequestException('Description must be a valid hex color code (e.g., #FF0000)');
+      }
     }
 
     return this.prisma.variantOption.create({
@@ -50,7 +59,17 @@ export class VariantOptionsService {
   }
 
   async update(id: number, updateDto: UpdateVariantOptionDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+
+    if (existing.custom_variant.name === 'Warna' && updateDto.description !== undefined) {
+      if (!updateDto.description) {
+        throw new BadRequestException('Description (hex code) cannot be empty for Warna variant options');
+      }
+      if (!/^#[0-9A-Fa-f]{6}$/.test(updateDto.description)) {
+        throw new BadRequestException('Description must be a valid hex color code (e.g., #FF0000)');
+      }
+    }
+
     return this.prisma.variantOption.update({
       where: { id },
       data: updateDto,

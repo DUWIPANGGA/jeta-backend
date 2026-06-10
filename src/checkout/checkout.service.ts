@@ -122,7 +122,7 @@ export class CheckoutService {
           order_number: orderNumber,
           grand_total: grandTotal,
           shipping_address: shippingAddress || 'N/A',
-          shipping_cost: 0,
+          shipping_cost: dto.shippingCost ?? 0,
           payment_method: paymentMethod.bank_name,
           status: 'pending',
           order_items: {
