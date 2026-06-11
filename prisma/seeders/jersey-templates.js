@@ -25,59 +25,36 @@ const templates = [
     image: '/uploads/jersey-templates/classic.jpg',
     description: 'Jersey klasik dengan potongan standar, cocok untuk futsal dan olahraga santai.',
     status: true,
-    combinations: [
-      { color: 'Merah', size: 'M', material: 'Polyester' },
-      { color: 'Merah', size: 'L', material: 'Polyester' },
-      { color: 'Merah', size: 'XL', material: 'Polyester' },
-      { color: 'Biru', size: 'M', material: 'Polyester' },
-      { color: 'Biru', size: 'L', material: 'Polyester' },
-      { color: 'Biru', size: 'XL', material: 'Polyester' },
-      { color: 'Hijau', size: 'M', material: 'Polyester' },
-      { color: 'Hijau', size: 'L', material: 'Polyester' },
-      { color: 'Hijau', size: 'XL', material: 'Polyester' },
-    ],
+    colors: ['Merah', 'Biru', 'Hijau'],
+    sizes: ['M', 'L', 'XL'],
+    materials: ['Polyester'],
   },
   {
     name: 'Jersey Premium Dry-Fit',
     image: '/uploads/jersey-templates/premium.jpg',
     description: 'Jersey dengan bahan dry-fit premium, ringan dan cepat kering.',
     status: true,
-    combinations: [
-      { color: 'Hitam', size: 'L', material: 'Spandex' },
-      { color: 'Hitam', size: 'XL', material: 'Spandex' },
-      { color: 'Hitam', size: 'XXL', material: 'Spandex' },
-      { color: 'Putih', size: 'L', material: 'Spandex' },
-      { color: 'Putih', size: 'XL', material: 'Spandex' },
-      { color: 'Putih', size: 'XXL', material: 'Spandex' },
-      { color: 'Navy', size: 'L', material: 'Spandex' },
-      { color: 'Navy', size: 'XL', material: 'Spandex' },
-      { color: 'Navy', size: 'XXL', material: 'Spandex' },
-    ],
+    colors: ['Hitam', 'Putih', 'Navy'],
+    sizes: ['L', 'XL', 'XXL'],
+    materials: ['Spandex'],
   },
   {
     name: 'Jersey Economy',
     image: '/uploads/jersey-templates/economy.jpg',
     description: 'Jersey ekonomis dengan bahan nyaman, cocok untuk latihan harian.',
     status: true,
-    combinations: [
-      { color: 'Kuning', size: 'S', material: 'Combed 20s' },
-      { color: 'Kuning', size: 'M', material: 'Combed 20s' },
-      { color: 'Kuning', size: 'L', material: 'Combed 20s' },
-      { color: 'Abu-abu', size: 'S', material: 'Combed 20s' },
-      { color: 'Abu-abu', size: 'M', material: 'Combed 20s' },
-      { color: 'Abu-abu', size: 'L', material: 'Combed 20s' },
-    ],
+    colors: ['Kuning', 'Abu-abu'],
+    sizes: ['S', 'M', 'L'],
+    materials: ['Combed 20s'],
   },
   {
     name: 'Jersey Full Sublim',
     image: '/uploads/jersey-templates/sublim.jpg',
     description: 'Jersey full sublimasi, warna tidak mudah luntur dan desain bebas.',
     status: true,
-    combinations: [
-      { color: 'Merah', size: 'XL', material: 'Combed 30s' },
-      { color: 'Biru', size: 'XL', material: 'Combed 30s' },
-      { color: 'Hijau', size: 'XL', material: 'Combed 30s' },
-    ],
+    colors: ['Merah', 'Biru', 'Hijau'],
+    sizes: ['XL'],
+    materials: ['Combed 30s'],
   },
 ];
 
@@ -85,6 +62,7 @@ async function main() {
   console.log('🌱 Seeding jersey templates...\n');
 
   let created = 0;
+  let updated = 0;
   let skipped = 0;
 
   for (const tpl of templates) {
@@ -92,60 +70,74 @@ async function main() {
       where: { name: tpl.name },
     });
 
+    const colorIds = [];
+    for (const name of tpl.colors) {
+      const id = await getOptionId('Warna', name);
+      if (!id) { console.log(`  ⚠️  Color "${name}" not found`); break; }
+      colorIds.push(id);
+    }
+    if (colorIds.length !== tpl.colors.length) { skipped++; continue; }
+
+    const sizeIds = [];
+    for (const name of tpl.sizes) {
+      const id = await getOptionId('Ukuran', name);
+      if (!id) { console.log(`  ⚠️  Size "${name}" not found`); break; }
+      sizeIds.push(id);
+    }
+    if (sizeIds.length !== tpl.sizes.length) { skipped++; continue; }
+
+    const materialIds = [];
+    for (const name of tpl.materials) {
+      const id = await getOptionId('Bahan', name);
+      if (!id) { console.log(`  ⚠️  Material "${name}" not found`); break; }
+      materialIds.push(id);
+    }
+    if (materialIds.length !== tpl.materials.length) { skipped++; continue; }
+
     if (existing) {
-      console.log(`  ⏭️  Jersey template already exists: ${tpl.name}`);
-      skipped++;
-      continue;
-    }
-
-    const combinationData = [];
-    let hasMissing = false;
-
-    for (const combo of tpl.combinations) {
-      const colorId = await getOptionId('Warna', combo.color);
-      const sizeId = await getOptionId('Ukuran', combo.size);
-      const materialId = await getOptionId('Bahan', combo.material);
-      if (!colorId || !sizeId || !materialId) {
-        hasMissing = true;
-        continue;
-      }
-      combinationData.push({
-        color_option_id: colorId,
-        size_option_id: sizeId,
-        material_option_id: materialId,
+      // Update existing template with new options
+      await prisma.templateColor.deleteMany({ where: { jersey_template_id: existing.id } });
+      await prisma.templateSize.deleteMany({ where: { jersey_template_id: existing.id } });
+      await prisma.templateMaterial.deleteMany({ where: { jersey_template_id: existing.id } });
+      await prisma.templateColor.createMany({
+        data: colorIds.map(id => ({ jersey_template_id: existing.id, variant_option_id: id })),
       });
-    }
-
-    if (hasMissing) {
-      console.log(`  ⚠️  Skipping template "${tpl.name}" - some variant options missing`);
-      skipped++;
-      continue;
-    }
-
-    await prisma.jerseyTemplate.create({
-      data: {
-        name: tpl.name,
-        image: tpl.image,
-        description: tpl.description,
-        status: tpl.status,
-        combinations: {
-          create: combinationData,
+      await prisma.templateSize.createMany({
+        data: sizeIds.map(id => ({ jersey_template_id: existing.id, variant_option_id: id })),
+      });
+      await prisma.templateMaterial.createMany({
+        data: materialIds.map(id => ({ jersey_template_id: existing.id, variant_option_id: id })),
+      });
+      updated++;
+      console.log(`  🔄 Updated jersey template: ${tpl.name}`);
+    } else {
+      await prisma.jerseyTemplate.create({
+        data: {
+          name: tpl.name,
+          image: tpl.image,
+          description: tpl.description,
+          status: tpl.status,
+          colors: { create: colorIds.map(id => ({ variant_option_id: id })) },
+          sizes: { create: sizeIds.map(id => ({ variant_option_id: id })) },
+          materials: { create: materialIds.map(id => ({ variant_option_id: id })) },
         },
-      },
-    });
-
-    created++;
-    console.log(`  ✅ Created jersey template: ${tpl.name} (${combinationData.length} combinations)`);
+      });
+      created++;
+      console.log(`  ✅ Created jersey template: ${tpl.name}`);
+    }
   }
 
   console.log(`\n📊 Summary:`);
   console.log(`  ✅ Created: ${created} jersey templates`);
-  console.log(`  ⏭️  Skipped: ${skipped} existing/missing`);
+  console.log(`  🔄 Updated: ${updated} jersey templates`);
+  console.log(`  ⏭️  Skipped: ${skipped} missing options`);
 }
 
 async function down() {
   console.log('\n🗑️ Rolling back jersey templates...');
-  await prisma.templateCombination.deleteMany({});
+  await prisma.templateColor.deleteMany({});
+  await prisma.templateSize.deleteMany({});
+  await prisma.templateMaterial.deleteMany({});
   await prisma.jerseyTemplate.deleteMany({});
   console.log('✅ Rollback completed');
 }

@@ -3,6 +3,18 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateJerseyTemplateDto } from './dto/create-jersey-template.dto';
 import { UpdateJerseyTemplateDto } from './dto/update-jersey-template.dto';
 
+const templateInclude = {
+  colors: {
+    include: { option: true },
+  },
+  sizes: {
+    include: { option: true },
+  },
+  materials: {
+    include: { option: true },
+  },
+};
+
 @Injectable()
 export class JerseyTemplatesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -21,25 +33,17 @@ export class JerseyTemplatesService {
         image: createDto.image,
         description: createDto.description,
         status: createDto.status ?? true,
-        combinations: createDto.combinations
-          ? {
-              create: createDto.combinations.map((c) => ({
-                color_option_id: c.color_option_id,
-                size_option_id: c.size_option_id,
-                material_option_id: c.material_option_id,
-              })),
-            }
+        colors: createDto.color_ids
+          ? { create: createDto.color_ids.map((id) => ({ variant_option_id: id })) }
+          : undefined,
+        sizes: createDto.size_ids
+          ? { create: createDto.size_ids.map((id) => ({ variant_option_id: id })) }
+          : undefined,
+        materials: createDto.material_ids
+          ? { create: createDto.material_ids.map((id) => ({ variant_option_id: id })) }
           : undefined,
       },
-      include: {
-        combinations: {
-          include: {
-            color: true,
-            size: true,
-            material: true,
-          },
-        },
-      },
+      include: templateInclude,
     });
   }
 
@@ -48,15 +52,7 @@ export class JerseyTemplatesService {
 
     return this.prisma.jerseyTemplate.findMany({
       where,
-      include: {
-        combinations: {
-          include: {
-            color: true,
-            size: true,
-            material: true,
-          },
-        },
-      },
+      include: templateInclude,
       orderBy: { name: 'asc' },
     });
   }
@@ -64,15 +60,7 @@ export class JerseyTemplatesService {
   async findOne(id: number) {
     const template = await this.prisma.jerseyTemplate.findUnique({
       where: { id },
-      include: {
-        combinations: {
-          include: {
-            color: true,
-            size: true,
-            material: true,
-          },
-        },
-      },
+      include: templateInclude,
     });
 
     if (!template) {
@@ -82,60 +70,73 @@ export class JerseyTemplatesService {
     return template;
   }
 
-  async update(id: number, updateDto: UpdateJerseyTemplateDto) {
-    await this.findOne(id);
+  async update(templateId: number, updateDto: UpdateJerseyTemplateDto) {
+    await this.findOne(templateId);
 
     if (updateDto.name) {
       const existing = await this.prisma.jerseyTemplate.findFirst({
-        where: { name: updateDto.name, NOT: { id } },
+        where: { name: updateDto.name, NOT: { id: templateId } },
       });
       if (existing) {
         throw new ConflictException(`Jersey template with name "${updateDto.name}" already exists`);
       }
     }
 
-    if (updateDto.combinations) {
-      await this.prisma.templateCombination.deleteMany({
-        where: { jersey_template_id: id },
+    if (updateDto.color_ids) {
+      await this.prisma.templateColor.deleteMany({
+        where: { jersey_template_id: templateId },
       });
+      await this.prisma.templateColor.createMany({
+        data: updateDto.color_ids.map((optionId) => ({
+          jersey_template_id: templateId,
+          variant_option_id: optionId,
+        })),
+      });
+    }
 
-      await this.prisma.templateCombination.createMany({
-        data: updateDto.combinations.map((c) => ({
-          jersey_template_id: id,
-          color_option_id: c.color_option_id,
-          size_option_id: c.size_option_id,
-          material_option_id: c.material_option_id,
+    if (updateDto.size_ids) {
+      await this.prisma.templateSize.deleteMany({
+        where: { jersey_template_id: templateId },
+      });
+      await this.prisma.templateSize.createMany({
+        data: updateDto.size_ids.map((optionId) => ({
+          jersey_template_id: templateId,
+          variant_option_id: optionId,
+        })),
+      });
+    }
+
+    if (updateDto.material_ids) {
+      await this.prisma.templateMaterial.deleteMany({
+        where: { jersey_template_id: templateId },
+      });
+      await this.prisma.templateMaterial.createMany({
+        data: updateDto.material_ids.map((optionId) => ({
+          jersey_template_id: templateId,
+          variant_option_id: optionId,
         })),
       });
     }
 
     return this.prisma.jerseyTemplate.update({
-      where: { id },
+      where: { id: templateId },
       data: {
         name: updateDto.name,
         image: updateDto.image,
         description: updateDto.description,
         status: updateDto.status,
       },
-      include: {
-        combinations: {
-          include: {
-            color: true,
-            size: true,
-            material: true,
-          },
-        },
-      },
+      include: templateInclude,
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(templateId: number) {
+    await this.findOne(templateId);
 
-    await this.prisma.templateCombination.deleteMany({
-      where: { jersey_template_id: id },
-    });
+    await this.prisma.templateColor.deleteMany({ where: { jersey_template_id: templateId } });
+    await this.prisma.templateSize.deleteMany({ where: { jersey_template_id: templateId } });
+    await this.prisma.templateMaterial.deleteMany({ where: { jersey_template_id: templateId } });
 
-    return this.prisma.jerseyTemplate.delete({ where: { id } });
+    return this.prisma.jerseyTemplate.delete({ where: { id: templateId } });
   }
 }

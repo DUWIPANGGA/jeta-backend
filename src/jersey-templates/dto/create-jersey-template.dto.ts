@@ -1,16 +1,5 @@
-import { IsString, IsOptional, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
-
-class CombinationDto {
-  @Type(() => Number)
-  color_option_id: number;
-
-  @Type(() => Number)
-  size_option_id: number;
-
-  @Type(() => Number)
-  material_option_id: number;
-}
 
 export class CreateJerseyTemplateDto {
   @IsString()
@@ -29,8 +18,17 @@ export class CreateJerseyTemplateDto {
   status?: boolean;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CombinationDto)
+  @Type(() => Number)
   @IsOptional()
-  combinations?: CombinationDto[];
+  color_ids?: number[];
+
+  @IsArray()
+  @Type(() => Number)
+  @IsOptional()
+  size_ids?: number[];
+
+  @IsArray()
+  @Type(() => Number)
+  @IsOptional()
+  material_ids?: number[];
 }

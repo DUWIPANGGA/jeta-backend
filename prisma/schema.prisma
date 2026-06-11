@@ -178,26 +178,47 @@ model JerseyTemplate {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  combinations TemplateCombination[]
+  colors    TemplateColor[]
+  sizes     TemplateSize[]
+  materials TemplateMaterial[]
 
   @@map("jersey_templates")
 }
 
-model TemplateCombination {
+model TemplateColor {
   id                  Int      @id @default(autoincrement())
   jersey_template_id  Int
-  color_option_id     Int       // → VariantOption (warna)
-  size_option_id      Int       // → VariantOption (ukuran)
-  material_option_id  Int       // → VariantOption (bahan)
-  created_at          DateTime @default(now())
+  variant_option_id   Int
 
   template JerseyTemplate @relation(fields: [jersey_template_id], references: [id], onDelete: Cascade)
-  color    VariantOption  @relation("TemplateColor", fields: [color_option_id], references: [id])
-  size     VariantOption  @relation("TemplateSize", fields: [size_option_id], references: [id])
-  material VariantOption  @relation("TemplateMaterial", fields: [material_option_id], references: [id])
+  option   VariantOption  @relation(fields: [variant_option_id], references: [id], onDelete: Cascade)
 
-  @@unique([jersey_template_id, color_option_id, size_option_id, material_option_id])
-  @@map("template_combinations")
+  @@unique([jersey_template_id, variant_option_id])
+  @@map("template_colors")
+}
+
+model TemplateSize {
+  id                  Int      @id @default(autoincrement())
+  jersey_template_id  Int
+  variant_option_id   Int
+
+  template JerseyTemplate @relation(fields: [jersey_template_id], references: [id], onDelete: Cascade)
+  option   VariantOption  @relation(fields: [variant_option_id], references: [id], onDelete: Cascade)
+
+  @@unique([jersey_template_id, variant_option_id])
+  @@map("template_sizes")
+}
+
+model TemplateMaterial {
+  id                  Int      @id @default(autoincrement())
+  jersey_template_id  Int
+  variant_option_id   Int
+
+  template JerseyTemplate @relation(fields: [jersey_template_id], references: [id], onDelete: Cascade)
+  option   VariantOption  @relation(fields: [variant_option_id], references: [id], onDelete: Cascade)
+
+  @@unique([jersey_template_id, variant_option_id])
+  @@map("template_materials")
 }
 
 model TimJersey {
@@ -256,9 +277,9 @@ model VariantOption {
 
   custom_variant    CustomVariant @relation(fields: [custom_variant_id], references: [id], onDelete: Cascade)
   customOrderItemOptions CustomOrderItemOption[]
-  templateColors    TemplateCombination[] @relation("TemplateColor")
-  templateSizes     TemplateCombination[] @relation("TemplateSize")
-  templateMaterials TemplateCombination[] @relation("TemplateMaterial")
+  templateColors    TemplateColor[]
+  templateSizes     TemplateSize[]
+  templateMaterials TemplateMaterial[]
   pemainUkuran      Pemain[]             @relation("PemainUkuran")
 
   @@map("variant_options")

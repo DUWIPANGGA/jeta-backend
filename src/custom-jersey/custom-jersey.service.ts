@@ -91,11 +91,12 @@ export class CustomJerseyService {
     const template = await this.prisma.jerseyTemplate.findUnique({
       where: { id: createDto.jersey_template_id },
       include: {
-        combinations: {
-          where: {
-            color_option_id: createDto.color_option_id,
-            material_option_id: createDto.material_option_id,
-          },
+        colors: {
+          where: { variant_option_id: createDto.color_option_id },
+          take: 1,
+        },
+        materials: {
+          where: { variant_option_id: createDto.material_option_id },
           take: 1,
         },
       },
@@ -104,6 +105,18 @@ export class CustomJerseyService {
     if (!template) {
       throw new NotFoundException(
         `Jersey template with ID ${createDto.jersey_template_id} not found`,
+      );
+    }
+
+    if (template.colors.length === 0) {
+      throw new BadRequestException(
+        `Color option ID ${createDto.color_option_id} is not allowed for this template`,
+      );
+    }
+
+    if (template.materials.length === 0) {
+      throw new BadRequestException(
+        `Material option ID ${createDto.material_option_id} is not allowed for this template`,
       );
     }
 
