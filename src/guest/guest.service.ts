@@ -119,7 +119,7 @@ export class GuestService {
     if (!order) return order;
 
     let virtualStatus = 'Menunggu ACC';
-    if (order.accept_status) {
+    if (order.accept_status === 'accepted') {
       const tracking = order.tracking || await this.prisma.tracking.findFirst({
         where: { custom_order_id: order.id },
       });

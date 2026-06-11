@@ -1,5 +1,5 @@
 // src/custom-orders/dto/update-custom-order.dto.ts
-import { IsOptional, IsString, IsEmail, IsArray, ValidateNested, IsInt, Min, IsBoolean, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsArray, ValidateNested, IsInt, Min, IsBoolean, MaxLength, IsIn } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export class UpdateCustomOrderItemDto {
@@ -75,9 +75,10 @@ export class UpdateCustomOrderDto {
   @IsOptional()
   total_amount?: number;
 
-  @IsBoolean()
+  @IsString()
+  @IsIn(['pending', 'accepted', 'rejected'])
   @IsOptional()
-  accept_status?: boolean;
+  accept_status?: string;
 
   @IsBoolean()
   @IsOptional()

@@ -43,7 +43,7 @@ export class CustomOrdersService {
     if (!order) return order;
 
     let virtualStatus = 'Menunggu ACC';
-    if (order.accept_status) {
+    if (order.accept_status === 'accepted') {
       const tracking = await this.prisma.tracking.findFirst({
         where: { custom_order_id: order.id },
       });
@@ -174,7 +174,7 @@ export class CustomOrdersService {
       deadline,
       catatan_tambahan: createCustomOrderDto.catatan_tambahan ?? '',
       images: imagePaths,
-      accept_status: false,
+      accept_status: 'pending',
       payment_status: false,
       dp_amount: isAdmin ? createCustomOrderDto.dp_amount ?? null : null,
       remaining_amount: isAdmin ? createCustomOrderDto.remaining_amount ?? null : null,
@@ -411,7 +411,7 @@ export class CustomOrdersService {
       deadline,
       catatan_tambahan: createDto.catatan_tambahan ?? '',
       images: imagePaths,
-      accept_status: true,
+      accept_status: 'accepted',
       payment_status: false,
       dp_amount: dpAmount,
       remaining_amount: remainingAmount,
@@ -680,7 +680,7 @@ export class CustomOrdersService {
       if (updateCustomOrderDto.dp_amount !== undefined) updateData.dp_amount = updateCustomOrderDto.dp_amount;
       if (updateCustomOrderDto.remaining_amount !== undefined) updateData.remaining_amount = updateCustomOrderDto.remaining_amount;
       if (updateCustomOrderDto.total_amount !== undefined) updateData.total_amount = updateCustomOrderDto.total_amount;
-      if (updateCustomOrderDto.accept_status !== undefined) updateData.accept_status = updateCustomOrderDto.accept_status;
+      if (updateCustomOrderDto.accept_status !== undefined) (updateData as any).accept_status = updateCustomOrderDto.accept_status;
       if (updateCustomOrderDto.payment_status !== undefined) updateData.payment_status = updateCustomOrderDto.payment_status;
       if (updateCustomOrderDto.offline_customer_name !== undefined) updateData.offline_customer_name = updateCustomOrderDto.offline_customer_name;
       if (updateCustomOrderDto.offline_phone !== undefined) updateData.offline_phone = updateCustomOrderDto.offline_phone;
@@ -809,10 +809,10 @@ export class CustomOrdersService {
   }
 
   // ==================== UPDATE ACCEPT STATUS ====================
-  async updateAcceptStatus(id: number, acceptStatus: boolean, acceptData?: AcceptCustomOrderDto) {
+  async updateAcceptStatus(id: number, acceptStatus: string, acceptData?: AcceptCustomOrderDto) {
     const customOrder = await this.findOne(id);
 
-    if (acceptStatus === true) {
+    if (acceptStatus === 'accepted') {
       let totalAmount = customOrder.total_amount;
       let dpAmount = customOrder.dp_amount;
       let remainingAmount = customOrder.remaining_amount;
@@ -852,7 +852,7 @@ export class CustomOrdersService {
       const result = await this.prisma.customOrder.update({
         where: { id },
         data: {
-          accept_status: true,
+          accept_status: 'accepted',
           total_amount: totalAmount,
           dp_amount: dpAmount,
           remaining_amount: remainingAmount,
@@ -883,7 +883,7 @@ export class CustomOrdersService {
     } else {
       const result = await this.prisma.customOrder.update({
         where: { id },
-        data: { accept_status: false },
+        data: { accept_status: 'rejected' },
         include: {
           items: {
             include: {
@@ -932,10 +932,10 @@ export class CustomOrdersService {
   async getStatistics() {
     const totalOrders = await this.prisma.customOrder.count();
     const acceptedOrders = await this.prisma.customOrder.count({
-      where: { accept_status: true },
+      where: { accept_status: 'accepted' },
     });
     const pendingOrders = await this.prisma.customOrder.count({
-      where: { accept_status: false },
+      where: { accept_status: 'pending' },
     });
 
     const all = await this.prisma.customOrder.findMany({

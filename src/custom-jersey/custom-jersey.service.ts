@@ -168,7 +168,7 @@ export class CustomJerseyService {
           deadline,
           catatan_tambahan: createDto.catatan_tambahan ?? '',
           images: templateImage,
-          accept_status: false,
+          accept_status: 'pending',
           payment_status: false,
           dp_amount: isAdmin ? createDto.dp_amount ?? null : null,
           remaining_amount: isAdmin ? createDto.remaining_amount ?? null : null,

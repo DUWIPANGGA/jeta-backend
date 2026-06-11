@@ -60,7 +60,7 @@ export class CustomerDataService {
     const customOrders = await this.prisma.customOrder.findMany({
       where: {
         user_id: userId,
-        accept_status: true,
+        accept_status: 'accepted',
       },
       include: {
         items: {

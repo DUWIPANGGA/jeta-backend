@@ -109,7 +109,7 @@ export class CustomOrderResponseDto {
   total_amount?: number;
 
   @Expose()
-  accept_status: boolean;
+  accept_status: string;
 
   @Expose()
   payment_status: boolean;

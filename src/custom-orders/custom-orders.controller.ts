@@ -219,7 +219,7 @@ export class CustomOrdersController {
     if (!isAdmin) {
       throw new HttpException('Only admin can change accept status', HttpStatus.FORBIDDEN);
     }
-    return this.customOrdersService.updateAcceptStatus(id, true, acceptData);
+    return this.customOrdersService.updateAcceptStatus(id, 'accepted', acceptData);
   }
 
   // ==================== REJECT CUSTOM ORDER ====================
@@ -237,7 +237,7 @@ export class CustomOrdersController {
     if (!isAdmin) {
       throw new HttpException('Only admin can reject orders', HttpStatus.FORBIDDEN);
     }
-    return this.customOrdersService.updateAcceptStatus(id, false);
+    return this.customOrdersService.updateAcceptStatus(id, 'rejected');
   }
 
   // ==================== DELETE ====================

@@ -57,7 +57,7 @@ class CustomOrderDto {
   deadline: Date;
 
   @Expose()
-  accept_status: boolean;
+  accept_status: string;
 
   @Expose()
   payment_status: boolean;

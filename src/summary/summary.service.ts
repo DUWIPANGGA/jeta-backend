@@ -116,7 +116,7 @@ export class SummaryService {
         order_id: `CUST-${order.id}`,
         customer_name: order.user?.name || order.name || 'Guest',
         product_name: this.getCustomOrderProductName(order),
-        status: order.accept_status ? 'Diproses' : 'Menunggu ACC',
+        status: order.accept_status === 'accepted' ? 'Diproses' : 'Menunggu ACC',
         total: order.total_amount || 0,
         created_at: order.created_at,
         order_type: 'custom',

@@ -50,7 +50,7 @@ export class TrackingsService {
       if (!customOrder) {
         throw new BadRequestException(`Custom Order with ID ${custom_order_id} not found`);
       }
-      if (!customOrder.accept_status) {
+      if (customOrder.accept_status !== 'accepted') {
         throw new BadRequestException('Tidak dapat membuat pelacakan pengiriman untuk pesanan kustom yang belum disetujui.');
       }
 
@@ -228,7 +228,7 @@ export class TrackingsService {
         throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
       }
     } else if (tracking.custom_order) {
-      if (!tracking.custom_order.accept_status) {
+      if (tracking.custom_order.accept_status !== 'accepted') {
         throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan kustom yang belum disetujui.');
       }
     }
@@ -295,7 +295,7 @@ export class TrackingsService {
         throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan yang belum dibayar (status: pending).');
       }
     } else if (tracking.custom_order) {
-      if (!tracking.custom_order.accept_status) {
+      if (tracking.custom_order.accept_status !== 'accepted') {
         throw new BadRequestException('Tidak dapat memperbarui pelacakan pengiriman untuk pesanan kustom yang belum disetujui.');
       }
     }
