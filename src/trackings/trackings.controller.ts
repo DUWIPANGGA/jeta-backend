@@ -12,25 +12,25 @@ export class TrackingsController {
   constructor(private readonly trackingsService: TrackingsService) { }
 
   @Get()
-  // @Access('Trackings', 'read')
+  @Access('Trackings', 'read')
   findAll() {
     return this.trackingsService.findAll();
   }
 
   @Get('order/:orderId')
-  // @Access('Trackings', 'read')
+  @Access('Trackings', 'read')
   findByOrder(@Param('orderId') orderId: string) {
     return this.trackingsService.findByOrder(+orderId);
   }
 
   @Get('custom-order/:customOrderId')
-  // @Access('Trackings', 'read')
+  @Access('Trackings', 'read')
   findByCustomOrder(@Param('customOrderId') customOrderId: string) {
     return this.trackingsService.findByCustomOrder(+customOrderId);
   }
 
   @Get(':id')
-  // @Access('Trackings', 'read')
+  @Access('Trackings', 'read')
   findOne(@Param('id') id: string) {
     return this.trackingsService.findOne(+id);
   }

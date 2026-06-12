@@ -18,6 +18,7 @@ import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('custom-variants')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class CustomVariantsController {
   constructor(private readonly customVariantsService: CustomVariantsService) {}
   
@@ -35,7 +36,6 @@ export class CustomVariantsController {
     return this.customVariantsService.findOne(id);
   }
   
-  @UseGuards(JwtAuthGuard, AccessGuard)
   @Post()
   @Access('CustomVariants', 'create')
   create(@Body() createDto: CreateCustomVariantDto) {

@@ -10,19 +10,19 @@ export class TrackingHistoriesController {
   constructor(private readonly trackingHistoriesService: TrackingHistoriesService) { }
 
   @Get()
-  // @Access('TrackingHistories', 'read')
+  @Access('TrackingHistories', 'read')
   findAll() {
     return this.trackingHistoriesService.findAll();
   }
 
   @Get('tracking/:trackingId')
-  // @Access('TrackingHistories', 'read')
+  @Access('TrackingHistories', 'read')
   findByTracking(@Param('trackingId') trackingId: string) {
     return this.trackingHistoriesService.findByTracking(+trackingId);
   }
 
   @Get(':id')
-  // @Access('TrackingHistories', 'read')
+  @Access('TrackingHistories', 'read')
   findOne(@Param('id') id: string) {
     return this.trackingHistoriesService.findOne(+id);
   }

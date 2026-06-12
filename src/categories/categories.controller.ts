@@ -19,6 +19,7 @@ import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('categories')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -36,21 +37,18 @@ export class CategoriesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Categories', 'create')
   create(@Body() createDto: CreateCategoryDto) {
     return this.categoriesService.create(createDto);
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Categories', 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateCategoryDto) {
     return this.categoriesService.update(id, updateDto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Categories', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.remove(id);

@@ -58,12 +58,14 @@ export class JerseyTemplatesController {
   }
 
   @Get()
+  @Access('JerseyTemplates', 'read')
   async findAll(@Query('include_inactive') includeInactive?: string) {
     const includeInactiveBool = includeInactive === 'false' ? false : true;
     return this.jerseyTemplatesService.findAll(includeInactiveBool);
   }
 
   @Get(':id')
+  @Access('JerseyTemplates', 'read')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.jerseyTemplatesService.findOne(id);
   }
