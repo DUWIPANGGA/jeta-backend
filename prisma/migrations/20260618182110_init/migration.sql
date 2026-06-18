@@ -645,6 +645,26 @@ CREATE TABLE "work_logs" (
 );
 
 -- CreateTable
+CREATE TABLE "activity_logs" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER,
+    "method" TEXT NOT NULL,
+    "route" TEXT NOT NULL,
+    "entity" TEXT,
+    "entity_id" INTEGER,
+    "action" TEXT NOT NULL,
+    "status_code" INTEGER NOT NULL,
+    "ip_address" VARCHAR(45),
+    "user_agent" TEXT,
+    "request_body" TEXT,
+    "old_value" TEXT,
+    "new_value" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "activity_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "progress_reports" (
     "id" SERIAL NOT NULL,
     "staff_id" INTEGER NOT NULL,
@@ -950,6 +970,9 @@ ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_custom_order_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "work_logs" ADD CONSTRAINT "work_logs_sport_order_id_fkey" FOREIGN KEY ("sport_order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "progress_reports" ADD CONSTRAINT "progress_reports_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "staffs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
