@@ -18,6 +18,7 @@ import { UpdateLogisticDto } from './dto/update-logistic.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 @Controller('logistics')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -26,6 +27,7 @@ export class LogisticsController {
 
   @Post()
   @Access('Logistics', 'create')
+  @LogActivity('logistic', 'create')
   create(@Body() createDto: CreateLogisticDto) {
     return this.logisticsService.create(createDto);
   }
@@ -44,6 +46,7 @@ export class LogisticsController {
 
   @Patch(':id')
   @Access('Logistics', 'update')
+  @LogActivity('logistic', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateLogisticDto,
@@ -54,6 +57,7 @@ export class LogisticsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Access('Logistics', 'delete')
+  @LogActivity('logistic', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.logisticsService.remove(id);
   }

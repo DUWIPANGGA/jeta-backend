@@ -15,6 +15,7 @@ import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('payment-methods')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -23,6 +24,7 @@ export class PaymentMethodsController {
 
   @Post()
   @Access('PaymentMethods', 'create')
+  @LogActivity('paymentMethod', 'create')
   create(@Body() createPaymentMethodDto: CreatePaymentMethodDto) {
     return this.paymentMethodsService.create(createPaymentMethodDto);
   }
@@ -41,6 +43,7 @@ export class PaymentMethodsController {
 
   @Patch(':id')
   @Access('PaymentMethods', 'update')
+  @LogActivity('paymentMethod', 'update')
   update(
     @Param('id') id: string,
     @Body() updatePaymentMethodDto: UpdatePaymentMethodDto,
@@ -50,6 +53,7 @@ export class PaymentMethodsController {
 
   @Delete(':id')
   @Access('PaymentMethods', 'delete')
+  @LogActivity('paymentMethod', 'delete')
   remove(@Param('id') id: string) {
     return this.paymentMethodsService.remove(+id);
   }

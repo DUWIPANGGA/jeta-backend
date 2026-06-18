@@ -5,6 +5,7 @@ import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 @Controller('trackings')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -37,6 +38,7 @@ export class TrackingsController {
 
   @Post()
   @Access('Trackings', 'create')
+  @LogActivity('tracking', 'create')
   create(@Body() createDto: CreateTrackingDto) {
     return this.trackingsService.create(createDto);
   }
@@ -44,12 +46,14 @@ export class TrackingsController {
 
   @Patch(':id')
   @Access('Trackings', 'update')
+  @LogActivity('tracking', 'update')
   update(@Param('id') id: string, @Body() updateDto: UpdateTrackingDto) {
     return this.trackingsService.update(+id, updateDto);
   }
 
   @Patch(':id/stage')
   @Access('Trackings', 'update')
+  @LogActivity('tracking', 'update')
   updateStage(
     @Param('id') id: string,
     @Body('stage_name') stageName: string,
@@ -60,6 +64,7 @@ export class TrackingsController {
 
   @Delete(':id')
   @Access('Trackings', 'delete')
+  @LogActivity('tracking', 'delete')
   remove(@Param('id') id: string) {
     return this.trackingsService.remove(+id);
   }

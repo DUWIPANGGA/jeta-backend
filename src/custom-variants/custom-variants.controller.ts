@@ -16,6 +16,7 @@ import { UpdateCustomVariantDto } from './dto/update-custom-variant.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('custom-variants')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -38,6 +39,7 @@ export class CustomVariantsController {
   
   @Post()
   @Access('CustomVariants', 'create')
+  @LogActivity('customVariant', 'create')
   create(@Body() createDto: CreateCustomVariantDto) {
     return this.customVariantsService.create(createDto);
   }
@@ -45,6 +47,7 @@ export class CustomVariantsController {
 
   @Patch(':id')
   @Access('CustomVariants', 'update')
+  @LogActivity('customVariant', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateCustomVariantDto,
@@ -54,6 +57,7 @@ export class CustomVariantsController {
 
   @Delete(':id')
   @Access('CustomVariants', 'delete')
+  @LogActivity('customVariant', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.customVariantsService.remove(id);
   }

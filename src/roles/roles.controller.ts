@@ -15,6 +15,7 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 @Controller('roles')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -43,6 +44,7 @@ export class RoleController {
 
   @Post()
   @Access('Roles', 'create')
+  @LogActivity('role', 'create')
   async create(@Body() createRoleDto: CreateRoleDto) {
     console.log('📦 Received body:', JSON.stringify(createRoleDto, null, 2));
     const role = await this.rolesService.create(createRoleDto);
@@ -75,6 +77,7 @@ export class RoleController {
 
   @Patch(':id')
   @Access('Roles', 'update')
+  @LogActivity('role', 'update')
   async update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     const role = await this.rolesService.update(parseInt(id), updateRoleDto);
     return {
@@ -86,6 +89,7 @@ export class RoleController {
 
   @Delete(':id')
   @Access('Roles', 'delete')
+  @LogActivity('role', 'delete')
   async remove(@Param('id') id: string) {
     await this.rolesService.remove(parseInt(id));
     return {

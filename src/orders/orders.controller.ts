@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 import { CreateAdminOrderDto } from './dto/create-admin-order.dto';
 
@@ -14,12 +15,14 @@ export class OrdersController {
 
   @Post()
   @Access('Orders', 'create')
+  @LogActivity('order', 'create')
   create(@Body() createDto: any) {
     return this.ordersService.create(createDto);
   }
 
   @Post('admin')
   @Access('Orders', 'create')
+  @LogActivity('order', 'create')
   createAdminOrder(@Body() createAdminOrderDto: CreateAdminOrderDto, @Request() req) {
     const adminUserId = req.user.id;
     return this.ordersService.createAdminOrder(createAdminOrderDto, adminUserId);
@@ -47,18 +50,21 @@ export class OrdersController {
 
   @Patch(':id')
   @Access('Orders', 'update')
+  @LogActivity('order', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.ordersService.update(+id, updateDto);
   }
 
   @Post(':id/tracking')
   @Access('Orders', 'update')
+  @LogActivity('order', 'create')
   updateTracking(@Param('id') id: string, @Body('stage_name') stageName: string) {
     return this.ordersService.updateTracking(+id, stageName);
   }
 
   @Delete(':id')
   @Access('Orders', 'delete')
+  @LogActivity('order', 'delete')
   remove(@Param('id') id: string) {
     return this.ordersService.remove(+id);
   }

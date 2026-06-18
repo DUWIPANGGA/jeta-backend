@@ -17,6 +17,7 @@ import { UpdateVariantOptionDto } from './dto/update-variant-option.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('variant-options')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -47,6 +48,7 @@ export class VariantOptionsController {
 
   @Post()
   @Access('VariantOptions', 'create')
+  @LogActivity('variantOption', 'create')
   create(@Body() createDto: CreateVariantOptionDto) {
     return this.variantOptionsService.create(createDto);
   }
@@ -55,6 +57,7 @@ export class VariantOptionsController {
 
   @Patch(':id')
   @Access('VariantOptions', 'update')
+  @LogActivity('variantOption', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateVariantOptionDto,
@@ -64,6 +67,7 @@ export class VariantOptionsController {
 
   @Delete(':id')
   @Access('VariantOptions', 'delete')
+  @LogActivity('variantOption', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.variantOptionsService.remove(id);
   }

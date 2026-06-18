@@ -4,6 +4,7 @@ import { OrderItemsService } from './order-items.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 @Controller('order-items')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -12,6 +13,7 @@ export class OrderItemsController {
 
   @Post()
   @Access('OrderItems', 'create')
+  @LogActivity('orderItem', 'create')
   create(@Body() createDto: any) {
     return this.orderItemsService.create(createDto);
   }
@@ -30,12 +32,14 @@ export class OrderItemsController {
 
   @Patch(':id')
   @Access('OrderItems', 'update')
+  @LogActivity('orderItem', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.orderItemsService.update(+id, updateDto);
   }
 
   @Delete(':id')
   @Access('OrderItems', 'delete')
+  @LogActivity('orderItem', 'delete')
   remove(@Param('id') id: string) {
     return this.orderItemsService.remove(+id);
   }

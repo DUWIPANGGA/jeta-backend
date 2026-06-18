@@ -17,6 +17,7 @@ import { UpdateStageDto } from './dto/update-stage.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('stages')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -25,6 +26,7 @@ export class StagesController {
 
   @Post()
   @Access('Stages', 'create')
+  @LogActivity('stage', 'create')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createStageDto: CreateStageDto) {
     return this.stagesService.create(createStageDto);
@@ -44,12 +46,14 @@ export class StagesController {
 
   @Patch(':id')
   @Access('Stages', 'update')
+  @LogActivity('stage', 'update')
   update(@Param('id') id: string, @Body() updateStageDto: UpdateStageDto) {
     return this.stagesService.update(+id, updateStageDto);
   }
 
   @Patch(':id/order')
   @Access('Stages', 'update')
+  @LogActivity('stage', 'update')
   updateOrder(
     @Param('id') id: string,
     @Body('order') order: number,
@@ -59,6 +63,7 @@ export class StagesController {
 
   @Delete(':id')
   @Access('Stages', 'delete')
+  @LogActivity('stage', 'delete')
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
     return this.stagesService.remove(+id);

@@ -21,6 +21,7 @@ import { ProductVariantsService } from './product-variants.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto';
 
@@ -53,6 +54,7 @@ export class ProductVariantsController {
 
   @Post()
   @Access('ProductVariants', 'create')
+  @LogActivity('productVariant', 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createDto: CreateProductVariantDto,
@@ -75,6 +77,7 @@ export class ProductVariantsController {
 
   @Patch(':id')
   @Access('ProductVariants', 'update')
+  @LogActivity('productVariant', 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id') id: string,
@@ -86,6 +89,7 @@ export class ProductVariantsController {
 
   @Delete(':id')
   @Access('ProductVariants', 'delete')
+  @LogActivity('productVariant', 'delete')
   remove(@Param('id') id: string) {
     return this.productVariantsService.remove(+id);
   }

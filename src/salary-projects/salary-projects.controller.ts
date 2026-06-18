@@ -16,6 +16,7 @@ import { UpdateSalaryProjectDto } from './dto/update-salary-project.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('salary-projects')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -24,6 +25,7 @@ export class SalaryProjectsController {
 
   @Post()
   @Access('SalaryProjects', 'create')
+  @LogActivity('salaryProjects', 'create')
   create(@Body() dto: CreateSalaryProjectDto) {
     return this.service.create(dto);
   }
@@ -42,6 +44,7 @@ export class SalaryProjectsController {
 
   @Patch(':id')
   @Access('SalaryProjects', 'update')
+  @LogActivity('salaryProjects', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSalaryProjectDto,

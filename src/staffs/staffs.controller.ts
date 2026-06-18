@@ -16,6 +16,7 @@ import { UpdateStaffDto } from './dto/update-staff.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('staffs')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -24,12 +25,14 @@ export class StaffController {
 
   @Post()
   @Access('Staffs', 'create')
+  @LogActivity('staff', 'create')
   create(@Body() createDto: CreateStaffDto) {
     return this.staffService.create(createDto);
   }
 
   @Patch('user/:userId')
   @Access('Staffs', 'update')
+  @LogActivity('staff', 'update')
   async updateOrCreateByUserId(
     @Param('userId', ParseIntPipe) userId: number,
     @Body() updateDto: UpdateStaffDto,
@@ -51,6 +54,7 @@ export class StaffController {
 
   @Patch(':id')
   @Access('Staffs', 'update')
+  @LogActivity('staff', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateStaffDto,
@@ -60,6 +64,7 @@ export class StaffController {
 
   @Delete(':id')
   @Access('Staffs', 'delete')
+  @LogActivity('staff', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.staffService.remove(id);
   }

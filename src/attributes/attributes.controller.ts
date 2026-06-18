@@ -15,6 +15,7 @@ import { UpdateAttributeDto } from './dto/update-attribute.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('attributes')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -23,6 +24,7 @@ export class AttributesController {
 
   @Post()
   @Access('Attributes', 'create')
+  @LogActivity('attribute', 'create')
   create(@Body() createDto: CreateAttributeDto) {
     return this.attributesService.create(createDto);
   }
@@ -41,6 +43,7 @@ export class AttributesController {
 
   @Patch(':id')
   @Access('Attributes', 'update')
+  @LogActivity('attribute', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateAttributeDto,
@@ -50,6 +53,7 @@ export class AttributesController {
 
   @Delete(':id')
   @Access('Attributes', 'delete')
+  @LogActivity('attribute', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.attributesService.remove(id);
   }

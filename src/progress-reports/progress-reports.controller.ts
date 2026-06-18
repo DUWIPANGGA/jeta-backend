@@ -26,6 +26,7 @@ import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 const uploadDir = './uploads/progress';
@@ -65,6 +66,7 @@ export class ProgressReportsController {
 
   @Post()
   @Access('ProgressReports', 'create')
+  @LogActivity('progressReport', 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createDto: CreateProgressReportDto,
@@ -117,6 +119,7 @@ export class ProgressReportsController {
 
   @Patch(':id')
   @Access('ProgressReports', 'update')
+  @LogActivity('progressReport', 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -138,6 +141,7 @@ export class ProgressReportsController {
 
   @Delete(':id')
   @Access('ProgressReports', 'delete')
+  @LogActivity('progressReport', 'delete')
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.id },

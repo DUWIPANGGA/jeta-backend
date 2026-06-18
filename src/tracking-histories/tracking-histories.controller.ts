@@ -3,6 +3,7 @@ import { TrackingHistoriesService } from './tracking-histories.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 @Controller('tracking-histories')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -29,6 +30,7 @@ export class TrackingHistoriesController {
 
   @Post()
   @Access('TrackingHistories', 'create')
+  @LogActivity('trackingHistory', 'create')
   create(@Body() createDto: { tracking_id: number; status: string }) {
     return this.trackingHistoriesService.create(createDto);
   }
@@ -36,12 +38,14 @@ export class TrackingHistoriesController {
 
   @Patch(':id')
   @Access('TrackingHistories', 'update')
+  @LogActivity('trackingHistory', 'update')
   update(@Param('id') id: string, @Body() updateDto: { status?: string }) {
     return this.trackingHistoriesService.update(+id, updateDto);
   }
 
   @Delete(':id')
   @Access('TrackingHistories', 'delete')
+  @LogActivity('trackingHistory', 'delete')
   remove(@Param('id') id: string) {
     return this.trackingHistoriesService.remove(+id);
   }

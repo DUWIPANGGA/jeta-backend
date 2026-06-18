@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -56,6 +57,8 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { SummaryModule } from './summary/summary.module';
 import { CarouselsModule } from './carousels/carousels.module';
 import { RecommendedProductsModule } from './recommended-products/recommended-products.module';
+import { ActivityLogsModule } from './activity-logs/activity-logs.module';
+import { ActivityLogInterceptor } from './common/interceptor/activity-log.interceptor';
 
 @Module({
   imports: [
@@ -137,10 +140,17 @@ import { RecommendedProductsModule } from './recommended-products/recommended-pr
     SummaryModule,
     CarouselsModule,
     RecommendedProductsModule,
+    ActivityLogsModule,
   ],
 
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLogInterceptor,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

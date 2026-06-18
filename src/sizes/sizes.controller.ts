@@ -15,6 +15,7 @@ import { UpdateSizeDto } from './dto/update-size.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('sizes')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -23,6 +24,7 @@ export class SizesController {
 
   @Post()
   @Access('Sizes', 'create')
+  @LogActivity('size', 'create')
   create(@Body() createDto: CreateSizeDto) {
     return this.sizesService.create(createDto);
   }
@@ -41,6 +43,7 @@ export class SizesController {
 
   @Patch(':id')
   @Access('Sizes', 'update')
+  @LogActivity('size', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateSizeDto,
@@ -50,6 +53,7 @@ export class SizesController {
 
   @Delete(':id')
   @Access('Sizes', 'delete')
+  @LogActivity('size', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.sizesService.remove(id);
   }
