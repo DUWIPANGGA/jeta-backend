@@ -22,12 +22,16 @@ CREATE TYPE "ProgressStatus" AS ENUM ('pending', 'proses', 'selesai');
 -- CreateEnum
 CREATE TYPE "SalaryPeriodType" AS ENUM ('daily', 'weekly', 'monthly');
 
+-- CreateEnum
+CREATE TYPE "AcceptStatus" AS ENUM ('pending', 'accepted', 'rejected');
+
 -- CreateTable
 CREATE TABLE "roles" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "level" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
+    "explicit_page_ids" INTEGER[] DEFAULT ARRAY[]::INTEGER[],
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -100,6 +104,70 @@ CREATE TABLE "password_reset_tokens" (
     "created_at" TIMESTAMP(3),
 
     CONSTRAINT "password_reset_tokens_pkey" PRIMARY KEY ("email")
+);
+
+-- CreateTable
+CREATE TABLE "jersey_templates" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "image" TEXT,
+    "description" TEXT,
+    "status" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "jersey_templates_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "template_colors" (
+    "id" SERIAL NOT NULL,
+    "jersey_template_id" INTEGER NOT NULL,
+    "variant_option_id" INTEGER NOT NULL,
+
+    CONSTRAINT "template_colors_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "template_sizes" (
+    "id" SERIAL NOT NULL,
+    "jersey_template_id" INTEGER NOT NULL,
+    "variant_option_id" INTEGER NOT NULL,
+
+    CONSTRAINT "template_sizes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "template_materials" (
+    "id" SERIAL NOT NULL,
+    "jersey_template_id" INTEGER NOT NULL,
+    "variant_option_id" INTEGER NOT NULL,
+
+    CONSTRAINT "template_materials_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tim_jerseys" (
+    "id" SERIAL NOT NULL,
+    "custom_order_id" INTEGER NOT NULL,
+    "team_name" TEXT,
+    "logo" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tim_jerseys_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "pemains" (
+    "id" SERIAL NOT NULL,
+    "tim_jersey_id" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "nomor_punggung" INTEGER NOT NULL,
+    "ukuran_option_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "pemains_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -275,7 +343,7 @@ CREATE TABLE "custom_orders" (
     "dp_amount" INTEGER,
     "remaining_amount" INTEGER,
     "total_amount" INTEGER,
-    "accept_status" BOOLEAN NOT NULL DEFAULT false,
+    "accept_status" "AcceptStatus" NOT NULL DEFAULT 'pending',
     "payment_status" BOOLEAN NOT NULL DEFAULT false,
     "is_admin_order" BOOLEAN NOT NULL DEFAULT false,
     "offline_customer_name" TEXT,
@@ -524,7 +592,7 @@ CREATE TABLE "carousels" (
     "text" TEXT,
     "title" TEXT,
     "link" TEXT,
-    "image" TEXT NOT NULL,
+    "media" TEXT,
     "video_url" TEXT,
     "order" INTEGER,
     "active" BOOLEAN NOT NULL DEFAULT true,
@@ -549,6 +617,7 @@ CREATE TABLE "recommended_products" (
 CREATE TABLE "portofolios" (
     "id" SERIAL NOT NULL,
     "name" TEXT,
+    "link" TEXT,
     "image" TEXT,
     "description" TEXT,
     "order" INTEGER,
@@ -634,6 +703,18 @@ CREATE UNIQUE INDEX "users_verification_token_key" ON "users"("verification_toke
 CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "template_colors_jersey_template_id_variant_option_id_key" ON "template_colors"("jersey_template_id", "variant_option_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "template_sizes_jersey_template_id_variant_option_id_key" ON "template_sizes"("jersey_template_id", "variant_option_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "template_materials_jersey_template_id_variant_option_id_key" ON "template_materials"("jersey_template_id", "variant_option_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tim_jerseys_custom_order_id_key" ON "tim_jerseys"("custom_order_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "custom_variants_name_key" ON "custom_variants"("name");
 
 -- CreateIndex
@@ -710,6 +791,33 @@ ALTER TABLE "accesses" ADD CONSTRAINT "accesses_page_id_fkey" FOREIGN KEY ("page
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "template_colors" ADD CONSTRAINT "template_colors_jersey_template_id_fkey" FOREIGN KEY ("jersey_template_id") REFERENCES "jersey_templates"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "template_colors" ADD CONSTRAINT "template_colors_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "template_sizes" ADD CONSTRAINT "template_sizes_jersey_template_id_fkey" FOREIGN KEY ("jersey_template_id") REFERENCES "jersey_templates"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "template_sizes" ADD CONSTRAINT "template_sizes_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "template_materials" ADD CONSTRAINT "template_materials_jersey_template_id_fkey" FOREIGN KEY ("jersey_template_id") REFERENCES "jersey_templates"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "template_materials" ADD CONSTRAINT "template_materials_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tim_jerseys" ADD CONSTRAINT "tim_jerseys_custom_order_id_fkey" FOREIGN KEY ("custom_order_id") REFERENCES "custom_orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pemains" ADD CONSTRAINT "pemains_tim_jersey_id_fkey" FOREIGN KEY ("tim_jersey_id") REFERENCES "tim_jerseys"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pemains" ADD CONSTRAINT "pemains_ukuran_option_id_fkey" FOREIGN KEY ("ukuran_option_id") REFERENCES "variant_options"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "variant_options" ADD CONSTRAINT "variant_options_custom_variant_id_fkey" FOREIGN KEY ("custom_variant_id") REFERENCES "custom_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;

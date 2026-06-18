@@ -36,7 +36,7 @@ async function main() {
             dp_amount: 500000,
             remaining_amount: 500000,
             total_amount: 1000000,
-            accept_status: true,
+            accept_status: 'accepted',
             payment_status: false,
             options: [
                 { variant: 'Warna', option: 'Hitam' },
@@ -58,7 +58,7 @@ async function main() {
             dp_amount: 300000,
             remaining_amount: 300000,
             total_amount: 600000,
-            accept_status: false,
+            accept_status: 'pending',
             payment_status: false,
             options: [
                 { variant: 'Warna', option: 'Hitam' },
@@ -78,7 +78,7 @@ async function main() {
             dp_amount: 750000,
             remaining_amount: 750000,
             total_amount: 1500000,
-            accept_status: true,
+            accept_status: 'accepted',
             payment_status: true,
             options: [
                 { variant: 'Warna', option: 'Abu-abu' },
@@ -99,7 +99,7 @@ async function main() {
             dp_amount: 400000,
             remaining_amount: 0,
             total_amount: 400000,
-            accept_status: false,
+            accept_status: 'pending',
             payment_status: false,
             options: [
                 { variant: 'Warna', option: 'Putih' },

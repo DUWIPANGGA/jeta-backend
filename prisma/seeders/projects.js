@@ -5,12 +5,12 @@ const prisma = new PrismaClient();
 async function main() {
   // 1. Ambil semua custom order yang sudah di-ACC (accept_status = true)
   const customOrders = await prisma.customOrder.findMany({
-    where: { accept_status: true },
+    where: { accept_status: 'accepted' },
     select: { id: true, user_id: true, name: true },
   });
 
   if (customOrders.length === 0) {
-    console.log('⚠️  Tidak ada custom order dengan accept_status=true. Seeder projects dibatalkan.');
+    console.log('⚠️  Tidak ada custom order dengan accept_status=accepted. Seeder projects dibatalkan.');
     return;
   }
 
