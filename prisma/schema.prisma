@@ -147,6 +147,7 @@ model User {
   work_logs          WorkLog[]
   staffs             Staff[]
   salaryPayments     SalaryPayment[]
+  activity_logs      ActivityLog[]
 
   role               Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
@@ -874,6 +875,31 @@ model WorkLog {
 // ─────────────────────────────────────────────────────────────────────────────
 // PROGRESS REPORT
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTIVITY LOGS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  method      String
+  route       String
+  entity      String?
+  entity_id   Int?
+  action      String
+  status_code Int
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?
+  request_body String?
+  old_value   String?
+  new_value   String?
+  created_at  DateTime @default(now())
+
+  user        User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
 
 model ProgressReport {
   id                Int             @id @default(autoincrement())

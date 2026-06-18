@@ -18,6 +18,7 @@ import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { diskStorage } from 'multer';
@@ -72,6 +73,7 @@ export class ProductsController {
   @Post()
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Products', 'create')
+  @LogActivity('product', 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async create(
     @Body() createProductDto: CreateProductDto,
@@ -86,6 +88,7 @@ export class ProductsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Products', 'update')
+  @LogActivity('product', 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async update(
     @Param('id') id: string,
@@ -98,6 +101,7 @@ export class ProductsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Products', 'delete')
+  @LogActivity('product', 'delete')
   remove(@Param('id') id: string) {
     return this.productsService.remove(+id);
   }

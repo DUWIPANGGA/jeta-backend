@@ -4,6 +4,7 @@ import { ConsultationMaterialsService } from './consultation-materials.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 @Controller('consultation-materials')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -12,6 +13,7 @@ export class ConsultationMaterialsController {
 
   @Post()
   @Access('ConsultationMaterials', 'create')
+  @LogActivity('consultationMaterial', 'create')
   create(@Body() createDto: any) {
     return this.consultationMaterialsService.create(createDto);
   }
@@ -30,12 +32,14 @@ export class ConsultationMaterialsController {
 
   @Patch(':id')
   @Access('ConsultationMaterials', 'update')
+  @LogActivity('consultationMaterial', 'update')
   update(@Param('id') id: string, @Body() updateDto: any) {
     return this.consultationMaterialsService.update(+id, updateDto);
   }
 
   @Delete(':id')
   @Access('ConsultationMaterials', 'delete')
+  @LogActivity('consultationMaterial', 'delete')
   remove(@Param('id') id: string) {
     return this.consultationMaterialsService.remove(+id);
   }

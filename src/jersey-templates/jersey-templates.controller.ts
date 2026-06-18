@@ -23,6 +23,7 @@ import { UpdateJerseyTemplateDto } from './dto/update-jersey-template.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 const uploadDir = './uploads/jersey-templates';
 if (!fs.existsSync(uploadDir)) {
@@ -47,6 +48,7 @@ export class JerseyTemplatesController {
   @Post()
   @UseInterceptors(FileInterceptor('image', { storage }))
   @Access('JerseyTemplates', 'create')
+  @LogActivity('jerseyTemplate', 'create')
   create(
     @UploadedFile() file: Express.Multer.File,
     @Body() createDto: CreateJerseyTemplateDto,
@@ -73,6 +75,7 @@ export class JerseyTemplatesController {
   @Patch(':id')
   @UseInterceptors(FileInterceptor('image', { storage }))
   @Access('JerseyTemplates', 'update')
+  @LogActivity('jerseyTemplate', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
@@ -86,6 +89,7 @@ export class JerseyTemplatesController {
 
   @Delete(':id')
   @Access('JerseyTemplates', 'delete')
+  @LogActivity('jerseyTemplate', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.jerseyTemplatesService.remove(id);
   }

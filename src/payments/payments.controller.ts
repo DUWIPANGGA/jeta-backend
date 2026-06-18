@@ -20,6 +20,7 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -46,6 +47,7 @@ export class PaymentsController {
 
   @Post()
   @Access('Payments', 'create')
+  @LogActivity('payment', 'create')
   create(@Body() createDto: CreatePaymentDto) {
     return this.paymentsService.create(createDto);
   }
@@ -70,6 +72,7 @@ export class PaymentsController {
 
   @Post(':id/upload-proof')
   @Access('Payments', 'update')
+  @LogActivity('payment', 'create')
   @UseInterceptors(
     FileInterceptor('file', {
       storage,
@@ -104,6 +107,7 @@ export class PaymentsController {
 
   @Patch(':id/verify')
   @Access('Payments', 'update')
+  @LogActivity('payment', 'update')
   verify(
     @Param('id', ParseIntPipe) id: number, 
     @Body('status') status: 'completed' | 'failed',
@@ -117,12 +121,14 @@ export class PaymentsController {
 
   @Patch(':id')
   @Access('Payments', 'update')
+  @LogActivity('payment', 'update')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdatePaymentDto) {
     return this.paymentsService.update(id, updateDto);
   }
 
   @Delete(':id')
   @Access('Payments', 'delete')
+  @LogActivity('payment', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.remove(id);
   }

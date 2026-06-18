@@ -30,6 +30,7 @@ import { AcceptCustomOrderDto } from './dto/accept-custom-order.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 // Setup upload directory
@@ -83,6 +84,7 @@ export class CustomOrdersController {
   // ==================== CREATE (USER) ====================
   @Post()
   @Access('CustomOrders', 'create')
+  @LogActivity('customOrder', 'create')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FilesInterceptor('images', 10, {
     storage,
@@ -106,6 +108,7 @@ export class CustomOrdersController {
   // ==================== CREATE (ADMIN) ====================
   @Post('admin')
   @Access('CustomOrders', 'create')
+  @LogActivity('customOrder', 'create')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FilesInterceptor('images', 10, {
     storage,
@@ -180,6 +183,7 @@ export class CustomOrdersController {
   // ==================== UPDATE ====================
   @Patch(':id')
   @Access('CustomOrders', 'update')
+  @LogActivity('customOrder', 'update')
   @UseInterceptors(FilesInterceptor('images', 10, {
     storage,
     fileFilter,
@@ -206,6 +210,7 @@ export class CustomOrdersController {
   // ==================== UPDATE ACCEPT STATUS ====================
   @Patch(':id/accept-status')
   @Access('CustomOrders', 'update')
+  @LogActivity('customOrder', 'update')
   async updateAcceptStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() acceptData: AcceptCustomOrderDto,
@@ -225,6 +230,7 @@ export class CustomOrdersController {
   // ==================== REJECT CUSTOM ORDER ====================
   @Patch(':id/reject')
   @Access('CustomOrders', 'update')
+  @LogActivity('customOrder', 'update')
   async rejectOrder(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestWithUser,
@@ -243,6 +249,7 @@ export class CustomOrdersController {
   // ==================== DELETE ====================
   @Delete(':id')
   @Access('CustomOrders', 'delete')
+  @LogActivity('customOrder', 'delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,

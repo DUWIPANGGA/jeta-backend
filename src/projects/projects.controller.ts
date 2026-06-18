@@ -20,6 +20,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface RequestWithUser extends Request {
@@ -36,6 +37,7 @@ export class ProjectsController {
 
   @Post()
   @Access('Projects', 'create')
+  @LogActivity('project', 'create')
   create(@Body() createDto: CreateProjectDto, @Req() req: RequestWithUser) {
     return this.projectsService.create(createDto, req.user.id);
   }
@@ -81,6 +83,7 @@ export class ProjectsController {
 
   @Patch(':id')
   @Access('Projects', 'update')
+  @LogActivity('project', 'update')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateProjectDto,
@@ -97,6 +100,7 @@ export class ProjectsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Access('Projects', 'delete')
+  @LogActivity('project', 'delete')
   async remove(@Param('id', ParseIntPipe) id: number, @Req() req: RequestWithUser) {
     const user = await this.prisma.user.findUnique({
       where: { id: req.user.id },

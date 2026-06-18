@@ -23,6 +23,7 @@ import { UpdateStaffUserDto } from './dto/update-staff-user.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 import { storage, fileFilter } from '../common/utils/file-upload.utils';
 
 interface RequestWithUser extends Request {
@@ -78,6 +79,7 @@ export class UsersController {
   // ==================== CREATE USER ====================
   @Post()
   @Access('Users', 'create')
+  @LogActivity('user', 'create')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -85,6 +87,7 @@ export class UsersController {
   // ==================== CREATE STAFF USER ====================
   @Post('staffs')
   @Access('Users', 'create')
+  @LogActivity('user', 'create')
   createStaff(@Body() createStaffUserDto: CreateStaffUserDto) {
     return this.usersService.createStaff(createStaffUserDto);
   }
@@ -92,6 +95,7 @@ export class UsersController {
   // ==================== UPDATE STAFF USER ====================
   @Patch('staffs/:id')
   @Access('Users', 'update')
+  @LogActivity('user', 'update')
   updateStaff(@Param('id', ParseIntPipe) id: number, @Body() updateStaffUserDto: UpdateStaffUserDto) {
     return this.usersService.updateStaff(id, updateStaffUserDto);
   }
@@ -99,6 +103,7 @@ export class UsersController {
   // ==================== UPDATE USER ====================
   @Patch(':id')
   @Access('Users', 'update')
+  @LogActivity('user', 'update')
   @UseInterceptors(FileInterceptor('image', { storage: storage('users'), fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -115,6 +120,7 @@ export class UsersController {
   // ==================== DELETE USER ====================
   @Delete(':id')
   @Access('Users', 'delete')
+  @LogActivity('user', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }

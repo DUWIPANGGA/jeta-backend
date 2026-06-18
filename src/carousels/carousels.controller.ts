@@ -22,6 +22,7 @@ import { UpdateCarouselDto } from './dto/update-carousel.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 const uploadDir = './uploads/carousels';
 if (!fs.existsSync(uploadDir)) {
@@ -62,6 +63,7 @@ export class CarouselsController {
   @Post()
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Carousels', 'create')
+  @LogActivity('carousel', 'create')
   @UseInterceptors(FileInterceptor('media', { storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async create(
     @Body() createDto: CreateCarouselDto,
@@ -73,6 +75,7 @@ export class CarouselsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Carousels', 'update')
+  @LogActivity('carousel', 'update')
   @UseInterceptors(FileInterceptor('media', { storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -85,6 +88,7 @@ export class CarouselsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Access('Carousels', 'delete')
+  @LogActivity('carousel', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.carouselsService.remove(id);
   }

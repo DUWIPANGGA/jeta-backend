@@ -20,6 +20,7 @@ import { CalculatePemainDto } from './dto/calculate-pemain.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 const uploadDir = './uploads/custom-jersey';
 if (!fs.existsSync(uploadDir)) {
@@ -71,6 +72,7 @@ export class CustomJerseyController {
   @UseGuards(JwtAuthGuard, AccessGuard)
   @Post('order')
   @Access('CustomOrders', 'create')
+  @LogActivity('customJersey', 'create')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
     FileInterceptor('logo', {

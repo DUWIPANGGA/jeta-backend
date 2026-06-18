@@ -24,6 +24,7 @@ import { UpdatePortofolioDto } from './dto/update-portofolio.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from 'src/common/decorator/activity-log/activity-log.decorator';
 
 const uploadDir = './uploads/portofolios';
 if (!fs.existsSync(uploadDir)) {
@@ -54,6 +55,7 @@ export class PortofolioController {
 
   @Post()
   @Access('Portofolio', 'create')
+  @LogActivity('portofolio', 'create')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async create(
     @Body() dto: CreatePortofolioDto,
@@ -79,6 +81,7 @@ export class PortofolioController {
 
   @Patch(':id')
   @Access('Portofolio', 'update')
+  @LogActivity('portofolio', 'update')
   @UseInterceptors(FileInterceptor('image', { storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -91,6 +94,7 @@ export class PortofolioController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Access('Portofolio', 'delete')
+  @LogActivity('portofolio', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.portofolioService.remove(id);
   }

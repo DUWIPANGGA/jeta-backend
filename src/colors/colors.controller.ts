@@ -15,6 +15,7 @@ import { UpdateColorDto } from './dto/update-color.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 @Controller('colors')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -23,6 +24,7 @@ export class ColorsController {
 
   @Post()
   @Access('Colors', 'create')
+  @LogActivity('color', 'create')
   create(@Body() createDto: CreateColorDto) {
     return this.colorsService.create(createDto);
   }
@@ -41,6 +43,7 @@ export class ColorsController {
 
   @Patch(':id')
   @Access('Colors', 'update')
+  @LogActivity('color', 'update')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateColorDto,
@@ -50,6 +53,7 @@ export class ColorsController {
 
   @Delete(':id')
   @Access('Colors', 'delete')
+  @LogActivity('color', 'delete')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.colorsService.remove(id);
   }

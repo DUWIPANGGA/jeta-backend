@@ -24,6 +24,7 @@ import { WeeklyTutupBukuQueryDto } from './dto/weekly-tutup-buku.dto';
 import { JwtAuthGuard } from '../common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 const paymentDir = './uploads/payments';
 if (!fs.existsSync(paymentDir)) {
@@ -86,6 +87,7 @@ export class FinanceController {
   // ==================== PEMBAYARAN PER PROYEK (EXISTING) ====================
   @Post('payments')
   @Access('Finance', 'create')
+  @LogActivity('salaryPayment', 'create')
   @UseInterceptors(FileInterceptor('proof', { storage: paymentStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async createPayment(
     @Body() createDto: CreatePaymentDto,
@@ -108,6 +110,7 @@ export class FinanceController {
   // ==================== PROSES GAJI PER PERIODE (BARU) ====================
   @Post('salary/pay')
   @Access('Finance', 'create')
+  @LogActivity('salaryPayment', 'create')
   @UseInterceptors(FileInterceptor('proof', { storage: salaryStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }))
   async processSalaryByPeriod(
     @UploadedFile() file: Express.Multer.File,

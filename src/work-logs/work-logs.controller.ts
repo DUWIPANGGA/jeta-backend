@@ -4,6 +4,7 @@ import { WorkLogsService } from './work-logs.service';
 import { JwtAuthGuard } from 'src/common/guard/jwt-auth/jwt-auth.guard';
 import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
+import { LogActivity } from '../common/decorator/activity-log/activity-log.decorator';
 
 interface RequestWithUser extends Request {
   user: { id: number; role_id: number };
@@ -16,6 +17,7 @@ export class WorkLogsController {
 
   @Post()
   @Access('WorkLogs', 'create')
+  @LogActivity('workLog', 'create')
   create(@Body() createDto: any, @Req() req: RequestWithUser) {
     return this.workLogsService.create(req.user.id, createDto);
   }
@@ -47,6 +49,7 @@ export class WorkLogsController {
 
   @Delete(':id')
   @Access('WorkLogs', 'delete')
+  @LogActivity('workLog', 'delete')
   remove(@Param('id') id: string) {
     return this.workLogsService.remove(+id);
   }
