@@ -214,34 +214,50 @@ export class AuthService {
     return { message: 'Password berhasil direset' };
   }
 
-  // ✅ TAMBAHKAN METHOD INI
+  // ✅ GET PROFILE WITH PERMISSIONS
   async getProfile(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        image: true,
-        created_at: true,
-        updated_at: true,
-        role: {
-          select: {
-            id: true,
-            name: true,
-            level: true,
-            description: true,
-          },
-        },
-      },
+      include: { role: true },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    const accesses = await this.prisma.access.findMany({
+      where: { role_id: user.role_id },
+      include: { page: true },
+      orderBy: { page: { nomor: 'asc' } },
+    });
+
+    const permissions = accesses.map((access) => ({
+      page_id: access.page.id,
+      page_name: access.page.name,
+      nomor: access.page.nomor,
+      can_create: access.create,
+      can_read: access.read,
+      can_update: access.update,
+      can_delete: access.delete,
+    }));
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      image: user.image,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      role: {
+        id: user.role.id,
+        name: user.role.name,
+        level: user.role.level,
+        description: user.role.description,
+        explicit_page_ids: user.role.explicit_page_ids,
+      },
+      permissions,
+    };
   }
 }

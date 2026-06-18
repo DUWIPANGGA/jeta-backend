@@ -2,11 +2,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const roles = [
-  { id: 1, name: 'superadmin', level: 1, description: 'Super Administrator - Full access to everything' },
-  { id: 2, name: 'admin', level: 2, description: 'Administrator - Manage operational data' },
-  { id: 3, name: 'staff', level: 3, description: 'Staff - Limited access for daily operations' },
-  { id: 4, name: 'customer', level: 4, description: 'Customer - Customer access only' },
-  { id: 5, name: 'finance', level: 5, description: 'Finance - Manage payments and salaries' },
+  { id: 1, name: 'superadmin', level: 1, description: 'Super Administrator - Full access to everything', explicit_page_ids: [] },
+  { id: 2, name: 'admin', level: 2, description: 'Administrator - Manage operational data', explicit_page_ids: [] },
+  { id: 3, name: 'staff', level: 3, description: 'Staff - Limited access for daily operations', explicit_page_ids: [] },
+  { id: 4, name: 'customer', level: 4, description: 'Customer - Customer access only', explicit_page_ids: [] },
+  { id: 5, name: 'finance', level: 5, description: 'Finance - Manage payments and salaries', explicit_page_ids: [] },
 ];
 
 async function main() {

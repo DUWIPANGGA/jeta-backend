@@ -154,10 +154,22 @@ export class AuthController {
   @Get('me')
   async getMe(@Req() req: RequestWithUser) {
     const userId = req.user.id;
-    const profile = await this.authService.getProfile(userId);
+    const result = await this.authService.getProfile(userId);
     return {
+      success: true,
       message: 'Profile retrieved successfully',
-      data: profile,
+      data: {
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        phone: result.phone,
+        address: result.address,
+        image: result.image,
+        created_at: result.created_at,
+        updated_at: result.updated_at,
+        role: result.role,
+      },
+      permissions: result.permissions,
     };
   }
 }

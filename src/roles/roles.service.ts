@@ -15,6 +15,7 @@ export class RolesService {
         name: roleData.name,
         level: roleData.level,
         description: roleData.description,
+        explicit_page_ids: roleData.explicit_page_ids ?? [],
         accesses: {
           create: accesses.map(access => ({
             name: `access_${roleData.name}_${access.pageId}`,
@@ -100,6 +101,7 @@ export class RolesService {
         name: roleData.name,
         level: roleData.level,
         description: roleData.description,
+        explicit_page_ids: roleData.explicit_page_ids ?? undefined,
         accesses: {
           create: accesses?.map(access => ({
             name: `access_${roleData.name || 'role'}_${access.pageId}`,

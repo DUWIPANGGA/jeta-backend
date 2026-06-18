@@ -77,12 +77,13 @@ enum AcceptStatus {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String
-  level       Int
-  description String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  name              String
+  level             Int
+  description       String
+  explicit_page_ids Int[]    @default([])
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 
   accesses    Access[]
   users       User[]

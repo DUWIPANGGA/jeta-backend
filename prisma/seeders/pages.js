@@ -20,7 +20,7 @@ const pages = [
   { id: 13, nomor: 13, name: 'Logistics' },
   { id: 14, nomor: 14, name: 'OrderItems' },
   { id: 15, nomor: 15, name: 'Orders' },
-  { id: 16, nomor: 16, name: 'Pages' },
+  { id: 16, nomor: 16, name: 'ActivityLogs' },
   { id: 17, nomor: 17, name: 'PaymentMethods' },
   { id: 18, nomor: 18, name: 'Payments' },
   { id: 19, nomor: 19, name: 'Portofolio' },

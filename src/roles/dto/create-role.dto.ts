@@ -34,5 +34,10 @@ export class CreateRoleDto {
   @Type(() => PageAccessDto)
   accesses: PageAccessDto[];
 
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  explicit_page_ids?: number[];
+
   // ❌ JANGAN ADA field id di sini! Biarkan auto-increment
 }
