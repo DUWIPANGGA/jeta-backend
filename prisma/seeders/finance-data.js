@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('🌱 Seeding finance data (SalaryProjects, ProgressReports, Payments)...');
+    console.log('🌱 Seeding finance data (SalaryProjects, WorkLogs, Payments)...');
 
     // 1. Ambil all staffs
     let staffs = await prisma.staff.findMany({
@@ -14,14 +14,10 @@ async function main() {
         return;
     }
 
-    // Ambil all projects
+    // Ambil all projects (beserta custom_order langsung)
     const projects = await prisma.project.findMany({
         include: {
-            custom_order: {
-                include: {
-                    items: true
-                }
-            }
+            custom_order: true,
         }
     });
 
@@ -53,17 +49,16 @@ async function main() {
         return;
     }
 
-    // Hapus data finance lama untuk kebersihan
+    // Hapus data finance lama
     await prisma.salaryPaymentDetail.deleteMany();
     await prisma.salaryPayment.deleteMany();
-    await prisma.progressReport.deleteMany();
+    await prisma.workLog.deleteMany();
     await prisma.salaryProjects.deleteMany();
-    console.log('🗑️  Data lama (SalaryPayment, ProgressReport, SalaryProjects) berhasil dibersihkan.');
+    console.log('🗑️  Data lama (SalaryPayment, WorkLog, SalaryProjects) berhasil dibersihkan.');
 
     // 2. Seed SalaryProjects (Penyesuaian gaji staff per proyek)
     console.log('📌 Seeding SalaryProjects...');
     for (const staff of staffs) {
-        // Set base salary staff (misal Rp 50.000)
         await prisma.staff.update({
             where: { id: staff.id },
             data: { salary: 50000 }
@@ -74,111 +69,100 @@ async function main() {
                 data: {
                     staff_id: staff.id,
                     project_id: project.id,
-                    adjustment_salary: 10000 // Total tarif per unit = 50.000 + 10.000 = 60.000
+                    adjustment_salary: 10000
                 }
             });
         }
     }
     console.log('✅ SalaryProjects seeded.');
 
-    // Re-fetch staffs to populate salaryProjects and updated salary
+    // Re-fetch staffs to populate salaryProjects
     staffs = await prisma.staff.findMany({
         include: { user: true, salaryProjects: true }
     });
 
-    // 3. Seed ProgressReports (Progres kerja disetujui dalam 4 minggu berbeda)
-    console.log('📌 Seeding ProgressReports...');
+    // 3. Seed WorkLogs (log kerja staff dalam 4 minggu berbeda)
+    console.log('📌 Seeding WorkLogs...');
     const now = new Date();
-    
-    // Fungsi pembantu untuk membuat tanggal
+
     function getPastDate(daysAgo) {
         const d = new Date(now);
         d.setDate(now.getDate() - daysAgo);
         return d;
     }
 
-    // Kita buat 4 minggu:
+    // 4 minggu:
     // Minggu 1: 22 hari lalu (Lunas)
     // Minggu 2: 15 hari lalu (Belum Dibayar)
     // Minggu 3: 8 hari lalu (Sebagian Dibayar)
     // Minggu 4: 2 hari lalu (Belum Dibayar)
 
-    const reportsToCreate = [
+    const workLogsToCreate = [
         // === MINGGU 1 (LUNAS) ===
-        { staffIdx: 0, projectIdx: 0, stageIdx: 0, qty: 10, approved: true, daysAgo: 22 },
-        { staffIdx: 1, projectIdx: 0, stageIdx: 1, qty: 15, approved: true, daysAgo: 21 },
-        { staffIdx: 2, projectIdx: 0, stageIdx: 2, qty: 10, approved: true, daysAgo: 20 },
+        { staffIdx: 0, projectIdx: 0, stageIdx: 0, qty: 10, daysAgo: 22 },
+        { staffIdx: 1, projectIdx: 0, stageIdx: 1, qty: 15, daysAgo: 21 },
+        { staffIdx: 2, projectIdx: 0, stageIdx: 2, qty: 10, daysAgo: 20 },
 
         // === MINGGU 2 (BELUM DIBAYAR) ===
-        { staffIdx: 0, projectIdx: 0, stageIdx: 1, qty: 12, approved: true, daysAgo: 15 },
-        { staffIdx: 1, projectIdx: 0, stageIdx: 2, qty: 8, approved: true, daysAgo: 14 },
+        { staffIdx: 0, projectIdx: 0, stageIdx: 1, qty: 12, daysAgo: 15 },
+        { staffIdx: 1, projectIdx: 0, stageIdx: 2, qty: 8, daysAgo: 14 },
 
         // === MINGGU 3 (SEBAGIAN DIBAYAR) ===
-        { staffIdx: 0, projectIdx: 0, stageIdx: 2, qty: 20, approved: true, daysAgo: 8 }, // Dibayar
-        { staffIdx: 1, projectIdx: 0, stageIdx: 3, qty: 15, approved: true, daysAgo: 7 }, // Belum Dibayar
+        { staffIdx: 0, projectIdx: 0, stageIdx: 2, qty: 20, daysAgo: 8 },
+        { staffIdx: 1, projectIdx: 0, stageIdx: 3, qty: 15, daysAgo: 7 },
 
         // === MINGGU 4 (BELUM DIBAYAR) ===
-        { staffIdx: 2, projectIdx: 0, stageIdx: 3, qty: 5, approved: true, daysAgo: 2 },
+        { staffIdx: 2, projectIdx: 0, stageIdx: 3, qty: 5, daysAgo: 2 },
     ];
 
-    const createdReports = [];
+    const createdWorkLogs = [];
 
-    for (const r of reportsToCreate) {
-        const staff = staffs[r.staffIdx % staffs.length];
-        const project = projects[r.projectIdx % projects.length];
-        const stage = stages[r.stageIdx % stages.length];
-        const item = project.custom_order?.items?.[0] || null;
+    for (const w of workLogsToCreate) {
+        const staff = staffs[w.staffIdx % staffs.length];
+        const project = projects[w.projectIdx % projects.length];
+        const stage = stages[w.stageIdx % stages.length];
 
-        const report = await prisma.progressReport.create({
+        const workLog = await prisma.workLog.create({
             data: {
-                staff_id: staff.id,
-                project_id: project.id,
-                custom_order_item_id: item ? item.id : null,
+                user_id: staff.user_id,
                 stage_id: stage.id,
-                status: 'selesai',
-                quantity: r.qty,
-                catatan: `Mengerjakan tahap ${stage.stage_name}`,
-                approval_status: r.approved,
-                created_at: getPastDate(r.daysAgo),
-                updated_at: getPastDate(r.daysAgo),
+                order_type: 'custom_order',
+                custom_order_id: project.custom_order?.id || null,
+                quantity: w.qty,
+                created_at: getPastDate(w.daysAgo),
+                updated_at: getPastDate(w.daysAgo),
             }
         });
-        createdReports.push({ ...report, staff, project, r });
+        createdWorkLogs.push({ ...workLog, staff, project, stage, w });
     }
-    console.log(`✅ ${createdReports.length} ProgressReports seeded.`);
+    console.log(`✅ ${createdWorkLogs.length} WorkLogs seeded.`);
 
-    // 4. Seed SalaryPayment & Details (Untuk mensimulasikan status Lunas dan Sebagian Dibayar)
+    // 4. Seed SalaryPayment & Details (Untuk WorkLogs)
     console.log('📌 Seeding SalaryPayments...');
 
     // --- PEMBAYARAN MINGGU 1 (Lunas) ---
-    // Semua report Minggu 1 dibayar penuh
-    const week1Reports = createdReports.filter(cr => cr.r.daysAgo >= 19 && cr.r.daysAgo <= 23);
-    
-    // Kelompokkan per staff untuk dibayar
+    const week1Logs = createdWorkLogs.filter(wl => wl.w.daysAgo >= 19 && wl.w.daysAgo <= 23);
+
     const week1ByStaff = {};
-    for (const report of week1Reports) {
-        if (!week1ByStaff[report.staff_id]) {
-            week1ByStaff[report.staff_id] = [];
+    for (const wl of week1Logs) {
+        if (!week1ByStaff[wl.staff.id]) {
+            week1ByStaff[wl.staff.id] = [];
         }
-        week1ByStaff[report.staff_id].push(report);
+        week1ByStaff[wl.staff.id].push(wl);
     }
 
     for (const staffId in week1ByStaff) {
-        const reports = week1ByStaff[staffId];
+        const logs = week1ByStaff[staffId];
         let totalAmount = 0;
         const details = [];
 
-        for (const report of reports) {
-            const adjustment = await prisma.salaryProjects.findFirst({
-                where: {
-                    staff_id: report.staff_id,
-                    project_id: report.project_id
-                }
-            });
-            const ratePerUnit = (report.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
-            const amount = report.quantity * ratePerUnit;
+        for (const wl of logs) {
+            const projectId = wl.project.id;
+            const adjustment = staffs.find(s => s.id === parseInt(staffId))?.salaryProjects.find(sp => sp.project_id === projectId);
+            const ratePerUnit = (wl.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
+            const amount = wl.quantity * ratePerUnit;
             totalAmount += amount;
-            details.push({ reportId: report.id, amount });
+            details.push({ workLogId: wl.id, amount });
         }
 
         const payment = await prisma.salaryPayment.create({
@@ -186,8 +170,9 @@ async function main() {
                 staff_id: parseInt(staffId),
                 paid_by: financeUser.id,
                 total_amount: totalAmount,
+                period_type: 'weekly',
                 notes: 'Gaji Minggu 1 (Lunas)',
-                payment_date: getPastDate(20), // Dibayar pada minggu 1
+                payment_date: getPastDate(20),
                 period_start: getPastDate(22),
                 period_end: getPastDate(16),
             }
@@ -197,7 +182,7 @@ async function main() {
             await prisma.salaryPaymentDetail.create({
                 data: {
                     salary_payment_id: payment.id,
-                    progress_report_id: detail.reportId,
+                    work_log_id: detail.workLogId,
                     amount: detail.amount
                 }
             });
@@ -205,34 +190,31 @@ async function main() {
     }
 
     // --- PEMBAYARAN MINGGU 3 (Sebagian Dibayar) ---
-    // Hanya membayar report milik Staff 0 (idx 0), report Staff 1 dibiarkan unpaid
-    const week3Reports = createdReports.filter(cr => cr.r.daysAgo >= 6 && cr.r.daysAgo <= 9);
-    const staff0Reports = week3Reports.filter(cr => cr.r.staffIdx === 0);
+    // Hanya membayar WorkLog Staff 0 (idx 0), WorkLog Staff 1 dibiarkan unpaid
+    const week3Logs = createdWorkLogs.filter(wl => wl.w.daysAgo >= 6 && wl.w.daysAgo <= 9);
+    const staff0Logs = week3Logs.filter(wl => wl.w.staffIdx === 0);
 
-    if (staff0Reports.length > 0) {
+    if (staff0Logs.length > 0) {
         let totalAmount = 0;
         const details = [];
 
-        for (const report of staff0Reports) {
-            const adjustment = await prisma.salaryProjects.findFirst({
-                where: {
-                    staff_id: report.staff_id,
-                    project_id: report.project_id
-                }
-            });
-            const ratePerUnit = (report.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
-            const amount = report.quantity * ratePerUnit;
+        for (const wl of staff0Logs) {
+            const projectId = wl.project.id;
+            const adjustment = staffs.find(s => s.id === wl.staff.id)?.salaryProjects.find(sp => sp.project_id === projectId);
+            const ratePerUnit = (wl.staff.salary ?? 0) + (adjustment?.adjustment_salary ?? 0);
+            const amount = wl.quantity * ratePerUnit;
             totalAmount += amount;
-            details.push({ reportId: report.id, amount });
+            details.push({ workLogId: wl.id, amount });
         }
 
         const payment = await prisma.salaryPayment.create({
             data: {
-                staff_id: staff0Reports[0].staff_id,
+                staff_id: staff0Logs[0].staff.id,
                 paid_by: financeUser.id,
                 total_amount: totalAmount,
+                period_type: 'weekly',
                 notes: 'Gaji Minggu 3 (Sebagian Dibayar - Staff 0)',
-                payment_date: getPastDate(6), // Dibayar pada minggu 3
+                payment_date: getPastDate(6),
                 period_start: getPastDate(8),
                 period_end: getPastDate(2),
             }
@@ -242,7 +224,7 @@ async function main() {
             await prisma.salaryPaymentDetail.create({
                 data: {
                     salary_payment_id: payment.id,
-                    progress_report_id: detail.reportId,
+                    work_log_id: detail.workLogId,
                     amount: detail.amount
                 }
             });
@@ -257,7 +239,7 @@ async function down() {
     console.log('\n🗑️ Rolling back finance data...');
     await prisma.salaryPaymentDetail.deleteMany({});
     await prisma.salaryPayment.deleteMany({});
-    await prisma.progressReport.deleteMany({});
+    await prisma.workLog.deleteMany({});
     await prisma.salaryProjects.deleteMany({});
     console.log('✅ Rollback completed');
 }
