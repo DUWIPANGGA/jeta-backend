@@ -84,6 +84,12 @@ export class AccessGuard implements CanActivate {
     this.logger.log(`   - role.id: ${roleId}`);
     this.logger.log(`   - role.name: ${userWithRole.role.name || 'N/A'}`);
 
+    // ============ SUPERADMIN BYPASS ============
+    if (userWithRole.role.name === 'superadmin') {
+      this.logger.log('🎉 SUPERADMIN BYPASS: Access granted for superadmin');
+      return true;
+    }
+
     // ============ STEP 9: Tentukan page ID ============
     this.logger.log(`🔍 STEP 9: Resolving page ID from pageIdentifier: "${pageIdentifier}"`);
     let pageId: number;

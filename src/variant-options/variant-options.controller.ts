@@ -19,6 +19,7 @@ import { AccessGuard } from '../common/guard/access/access.guard';
 import { Access } from '../common/decorator/access/access.decorator';
 
 @Controller('variant-options')
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class VariantOptionsController {
   constructor(private readonly variantOptionsService: VariantOptionsService) {}
   @Get()
@@ -44,7 +45,6 @@ export class VariantOptionsController {
     return this.variantOptionsService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard, AccessGuard)
   @Post()
   @Access('VariantOptions', 'create')
   create(@Body() createDto: CreateVariantOptionDto) {

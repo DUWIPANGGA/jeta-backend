@@ -220,6 +220,13 @@ export class CustomOrdersService {
           include: {
             user: { select: { id: true, name: true, email: true, phone: true } },
             payments: true,
+            tim_jersey: {
+              include: {
+                pemains: {
+                  include: { ukuran: true },
+                },
+              },
+            },
             items: {
               include: {
                 selected_options: {
@@ -497,6 +504,13 @@ export class CustomOrdersService {
           include: {
             user: { select: { id: true, name: true, email: true, phone: true } },
             payments: true,
+            tim_jersey: {
+              include: {
+                pemains: {
+                  include: { ukuran: true },
+                },
+              },
+            },
             items: {
               include: {
                 selected_options: {
@@ -541,6 +555,13 @@ export class CustomOrdersService {
         user: { select: { id: true, name: true, email: true, phone: true } },
         payments: true,
         projects: { include: { members: true } },
+        tim_jersey: {
+          include: {
+            pemains: {
+              include: { ukuran: true },
+            },
+          },
+        },
         items: {
           include: {
             selected_options: {
@@ -576,6 +597,13 @@ export class CustomOrdersService {
         user: { select: { id: true, name: true, email: true, phone: true } },
         payments: true,
         projects: { include: { members: true } },
+        tim_jersey: {
+          include: {
+            pemains: {
+              include: { ukuran: true },
+            },
+          },
+        },
         items: {
           include: {
             selected_options: {
@@ -612,6 +640,13 @@ export class CustomOrdersService {
       orderBy: { created_at: 'desc' },
       include: {
         payments: true,
+        tim_jersey: {
+          include: {
+            pemains: {
+              include: { ukuran: true },
+            },
+          },
+        },
         items: {
           include: {
             selected_options: {
@@ -779,6 +814,13 @@ export class CustomOrdersService {
         include: {
           user: { select: { id: true, name: true, email: true, phone: true } },
           payments: true,
+          tim_jersey: {
+            include: {
+              pemains: {
+                include: { ukuran: true },
+              },
+            },
+          },
           items: {
             include: {
               selected_options: {
@@ -860,6 +902,13 @@ export class CustomOrdersService {
         include: {
           payments: true,
           projects: { include: { members: true } },
+          tim_jersey: {
+            include: {
+              pemains: {
+                include: { ukuran: true },
+              },
+            },
+          },
           items: {
             include: {
               selected_options: {
@@ -885,6 +934,13 @@ export class CustomOrdersService {
         where: { id },
         data: { accept_status: 'rejected' },
         include: {
+          tim_jersey: {
+            include: {
+              pemains: {
+                include: { ukuran: true },
+              },
+            },
+          },
           items: {
             include: {
               selected_options: {

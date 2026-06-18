@@ -16,8 +16,26 @@ export class GuestController {
 
   // Guest bisa lihat daftar produk
   @Get('products')
-  async getAllProducts() {
-    return this.guestService.getAllProducts();
+  async getAllProducts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('category') category?: string,
+    @Query('size') size?: string,
+    @Query('color') color?: string,
+  ) {
+    return this.guestService.getAllProducts({
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 6,
+      search,
+      minPrice: minPrice ? parseInt(minPrice, 10) : undefined,
+      maxPrice: maxPrice ? parseInt(maxPrice, 10) : undefined,
+      category,
+      size,
+      color,
+    });
   }
 
   // Guest bisa lihat detail produk

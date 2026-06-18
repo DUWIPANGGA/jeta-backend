@@ -98,6 +98,7 @@ export class UsersController {
 
   // ==================== UPDATE USER ====================
   @Patch(':id')
+  @Access('Users', 'update')
   @UseInterceptors(FileInterceptor('image', { storage: storage('users'), fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }))
   async update(
     @Param('id', ParseIntPipe) id: number,

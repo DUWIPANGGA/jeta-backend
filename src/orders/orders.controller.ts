@@ -32,6 +32,7 @@ export class OrdersController {
   }
 
   @Get('user/:userId')
+  @Access('Orders', 'read')
   findByUser(@Param('userId') userId: string, @Request() req) {
     const loggedInUserId = req.user.id;
     const loggedInUserRoleId = req.user.role_id;

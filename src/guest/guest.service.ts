@@ -1,32 +1,81 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+interface ProductQueryParams {
+  page: number;
+  limit: number;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  category?: string;
+  size?: string;
+  color?: string;
+}
+
 @Injectable()
 export class GuestService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllProducts() {
-    const products = await this.prisma.product.findMany({
-      include: {
-        category: true,
-        material: true, // ✅ material di product, bukan di variant
-        variants: {
-          include: {
-            size: true,
-            color: true,
-            // ❌ HAPUS attribute: true,
-            // ❌ HAPUS material: true,
+  async getAllProducts(params: ProductQueryParams) {
+    const { page, limit, search, minPrice, maxPrice, category, size, color } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+      if (minPrice !== undefined) where.price.gte = minPrice;
+      if (maxPrice !== undefined) where.price.lte = maxPrice;
+    }
+
+    if (category) {
+      where.category = { name: { equals: category, mode: 'insensitive' } };
+    }
+
+    if (size || color) {
+      where.variants = { some: {} };
+      if (size) {
+        where.variants.some.size = { name: { equals: size, mode: 'insensitive' } };
+      }
+      if (color) {
+        where.variants.some.color = { name: { equals: color, mode: 'insensitive' } };
+      }
+    }
+
+    const [products, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          category: true,
+          material: true,
+          variants: {
+            include: {
+              size: true,
+              color: true,
+            },
           },
         },
-      },
-      orderBy: { created_at: 'desc' },
-    });
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    const data = products.map((p) => ({
+      ...p,
+      status: p.status ? 'tersedia' : 'habis',
+    }));
 
     return {
       success: true,
       message: 'Products retrieved successfully',
-      data: products,
-      total: products.length,
+      data,
+      last_page: Math.ceil(total / limit),
     };
   }
 
@@ -35,13 +84,11 @@ export class GuestService {
       where: { id },
       include: {
         category: true,
-        material: true, // ✅ material di product
+        material: true,
         variants: {
           include: {
             size: true,
             color: true,
-            // ❌ HAPUS attribute: true,
-            // ❌ HAPUS material: true,
           },
         },
       },
@@ -54,26 +101,30 @@ export class GuestService {
     return {
       success: true,
       message: 'Product retrieved successfully',
-      data: product,
+      data: {
+        ...product,
+        status: product.status ? 'tersedia' : 'habis',
+      },
     };
   }
 
   async getAllCategories() {
     const categories = await this.prisma.category.findMany({
-      include: {
-        products: {
-          include: {
-            material: true,
-          },
-        },
-      },
       orderBy: { name: 'asc' },
     });
+
+    const data = categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      created_at: c.created_at,
+      updated_at: c.updated_at,
+    }));
 
     return {
       success: true,
       message: 'Categories retrieved successfully',
-      data: categories,
+      data,
     };
   }
 
