@@ -17,7 +17,7 @@ import { AccessGuard } from 'src/common/guard/access/access.guard';
 import { Access } from 'src/common/decorator/access/access.decorator';
 
 @Controller('pages')
-// @UseGuards(JwtAuthGuard, AccessGuard)
+@UseGuards(JwtAuthGuard, AccessGuard)
 export class PagesController {
   constructor(private readonly pagesService: PagesService) { }
 
