@@ -21,15 +21,15 @@ const accessConfig = {
 
   staff: (pageName) => {
     const staffPages = new Set([
-      'Auth',
       'Products',
-      'CustomOrders',
       'ProgressReports',
       'Projects',
       'Staffs',
       'Stages',
       'WorkLogs',
       'JerseyTemplates',
+      'Users',
+      'SalaryProjects',
     ]);
 
     if (!staffPages.has(pageName)) return noAccess;
@@ -40,11 +40,8 @@ const accessConfig = {
     if (pageName === 'Products') {
       return { create: false, read: true, update: false, delete: false };
     }
-    if (pageName === 'CustomOrders') {
-      return { create: false, read: true, update: false, delete: false };
-    }
     if (pageName === 'Projects') {
-      return { create: false, read: true, update: true, delete: false };
+      return { create: true, read: true, update: true, delete: false };
     }
     if (pageName === 'Staffs') {
       return { create: false, read: true, update: false, delete: false };
@@ -56,6 +53,9 @@ const accessConfig = {
       return { create: true, read: true, update: true, delete: false };
     }
     if (pageName === 'JerseyTemplates') {
+      return { create: false, read: true, update: false, delete: false };
+    }
+    if (pageName === 'Users') {
       return { create: false, read: true, update: false, delete: false };
     }
 
