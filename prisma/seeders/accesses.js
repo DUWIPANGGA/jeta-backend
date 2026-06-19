@@ -30,6 +30,7 @@ const accessConfig = {
       'JerseyTemplates',
       'Users',
       'SalaryProjects',
+      'ProductionLogs',
     ]);
 
     if (!staffPages.has(pageName)) return noAccess;
@@ -41,7 +42,7 @@ const accessConfig = {
       return { create: false, read: true, update: false, delete: false };
     }
     if (pageName === 'Projects') {
-      return { create: true, read: true, update: true, delete: false };
+      return { create: false, read: true, update: false, delete: false };
     }
     if (pageName === 'Staffs') {
       return { create: false, read: true, update: false, delete: false };
@@ -58,7 +59,6 @@ const accessConfig = {
     if (pageName === 'Users') {
       return { create: false, read: true, update: false, delete: false };
     }
-
     return { create: false, read: true, update: false, delete: false };
   },
 
@@ -99,6 +99,8 @@ const accessConfig = {
       'Staffs',
       'Reports',
       'WorkLogs',
+      'Stages',
+      'CustomOrders',
     ]);
 
     if (!financePages.has(pageName)) return noAccess;
@@ -129,15 +131,18 @@ async function main() {
 
   let createdCount = 0;
   let updatedCount = 0;
+  let deletedCount = 0;
 
   for (const role of roles) {
     console.log(`\n📌 Processing accesses for ${role.name} (ID: ${role.id})...`);
 
-    const getAccess = accessConfig[role.name];
+    let getAccess = accessConfig[role.name];
     if (!getAccess) {
-      console.log(`  ⚠️  No access config for role ${role.name}, skipping...`);
-      continue;
+      console.warn(`  ⚠️  Role "${role.name}" tidak memiliki konfigurasi akses. Memberi akses read-only untuk semua halaman.`);
+      getAccess = () => ({ create: false, read: true, update: false, delete: false });
     }
+
+    const configuredPageIds = new Set();
 
     for (const page of pages) {
       const access = getAccess(page.name);
@@ -145,6 +150,8 @@ async function main() {
       if (!access.create && !access.read && !access.update && !access.delete) {
         continue;
       }
+
+      configuredPageIds.add(page.id);
 
       const existingAccess = await prisma.access.findFirst({
         where: { role_id: role.id, page_id: page.id },
@@ -194,11 +201,24 @@ async function main() {
         );
       }
     }
+
+    // Clean up stale access records (exist in DB but no longer configured for this role)
+    const staleCount = await prisma.access.deleteMany({
+      where: {
+        role_id: role.id,
+        page_id: { notIn: Array.from(configuredPageIds) },
+      },
+    });
+    if (staleCount.count > 0) {
+      deletedCount += staleCount.count;
+      console.log(`  🗑️ Deleted ${staleCount.count} stale access(es) for role "${role.name}"`);
+    }
   }
 
   console.log(`\n📊 Summary:`);
   console.log(`✅ Created: ${createdCount} new accesses`);
   console.log(`🔄 Updated: ${updatedCount} existing accesses`);
+  console.log(`🗑️ Deleted: ${deletedCount} stale accesses`);
 
   const allAccesses = await prisma.access.findMany({
     include: { role: { select: { name: true } }, page: { select: { name: true, id: true } } },
