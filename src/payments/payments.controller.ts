@@ -36,7 +36,17 @@ const storage = diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `proof-${uniqueSuffix}${extname(file.originalname)}`);
+    let ext = extname(file.originalname);
+    if (!ext) {
+      const mimeMap = {
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'image/webp': '.webp',
+        'application/pdf': '.pdf',
+      };
+      ext = mimeMap[file.mimetype] || '.jpg';
+    }
+    cb(null, `proof-${uniqueSuffix}${ext}`);
   },
 });
 
