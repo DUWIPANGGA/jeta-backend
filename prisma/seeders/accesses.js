@@ -73,14 +73,19 @@ const accessConfig = {
       'Guest',
       'PaymentMethods',
       'Payments',
+      'JerseyTemplates',
+      'VariantOptions',
+      'CustomVariants',
+      'Orders',
+      'Users',
     ]);
 
     if (!userPages.has(pageName)) return noAccess;
 
     return {
-      create: pageName === 'Carts' || pageName === 'CustomOrders',
+      create: pageName === 'Carts' || pageName === 'CustomOrders' || pageName === 'Orders',
       read: true,
-      update: pageName === 'Carts' || pageName === 'Payments',
+      update: pageName === 'Carts' || pageName === 'Payments' || pageName === 'Users',
       delete: pageName === 'Carts',
     };
   },

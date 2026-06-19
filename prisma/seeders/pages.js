@@ -48,6 +48,7 @@ const pages = [
   { id: 40, nomor: 40, name: 'Carousels' },
   { id: 41, nomor: 41, name: 'RecommendedProducts' },
   { id: 42, nomor: 42, name: 'JerseyTemplates' },
+  { id: 43, nomor: 43, name: 'Pages' },
 ];
 
 async function main() {

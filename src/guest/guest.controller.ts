@@ -5,7 +5,7 @@ import { OrdersService } from '../orders/orders.service';
 
 // ❌ HAPUS semua guard dan decorator yang tidak perlu
 // @UseGuards(JwtAuthGuard, AccessGuard)
-// @Access(13, 'read')
+// @Access(12, 'read') // Guest ID = 12
 
 @Controller('guest')
 export class GuestController {
