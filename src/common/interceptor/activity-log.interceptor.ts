@@ -65,9 +65,13 @@ export class ActivityLogInterceptor implements NestInterceptor {
                     status_code: statusCode,
                     ip_address: ipAddress,
                     user_agent: userAgent,
-                    request_body: requestBody ? JSON.stringify(requestBody) : null,
+                    request_body: requestBody && typeof requestBody === 'object' && Object.keys(requestBody).length > 0
+                      ? JSON.stringify(requestBody, (key, value) => key === 'file' ? '[File]' : value)
+                      : null,
                     old_value: oldValue ? JSON.stringify(oldValue) : null,
-                    new_value: responseBody ? JSON.stringify(responseBody) : null,
+                    new_value: responseBody
+                      ? JSON.stringify(responseBody, (key, value) => key === 'file' ? '[File]' : value)
+                      : null,
                   },
                 })
                 .catch((err) =>

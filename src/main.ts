@@ -75,13 +75,13 @@ async function bootstrap() {
 }
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason) => {
+  winstonLogger.error(`Unhandled Rejection: ${reason}`);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  winstonLogger.error(`Uncaught Exception: ${error.message}`, error.stack);
   process.exit(1);
 });
 

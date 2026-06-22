@@ -137,10 +137,10 @@ export class PaymentsService {
       throw new BadRequestException('Payment already completed');
     }
 
-    if (userId && payment.order?.user?.id && payment.order.user.id !== userId) {
+    if (userId != null && payment.order?.user?.id && payment.order.user.id !== userId) {
       throw new ForbiddenException('You are not allowed to upload proof for this payment');
     }
-    if (userId && payment.custom_order?.user?.id && payment.custom_order.user.id !== userId) {
+    if (userId != null && payment.custom_order?.user?.id && payment.custom_order.user.id !== userId) {
       throw new ForbiddenException('You are not allowed to upload proof for this payment');
     }
 
@@ -148,18 +148,26 @@ export class PaymentsService {
       payment_proof: filePath,
       payment_status: PaymentStatus.waiting_verification,
     };
-    if (amount) dataToUpdate.amount = amount;
-    if (paymentMethodId) dataToUpdate.payment_method_id = paymentMethodId;
+    if (amount != null && !isNaN(amount)) dataToUpdate.amount = amount;
+    if (paymentMethodId != null) dataToUpdate.payment_method_id = paymentMethodId;
 
-    return this.prisma.payment.update({
-      where: { id },
-      data: dataToUpdate,
-      include: {
-        custom_order: true,
-        order: true,
-        payment_method: true,
-      },
-    });
+    try {
+      return await this.prisma.payment.update({
+        where: { id },
+        data: dataToUpdate,
+        include: {
+          custom_order: true,
+          order: true,
+          payment_method: true,
+        },
+      });
+    } catch (error) {
+      console.error('=== UPLOAD PROOF ERROR ===');
+      console.error('id:', id, 'filePath:', filePath, 'amount:', amount, 'paymentMethodId:', paymentMethodId, 'userId:', userId);
+      console.error('dataToUpdate:', JSON.stringify(dataToUpdate));
+      console.error('Error:', error);
+      throw error;
+    }
   }
 
   async verifyPayment(id: number, status: 'completed' | 'failed', verifiedAmount?: number) {

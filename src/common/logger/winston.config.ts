@@ -1,7 +1,11 @@
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
+import { existsSync, mkdirSync } from 'fs';
 
 const logDir = 'logs';
+if (!existsSync(logDir)) {
+  mkdirSync(logDir, { recursive: true });
+}
 
 export const winstonConfig = {
   transports: [

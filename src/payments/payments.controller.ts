@@ -28,7 +28,7 @@ import { existsSync, mkdirSync } from 'fs';
 
 const storage = diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = './uploads/payments';
+    const uploadPath = join(process.cwd(), 'uploads', 'payments');
     if (!existsSync(uploadPath)) {
       mkdirSync(uploadPath, { recursive: true });
     }
@@ -106,11 +106,19 @@ export class PaymentsController {
       throw new BadRequestException('File is required');
     }
     const filePath = `/uploads/payments/${file.filename}`;
+    const parsedAmount = amount ? parseInt(amount) : undefined;
+    const parsedPaymentMethodId = paymentMethodId ? parseInt(paymentMethodId) : undefined;
+    if (parsedAmount !== undefined && isNaN(parsedAmount)) {
+      throw new BadRequestException('Invalid amount');
+    }
+    if (parsedPaymentMethodId !== undefined && isNaN(parsedPaymentMethodId)) {
+      throw new BadRequestException('Invalid payment method');
+    }
     return this.paymentsService.uploadProof(
       id, 
       filePath,
-      amount ? parseInt(amount) : undefined,
-      paymentMethodId ? parseInt(paymentMethodId) : undefined,
+      parsedAmount,
+      parsedPaymentMethodId,
       req?.user?.id,
     );
   }

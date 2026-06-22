@@ -1,0 +1,355 @@
+2026-06-22T05:57:50.547Z [32minfo[39m [NestFactory] Starting Nest application...
+2026-06-22T05:57:50.582Z [32minfo[39m [InstanceLoader] MailerModule dependencies initialized
+2026-06-22T05:57:50.584Z [32minfo[39m [InstanceLoader] PrismaModule dependencies initialized
+2026-06-22T05:57:50.584Z [32minfo[39m [InstanceLoader] PassportModule dependencies initialized
+2026-06-22T05:57:50.599Z [32minfo[39m [InstanceLoader] WinstonModule dependencies initialized
+2026-06-22T05:57:50.600Z [32minfo[39m [InstanceLoader] ConfigHostModule dependencies initialized
+2026-06-22T05:57:50.607Z [32minfo[39m [InstanceLoader] ConfigModule dependencies initialized
+2026-06-22T05:57:50.608Z [32minfo[39m [InstanceLoader] ConfigModule dependencies initialized
+2026-06-22T05:57:50.608Z [32minfo[39m [InstanceLoader] ServeStaticModule dependencies initialized
+2026-06-22T05:57:50.609Z [32minfo[39m [InstanceLoader] ServeStaticModule dependencies initialized
+2026-06-22T05:57:50.612Z [32minfo[39m [InstanceLoader] EmailModule dependencies initialized
+2026-06-22T05:57:50.612Z [32minfo[39m [InstanceLoader] MailerCoreModule dependencies initialized
+2026-06-22T05:57:50.614Z [32minfo[39m [InstanceLoader] JwtModule dependencies initialized
+2026-06-22T05:57:50.615Z [32minfo[39m [InstanceLoader] GuestModule dependencies initialized
+2026-06-22T05:57:50.618Z [32minfo[39m [InstanceLoader] CategoriesModule dependencies initialized
+2026-06-22T05:57:50.619Z [32minfo[39m [InstanceLoader] ProductVariantsModule dependencies initialized
+2026-06-22T05:57:50.619Z [32minfo[39m [InstanceLoader] CartsModule dependencies initialized
+2026-06-22T05:57:50.620Z [32minfo[39m [InstanceLoader] OrdersModule dependencies initialized
+2026-06-22T05:57:50.620Z [32minfo[39m [InstanceLoader] OrderItemsModule dependencies initialized
+2026-06-22T05:57:50.621Z [32minfo[39m [InstanceLoader] TrackingsModule dependencies initialized
+2026-06-22T05:57:50.621Z [32minfo[39m [InstanceLoader] ConsultationsModule dependencies initialized
+2026-06-22T05:57:50.622Z [32minfo[39m [InstanceLoader] ConsultationFilesModule dependencies initialized
+2026-06-22T05:57:50.622Z [32minfo[39m [InstanceLoader] ConsultationMaterialsModule dependencies initialized
+2026-06-22T05:57:50.622Z [32minfo[39m [InstanceLoader] PagesModule dependencies initialized
+2026-06-22T05:57:50.623Z [32minfo[39m [InstanceLoader] LogisticsModule dependencies initialized
+2026-06-22T05:57:50.624Z [32minfo[39m [InstanceLoader] UsersModule dependencies initialized
+2026-06-22T05:57:50.624Z [32minfo[39m [InstanceLoader] RolesModule dependencies initialized
+2026-06-22T05:57:50.625Z [32minfo[39m [InstanceLoader] ProductsModule dependencies initialized
+2026-06-22T05:57:50.625Z [32minfo[39m [InstanceLoader] PaymentsModule dependencies initialized
+2026-06-22T05:57:50.625Z [32minfo[39m [InstanceLoader] PaymentMethodsModule dependencies initialized
+2026-06-22T05:57:50.626Z [32minfo[39m [InstanceLoader] StagesModule dependencies initialized
+2026-06-22T05:57:50.626Z [32minfo[39m [InstanceLoader] PortofolioModule dependencies initialized
+2026-06-22T05:57:50.627Z [32minfo[39m [InstanceLoader] WorkLogsModule dependencies initialized
+2026-06-22T05:57:50.627Z [32minfo[39m [InstanceLoader] CheckoutModule dependencies initialized
+2026-06-22T05:57:50.627Z [32minfo[39m [InstanceLoader] CustomerDataModule dependencies initialized
+2026-06-22T05:57:50.628Z [32minfo[39m [InstanceLoader] ReportsModule dependencies initialized
+2026-06-22T05:57:50.628Z [32minfo[39m [InstanceLoader] StaffsModule dependencies initialized
+2026-06-22T05:57:50.629Z [32minfo[39m [InstanceLoader] SalaryProjectsModule dependencies initialized
+2026-06-22T05:57:50.630Z [32minfo[39m [InstanceLoader] FinanceModule dependencies initialized
+2026-06-22T05:57:50.630Z [32minfo[39m [InstanceLoader] SizesModule dependencies initialized
+2026-06-22T05:57:50.631Z [32minfo[39m [InstanceLoader] ColorsModule dependencies initialized
+2026-06-22T05:57:50.631Z [32minfo[39m [InstanceLoader] AttributesModule dependencies initialized
+2026-06-22T05:57:50.631Z [32minfo[39m [InstanceLoader] MaterialsModule dependencies initialized
+2026-06-22T05:57:50.632Z [32minfo[39m [InstanceLoader] CustomVariantsModule dependencies initialized
+2026-06-22T05:57:50.632Z [32minfo[39m [InstanceLoader] VariantOptionsModule dependencies initialized
+2026-06-22T05:57:50.633Z [32minfo[39m [InstanceLoader] JerseyTemplatesModule dependencies initialized
+2026-06-22T05:57:50.633Z [32minfo[39m [InstanceLoader] CustomJerseyModule dependencies initialized
+2026-06-22T05:57:50.633Z [32minfo[39m [InstanceLoader] SummaryModule dependencies initialized
+2026-06-22T05:57:50.633Z [32minfo[39m [InstanceLoader] CarouselsModule dependencies initialized
+2026-06-22T05:57:50.634Z [32minfo[39m [InstanceLoader] RecommendedProductsModule dependencies initialized
+2026-06-22T05:57:50.634Z [32minfo[39m [InstanceLoader] TrackingHistoriesModule dependencies initialized
+2026-06-22T05:57:50.634Z [32minfo[39m [InstanceLoader] ProductionLogsModule dependencies initialized
+2026-06-22T05:57:50.634Z [32minfo[39m [InstanceLoader] ActivityLogsModule dependencies initialized
+2026-06-22T05:57:50.635Z [32minfo[39m [InstanceLoader] CustomOrdersModule dependencies initialized
+2026-06-22T05:57:50.635Z [32minfo[39m [InstanceLoader] ProjectsModule dependencies initialized
+2026-06-22T05:57:50.636Z [32minfo[39m [InstanceLoader] ProgressReportsModule dependencies initialized
+2026-06-22T05:57:50.636Z [32minfo[39m [InstanceLoader] AppModule dependencies initialized
+2026-06-22T05:57:50.637Z [32minfo[39m [InstanceLoader] AuthModule dependencies initialized
+2026-06-22T05:57:50.647Z [33mwarn[39m [LegacyRouteConverter] Unsupported route path: "/api/*". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. For more details, refer to the migration guide. Attempting to auto-convert...
+2026-06-22T05:57:50.649Z [32minfo[39m [RoutesResolver] AppController {/api}:
+2026-06-22T05:57:50.651Z [32minfo[39m [RouterExplorer] Mapped {/api, GET} route
+2026-06-22T05:57:50.652Z [32minfo[39m [RoutesResolver] UsersController {/api/users}:
+2026-06-22T05:57:50.654Z [32minfo[39m [RouterExplorer] Mapped {/api/users/permissions, GET} route
+2026-06-22T05:57:50.655Z [32minfo[39m [RouterExplorer] Mapped {/api/users, GET} route
+2026-06-22T05:57:50.655Z [32minfo[39m [RouterExplorer] Mapped {/api/users/staffs, GET} route
+2026-06-22T05:57:50.657Z [32minfo[39m [RouterExplorer] Mapped {/api/users/staffs/:id, GET} route
+2026-06-22T05:57:50.658Z [32minfo[39m [RouterExplorer] Mapped {/api/users/customers/:id, GET} route
+2026-06-22T05:57:50.659Z [32minfo[39m [RouterExplorer] Mapped {/api/users/:id, GET} route
+2026-06-22T05:57:50.660Z [32minfo[39m [RouterExplorer] Mapped {/api/users, POST} route
+2026-06-22T05:57:50.661Z [32minfo[39m [RouterExplorer] Mapped {/api/users/staffs, POST} route
+2026-06-22T05:57:50.663Z [32minfo[39m [RouterExplorer] Mapped {/api/users/staffs/:id, PATCH} route
+2026-06-22T05:57:50.664Z [32minfo[39m [RouterExplorer] Mapped {/api/users/:id, PATCH} route
+2026-06-22T05:57:50.665Z [32minfo[39m [RouterExplorer] Mapped {/api/users/:id, DELETE} route
+2026-06-22T05:57:50.665Z [32minfo[39m [RoutesResolver] AuthController {/api/auth}:
+2026-06-22T05:57:50.666Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/login/customer, POST} route
+2026-06-22T05:57:50.667Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/login/staff, POST} route
+2026-06-22T05:57:50.667Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/register, POST} route
+2026-06-22T05:57:50.668Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/verify, GET} route
+2026-06-22T05:57:50.669Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/forgot-password, POST} route
+2026-06-22T05:57:50.670Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/reset-password, POST} route
+2026-06-22T05:57:50.670Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/logout, POST} route
+2026-06-22T05:57:50.671Z [32minfo[39m [RouterExplorer] Mapped {/api/auth/me, GET} route
+2026-06-22T05:57:50.671Z [32minfo[39m [RoutesResolver] RoleController {/api/roles}:
+2026-06-22T05:57:50.672Z [32minfo[39m [RouterExplorer] Mapped {/api/roles/pages, GET} route
+2026-06-22T05:57:50.673Z [32minfo[39m [RouterExplorer] Mapped {/api/roles/pages-with-access/:roleId, GET} route
+2026-06-22T05:57:50.673Z [32minfo[39m [RouterExplorer] Mapped {/api/roles, POST} route
+2026-06-22T05:57:50.674Z [32minfo[39m [RouterExplorer] Mapped {/api/roles, GET} route
+2026-06-22T05:57:50.674Z [32minfo[39m [RouterExplorer] Mapped {/api/roles/:id, GET} route
+2026-06-22T05:57:50.675Z [32minfo[39m [RouterExplorer] Mapped {/api/roles/:id, PATCH} route
+2026-06-22T05:57:50.676Z [32minfo[39m [RouterExplorer] Mapped {/api/roles/:id, DELETE} route
+2026-06-22T05:57:50.676Z [32minfo[39m [RoutesResolver] CategoriesController {/api/categories}:
+2026-06-22T05:57:50.677Z [32minfo[39m [RouterExplorer] Mapped {/api/categories, GET} route
+2026-06-22T05:57:50.678Z [32minfo[39m [RouterExplorer] Mapped {/api/categories/:id, GET} route
+2026-06-22T05:57:50.678Z [32minfo[39m [RouterExplorer] Mapped {/api/categories, POST} route
+2026-06-22T05:57:50.679Z [32minfo[39m [RouterExplorer] Mapped {/api/categories/:id, PATCH} route
+2026-06-22T05:57:50.680Z [32minfo[39m [RouterExplorer] Mapped {/api/categories/:id, DELETE} route
+2026-06-22T05:57:50.681Z [32minfo[39m [RoutesResolver] ProductsController {/api/products}:
+2026-06-22T05:57:50.682Z [32minfo[39m [RouterExplorer] Mapped {/api/products, GET} route
+2026-06-22T05:57:50.682Z [32minfo[39m [RouterExplorer] Mapped {/api/products/category/:category_id, GET} route
+2026-06-22T05:57:50.683Z [32minfo[39m [RouterExplorer] Mapped {/api/products/:id, GET} route
+2026-06-22T05:57:50.683Z [32minfo[39m [RouterExplorer] Mapped {/api/products, POST} route
+2026-06-22T05:57:50.684Z [32minfo[39m [RouterExplorer] Mapped {/api/products/:id, PATCH} route
+2026-06-22T05:57:50.685Z [32minfo[39m [RouterExplorer] Mapped {/api/products/:id, DELETE} route
+2026-06-22T05:57:50.685Z [32minfo[39m [RoutesResolver] ProductVariantsController {/api/product-variants}:
+2026-06-22T05:57:50.686Z [32minfo[39m [RouterExplorer] Mapped {/api/product-variants, POST} route
+2026-06-22T05:57:50.686Z [32minfo[39m [RouterExplorer] Mapped {/api/product-variants, GET} route
+2026-06-22T05:57:50.687Z [32minfo[39m [RouterExplorer] Mapped {/api/product-variants/:id, GET} route
+2026-06-22T05:57:50.687Z [32minfo[39m [RouterExplorer] Mapped {/api/product-variants/:id, PATCH} route
+2026-06-22T05:57:50.688Z [32minfo[39m [RouterExplorer] Mapped {/api/product-variants/:id, DELETE} route
+2026-06-22T05:57:50.688Z [32minfo[39m [RoutesResolver] CartsController {/api/carts}:
+2026-06-22T05:57:50.689Z [32minfo[39m [RouterExplorer] Mapped {/api/carts, POST} route
+2026-06-22T05:57:50.690Z [32minfo[39m [RouterExplorer] Mapped {/api/carts, GET} route
+2026-06-22T05:57:50.690Z [32minfo[39m [RouterExplorer] Mapped {/api/carts/:id, GET} route
+2026-06-22T05:57:50.691Z [32minfo[39m [RouterExplorer] Mapped {/api/carts/:id, PATCH} route
+2026-06-22T05:57:50.692Z [32minfo[39m [RouterExplorer] Mapped {/api/carts/:id, DELETE} route
+2026-06-22T05:57:50.692Z [32minfo[39m [RoutesResolver] OrdersController {/api/orders}:
+2026-06-22T05:57:50.693Z [32minfo[39m [RouterExplorer] Mapped {/api/orders, POST} route
+2026-06-22T05:57:50.694Z [32minfo[39m [RouterExplorer] Mapped {/api/orders/admin, POST} route
+2026-06-22T05:57:50.695Z [32minfo[39m [RouterExplorer] Mapped {/api/orders, GET} route
+2026-06-22T05:57:50.696Z [32minfo[39m [RouterExplorer] Mapped {/api/orders/user/:userId, GET} route
+2026-06-22T05:57:50.696Z [32minfo[39m [RouterExplorer] Mapped {/api/orders/:id, GET} route
+2026-06-22T05:57:50.698Z [32minfo[39m [RouterExplorer] Mapped {/api/orders/:id, PATCH} route
+2026-06-22T05:57:50.698Z [32minfo[39m [RouterExplorer] Mapped {/api/orders/:id/tracking, POST} route
+2026-06-22T05:57:50.699Z [32minfo[39m [RouterExplorer] Mapped {/api/orders/:id, DELETE} route
+2026-06-22T05:57:50.700Z [32minfo[39m [RoutesResolver] OrderItemsController {/api/order-items}:
+2026-06-22T05:57:50.701Z [32minfo[39m [RouterExplorer] Mapped {/api/order-items, POST} route
+2026-06-22T05:57:50.701Z [32minfo[39m [RouterExplorer] Mapped {/api/order-items, GET} route
+2026-06-22T05:57:50.702Z [32minfo[39m [RouterExplorer] Mapped {/api/order-items/:id, GET} route
+2026-06-22T05:57:50.703Z [32minfo[39m [RouterExplorer] Mapped {/api/order-items/:id, PATCH} route
+2026-06-22T05:57:50.703Z [32minfo[39m [RouterExplorer] Mapped {/api/order-items/:id, DELETE} route
+2026-06-22T05:57:50.704Z [32minfo[39m [RoutesResolver] PaymentsController {/api/payments}:
+2026-06-22T05:57:50.704Z [32minfo[39m [RouterExplorer] Mapped {/api/payments, POST} route
+2026-06-22T05:57:50.705Z [32minfo[39m [RouterExplorer] Mapped {/api/payments, GET} route
+2026-06-22T05:57:50.705Z [32minfo[39m [RouterExplorer] Mapped {/api/payments/pending, GET} route
+2026-06-22T05:57:50.706Z [32minfo[39m [RouterExplorer] Mapped {/api/payments/:id, GET} route
+2026-06-22T05:57:50.707Z [32minfo[39m [RouterExplorer] Mapped {/api/payments/:id/upload-proof, POST} route
+2026-06-22T05:57:50.707Z [32minfo[39m [RouterExplorer] Mapped {/api/payments/:id/verify, PATCH} route
+2026-06-22T05:57:50.708Z [32minfo[39m [RouterExplorer] Mapped {/api/payments/:id, PATCH} route
+2026-06-22T05:57:50.708Z [32minfo[39m [RouterExplorer] Mapped {/api/payments/:id, DELETE} route
+2026-06-22T05:57:50.709Z [32minfo[39m [RoutesResolver] PaymentMethodsController {/api/payment-methods}:
+2026-06-22T05:57:50.709Z [32minfo[39m [RouterExplorer] Mapped {/api/payment-methods, POST} route
+2026-06-22T05:57:50.710Z [32minfo[39m [RouterExplorer] Mapped {/api/payment-methods, GET} route
+2026-06-22T05:57:50.710Z [32minfo[39m [RouterExplorer] Mapped {/api/payment-methods/:id, GET} route
+2026-06-22T05:57:50.711Z [32minfo[39m [RouterExplorer] Mapped {/api/payment-methods/:id, PATCH} route
+2026-06-22T05:57:50.712Z [32minfo[39m [RouterExplorer] Mapped {/api/payment-methods/:id, DELETE} route
+2026-06-22T05:57:50.712Z [32minfo[39m [RoutesResolver] TrackingsController {/api/trackings}:
+2026-06-22T05:57:50.713Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings, GET} route
+2026-06-22T05:57:50.714Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings/order/:orderId, GET} route
+2026-06-22T05:57:50.714Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings/custom-order/:customOrderId, GET} route
+2026-06-22T05:57:50.715Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings/:id, GET} route
+2026-06-22T05:57:50.715Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings, POST} route
+2026-06-22T05:57:50.716Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings/:id, PATCH} route
+2026-06-22T05:57:50.717Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings/:id/stage, PATCH} route
+2026-06-22T05:57:50.717Z [32minfo[39m [RouterExplorer] Mapped {/api/trackings/:id, DELETE} route
+2026-06-22T05:57:50.718Z [32minfo[39m [RoutesResolver] TrackingHistoriesController {/api/tracking-histories}:
+2026-06-22T05:57:50.718Z [32minfo[39m [RouterExplorer] Mapped {/api/tracking-histories, GET} route
+2026-06-22T05:57:50.719Z [32minfo[39m [RouterExplorer] Mapped {/api/tracking-histories/tracking/:trackingId, GET} route
+2026-06-22T05:57:50.719Z [32minfo[39m [RouterExplorer] Mapped {/api/tracking-histories/:id, GET} route
+2026-06-22T05:57:50.720Z [32minfo[39m [RouterExplorer] Mapped {/api/tracking-histories, POST} route
+2026-06-22T05:57:50.721Z [32minfo[39m [RouterExplorer] Mapped {/api/tracking-histories/:id, PATCH} route
+2026-06-22T05:57:50.721Z [32minfo[39m [RouterExplorer] Mapped {/api/tracking-histories/:id, DELETE} route
+2026-06-22T05:57:50.722Z [32minfo[39m [RoutesResolver] ConsultationsController {/api/consultations}:
+2026-06-22T05:57:50.722Z [32minfo[39m [RouterExplorer] Mapped {/api/consultations, POST} route
+2026-06-22T05:57:50.723Z [32minfo[39m [RouterExplorer] Mapped {/api/consultations, GET} route
+2026-06-22T05:57:50.724Z [32minfo[39m [RouterExplorer] Mapped {/api/consultations/:id, GET} route
+2026-06-22T05:57:50.724Z [32minfo[39m [RouterExplorer] Mapped {/api/consultations/:id, PATCH} route
+2026-06-22T05:57:50.725Z [32minfo[39m [RouterExplorer] Mapped {/api/consultations/:id, DELETE} route
+2026-06-22T05:57:50.725Z [32minfo[39m [RoutesResolver] ConsultationFilesController {/api/consultation-files}:
+2026-06-22T05:57:50.726Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-files, POST} route
+2026-06-22T05:57:50.726Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-files, GET} route
+2026-06-22T05:57:50.727Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-files/:id, GET} route
+2026-06-22T05:57:50.727Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-files/:id, PATCH} route
+2026-06-22T05:57:50.728Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-files/:id, DELETE} route
+2026-06-22T05:57:50.729Z [32minfo[39m [RoutesResolver] ConsultationMaterialsController {/api/consultation-materials}:
+2026-06-22T05:57:50.730Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-materials, POST} route
+2026-06-22T05:57:50.730Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-materials, GET} route
+2026-06-22T05:57:50.731Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-materials/:id, GET} route
+2026-06-22T05:57:50.732Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-materials/:id, PATCH} route
+2026-06-22T05:57:50.732Z [32minfo[39m [RouterExplorer] Mapped {/api/consultation-materials/:id, DELETE} route
+2026-06-22T05:57:50.733Z [32minfo[39m [RoutesResolver] CustomOrdersController {/api/custom-orders}:
+2026-06-22T05:57:50.734Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders, POST} route
+2026-06-22T05:57:50.734Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/admin, POST} route
+2026-06-22T05:57:50.735Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders, GET} route
+2026-06-22T05:57:50.735Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/statistics, GET} route
+2026-06-22T05:57:50.736Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/user/:userId, GET} route
+2026-06-22T05:57:50.736Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/:id, GET} route
+2026-06-22T05:57:50.737Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/:id, PATCH} route
+2026-06-22T05:57:50.738Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/:id/accept-status, PATCH} route
+2026-06-22T05:57:50.738Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/:id/reject, PATCH} route
+2026-06-22T05:57:50.739Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/:id, DELETE} route
+2026-06-22T05:57:50.739Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-orders/:id/total-quantity, GET} route
+2026-06-22T05:57:50.740Z [32minfo[39m [RoutesResolver] ProductionLogsController {/api/production-logs}:
+2026-06-22T05:57:50.740Z [32minfo[39m [RouterExplorer] Mapped {/api/production-logs, POST} route
+2026-06-22T05:57:50.741Z [32minfo[39m [RouterExplorer] Mapped {/api/production-logs, GET} route
+2026-06-22T05:57:50.741Z [32minfo[39m [RouterExplorer] Mapped {/api/production-logs/:id, GET} route
+2026-06-22T05:57:50.742Z [32minfo[39m [RouterExplorer] Mapped {/api/production-logs/:id, PATCH} route
+2026-06-22T05:57:50.743Z [32minfo[39m [RouterExplorer] Mapped {/api/production-logs/:id, DELETE} route
+2026-06-22T05:57:50.743Z [32minfo[39m [RoutesResolver] GuestController {/api/guest}:
+2026-06-22T05:57:50.743Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/products, GET} route
+2026-06-22T05:57:50.744Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/products/:id, GET} route
+2026-06-22T05:57:50.745Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/categories, GET} route
+2026-06-22T05:57:50.745Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/portofolios, GET} route
+2026-06-22T05:57:50.746Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/stages, GET} route
+2026-06-22T05:57:50.747Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/recommended-products, GET} route
+2026-06-22T05:57:50.748Z [32minfo[39m [RouterExplorer] Mapped {/api/guest/track/:code, GET} route
+2026-06-22T05:57:50.748Z [32minfo[39m [RoutesResolver] StagesController {/api/stages}:
+2026-06-22T05:57:50.749Z [32minfo[39m [RouterExplorer] Mapped {/api/stages, POST} route
+2026-06-22T05:57:50.750Z [32minfo[39m [RouterExplorer] Mapped {/api/stages, GET} route
+2026-06-22T05:57:50.751Z [32minfo[39m [RouterExplorer] Mapped {/api/stages/:id, GET} route
+2026-06-22T05:57:50.751Z [32minfo[39m [RouterExplorer] Mapped {/api/stages/:id, PATCH} route
+2026-06-22T05:57:50.752Z [32minfo[39m [RouterExplorer] Mapped {/api/stages/:id/order, PATCH} route
+2026-06-22T05:57:50.753Z [32minfo[39m [RouterExplorer] Mapped {/api/stages/:id, DELETE} route
+2026-06-22T05:57:50.753Z [32minfo[39m [RoutesResolver] PortofolioController {/api/portofolios}:
+2026-06-22T05:57:50.754Z [32minfo[39m [RouterExplorer] Mapped {/api/portofolios, POST} route
+2026-06-22T05:57:50.755Z [32minfo[39m [RouterExplorer] Mapped {/api/portofolios, GET} route
+2026-06-22T05:57:50.755Z [32minfo[39m [RouterExplorer] Mapped {/api/portofolios/:id, GET} route
+2026-06-22T05:57:50.756Z [32minfo[39m [RouterExplorer] Mapped {/api/portofolios/:id, PATCH} route
+2026-06-22T05:57:50.757Z [32minfo[39m [RouterExplorer] Mapped {/api/portofolios/:id, DELETE} route
+2026-06-22T05:57:50.757Z [32minfo[39m [RoutesResolver] PagesController {/api/pages}:
+2026-06-22T05:57:50.758Z [32minfo[39m [RouterExplorer] Mapped {/api/pages, POST} route
+2026-06-22T05:57:50.758Z [32minfo[39m [RouterExplorer] Mapped {/api/pages, GET} route
+2026-06-22T05:57:50.759Z [32minfo[39m [RouterExplorer] Mapped {/api/pages/:id, GET} route
+2026-06-22T05:57:50.759Z [32minfo[39m [RouterExplorer] Mapped {/api/pages/:id, PATCH} route
+2026-06-22T05:57:50.760Z [32minfo[39m [RouterExplorer] Mapped {/api/pages/:id, DELETE} route
+2026-06-22T05:57:50.760Z [32minfo[39m [RoutesResolver] ProjectsController {/api/projects}:
+2026-06-22T05:57:50.761Z [32minfo[39m [RouterExplorer] Mapped {/api/projects, POST} route
+2026-06-22T05:57:50.762Z [32minfo[39m [RouterExplorer] Mapped {/api/projects, GET} route
+2026-06-22T05:57:50.763Z [32minfo[39m [RouterExplorer] Mapped {/api/projects/my-tasks, GET} route
+2026-06-22T05:57:50.764Z [32minfo[39m [RouterExplorer] Mapped {/api/projects/queue, GET} route
+2026-06-22T05:57:50.764Z [32minfo[39m [RouterExplorer] Mapped {/api/projects/:id, GET} route
+2026-06-22T05:57:50.765Z [32minfo[39m [RouterExplorer] Mapped {/api/projects/:id, PATCH} route
+2026-06-22T05:57:50.765Z [32minfo[39m [RouterExplorer] Mapped {/api/projects/:id, DELETE} route
+2026-06-22T05:57:50.766Z [32minfo[39m [RoutesResolver] WorkLogsController {/api/work-logs}:
+2026-06-22T05:57:50.766Z [32minfo[39m [RouterExplorer] Mapped {/api/work-logs, POST} route
+2026-06-22T05:57:50.767Z [32minfo[39m [RouterExplorer] Mapped {/api/work-logs, GET} route
+2026-06-22T05:57:50.768Z [32minfo[39m [RouterExplorer] Mapped {/api/work-logs/progress/:type/:id, GET} route
+2026-06-22T05:57:50.768Z [32minfo[39m [RouterExplorer] Mapped {/api/work-logs/:id, GET} route
+2026-06-22T05:57:50.769Z [32minfo[39m [RouterExplorer] Mapped {/api/work-logs/:id, DELETE} route
+2026-06-22T05:57:50.770Z [32minfo[39m [RoutesResolver] CheckoutController {/api/checkout}:
+2026-06-22T05:57:50.773Z [32minfo[39m [RouterExplorer] Mapped {/api/checkout, POST} route
+2026-06-22T05:57:50.774Z [32minfo[39m [RoutesResolver] LogisticsController {/api/logistics}:
+2026-06-22T05:57:50.774Z [32minfo[39m [RouterExplorer] Mapped {/api/logistics, POST} route
+2026-06-22T05:57:50.775Z [32minfo[39m [RouterExplorer] Mapped {/api/logistics, GET} route
+2026-06-22T05:57:50.776Z [32minfo[39m [RouterExplorer] Mapped {/api/logistics/:id, GET} route
+2026-06-22T05:57:50.777Z [32minfo[39m [RouterExplorer] Mapped {/api/logistics/:id, PATCH} route
+2026-06-22T05:57:50.778Z [32minfo[39m [RouterExplorer] Mapped {/api/logistics/:id, DELETE} route
+2026-06-22T05:57:50.778Z [32minfo[39m [RoutesResolver] CustomerDataController {/api/customer-data}:
+2026-06-22T05:57:50.779Z [32minfo[39m [RouterExplorer] Mapped {/api/customer-data/me, GET} route
+2026-06-22T05:57:50.780Z [32minfo[39m [RoutesResolver] ReportsController {/api/reports}:
+2026-06-22T05:57:50.780Z [32minfo[39m [RouterExplorer] Mapped {/api/reports/product-sales, GET} route
+2026-06-22T05:57:50.781Z [32minfo[39m [RouterExplorer] Mapped {/api/reports/product-sales/export, GET} route
+2026-06-22T05:57:50.782Z [32minfo[39m [RouterExplorer] Mapped {/api/reports/sales, GET} route
+2026-06-22T05:57:50.782Z [32minfo[39m [RouterExplorer] Mapped {/api/reports/sales/export, GET} route
+2026-06-22T05:57:50.783Z [32minfo[39m [RouterExplorer] Mapped {/api/reports/production, GET} route
+2026-06-22T05:57:50.783Z [32minfo[39m [RouterExplorer] Mapped {/api/reports/production/export, GET} route
+2026-06-22T05:57:50.784Z [32minfo[39m [RoutesResolver] ProgressReportsController {/api/progress-reports}:
+2026-06-22T05:57:50.784Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports, POST} route
+2026-06-22T05:57:50.785Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports, GET} route
+2026-06-22T05:57:50.785Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports/my-tasks, GET} route
+2026-06-22T05:57:50.786Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports/queue, GET} route
+2026-06-22T05:57:50.786Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports/remaining/:customOrderItemId, GET} route
+2026-06-22T05:57:50.800Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports/:id, GET} route
+2026-06-22T05:57:50.800Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports/:id, PATCH} route
+2026-06-22T05:57:50.801Z [32minfo[39m [RouterExplorer] Mapped {/api/progress-reports/:id, DELETE} route
+2026-06-22T05:57:50.801Z [32minfo[39m [RoutesResolver] StaffController {/api/staffs}:
+2026-06-22T05:57:50.802Z [32minfo[39m [RouterExplorer] Mapped {/api/staffs, POST} route
+2026-06-22T05:57:50.802Z [32minfo[39m [RouterExplorer] Mapped {/api/staffs/user/:userId, PATCH} route
+2026-06-22T05:57:50.803Z [32minfo[39m [RouterExplorer] Mapped {/api/staffs, GET} route
+2026-06-22T05:57:50.803Z [32minfo[39m [RouterExplorer] Mapped {/api/staffs/:id, GET} route
+2026-06-22T05:57:50.804Z [32minfo[39m [RouterExplorer] Mapped {/api/staffs/:id, PATCH} route
+2026-06-22T05:57:50.804Z [32minfo[39m [RouterExplorer] Mapped {/api/staffs/:id, DELETE} route
+2026-06-22T05:57:50.805Z [32minfo[39m [RoutesResolver] SalaryProjectsController {/api/salary-projects}:
+2026-06-22T05:57:50.805Z [32minfo[39m [RouterExplorer] Mapped {/api/salary-projects, POST} route
+2026-06-22T05:57:50.805Z [32minfo[39m [RouterExplorer] Mapped {/api/salary-projects, GET} route
+2026-06-22T05:57:50.806Z [32minfo[39m [RouterExplorer] Mapped {/api/salary-projects/:id, GET} route
+2026-06-22T05:57:50.806Z [32minfo[39m [RouterExplorer] Mapped {/api/salary-projects/:id, PATCH} route
+2026-06-22T05:57:50.807Z [32minfo[39m [RouterExplorer] Mapped {/api/salary-projects/:id, DELETE} route
+2026-06-22T05:57:50.807Z [32minfo[39m [RoutesResolver] FinanceController {/api/finance}:
+2026-06-22T05:57:50.808Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/staff-ranking, GET} route
+2026-06-22T05:57:50.809Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/staff/:staffId/projects, GET} route
+2026-06-22T05:57:50.809Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/payments, POST} route
+2026-06-22T05:57:50.810Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/salary/preview, POST} route
+2026-06-22T05:57:50.810Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/salary/pay, POST} route
+2026-06-22T05:57:50.810Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/salary/staff/:staffId, GET} route
+2026-06-22T05:57:50.811Z [32minfo[39m [RouterExplorer] Mapped {/api/finance/tutup-buku, GET} route
+2026-06-22T05:57:50.811Z [32minfo[39m [RoutesResolver] SizesController {/api/sizes}:
+2026-06-22T05:57:50.812Z [32minfo[39m [RouterExplorer] Mapped {/api/sizes, POST} route
+2026-06-22T05:57:50.813Z [32minfo[39m [RouterExplorer] Mapped {/api/sizes, GET} route
+2026-06-22T05:57:50.813Z [32minfo[39m [RouterExplorer] Mapped {/api/sizes/:id, GET} route
+2026-06-22T05:57:50.814Z [32minfo[39m [RouterExplorer] Mapped {/api/sizes/:id, PATCH} route
+2026-06-22T05:57:50.814Z [32minfo[39m [RouterExplorer] Mapped {/api/sizes/:id, DELETE} route
+2026-06-22T05:57:50.815Z [32minfo[39m [RoutesResolver] ColorsController {/api/colors}:
+2026-06-22T05:57:50.815Z [32minfo[39m [RouterExplorer] Mapped {/api/colors, POST} route
+2026-06-22T05:57:50.816Z [32minfo[39m [RouterExplorer] Mapped {/api/colors, GET} route
+2026-06-22T05:57:50.818Z [32minfo[39m [RouterExplorer] Mapped {/api/colors/:id, GET} route
+2026-06-22T05:57:50.818Z [32minfo[39m [RouterExplorer] Mapped {/api/colors/:id, PATCH} route
+2026-06-22T05:57:50.819Z [32minfo[39m [RouterExplorer] Mapped {/api/colors/:id, DELETE} route
+2026-06-22T05:57:50.819Z [32minfo[39m [RoutesResolver] AttributesController {/api/attributes}:
+2026-06-22T05:57:50.819Z [32minfo[39m [RouterExplorer] Mapped {/api/attributes, POST} route
+2026-06-22T05:57:50.820Z [32minfo[39m [RouterExplorer] Mapped {/api/attributes, GET} route
+2026-06-22T05:57:50.820Z [32minfo[39m [RouterExplorer] Mapped {/api/attributes/:id, GET} route
+2026-06-22T05:57:50.820Z [32minfo[39m [RouterExplorer] Mapped {/api/attributes/:id, PATCH} route
+2026-06-22T05:57:50.821Z [32minfo[39m [RouterExplorer] Mapped {/api/attributes/:id, DELETE} route
+2026-06-22T05:57:50.822Z [32minfo[39m [RoutesResolver] MaterialsController {/api/materials}:
+2026-06-22T05:57:50.823Z [32minfo[39m [RouterExplorer] Mapped {/api/materials, POST} route
+2026-06-22T05:57:50.823Z [32minfo[39m [RouterExplorer] Mapped {/api/materials, GET} route
+2026-06-22T05:57:50.823Z [32minfo[39m [RouterExplorer] Mapped {/api/materials/:id, GET} route
+2026-06-22T05:57:50.823Z [32minfo[39m [RouterExplorer] Mapped {/api/materials/:id, PATCH} route
+2026-06-22T05:57:50.824Z [32minfo[39m [RouterExplorer] Mapped {/api/materials/:id, DELETE} route
+2026-06-22T05:57:50.824Z [32minfo[39m [RoutesResolver] CustomVariantsController {/api/custom-variants}:
+2026-06-22T05:57:50.824Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-variants, GET} route
+2026-06-22T05:57:50.824Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-variants/:id, GET} route
+2026-06-22T05:57:50.825Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-variants, POST} route
+2026-06-22T05:57:50.825Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-variants/:id, PATCH} route
+2026-06-22T05:57:50.825Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-variants/:id, DELETE} route
+2026-06-22T05:57:50.825Z [32minfo[39m [RoutesResolver] VariantOptionsController {/api/variant-options}:
+2026-06-22T05:57:50.832Z [32minfo[39m [RouterExplorer] Mapped {/api/variant-options, GET} route
+2026-06-22T05:57:50.832Z [32minfo[39m [RouterExplorer] Mapped {/api/variant-options/by-custom-variant/:customVariantId, GET} route
+2026-06-22T05:57:50.833Z [32minfo[39m [RouterExplorer] Mapped {/api/variant-options/:id, GET} route
+2026-06-22T05:57:50.833Z [32minfo[39m [RouterExplorer] Mapped {/api/variant-options, POST} route
+2026-06-22T05:57:50.834Z [32minfo[39m [RouterExplorer] Mapped {/api/variant-options/:id, PATCH} route
+2026-06-22T05:57:50.834Z [32minfo[39m [RouterExplorer] Mapped {/api/variant-options/:id, DELETE} route
+2026-06-22T05:57:50.834Z [32minfo[39m [RoutesResolver] JerseyTemplatesController {/api/jersey-templates}:
+2026-06-22T05:57:50.835Z [32minfo[39m [RouterExplorer] Mapped {/api/jersey-templates, POST} route
+2026-06-22T05:57:50.835Z [32minfo[39m [RouterExplorer] Mapped {/api/jersey-templates, GET} route
+2026-06-22T05:57:50.835Z [32minfo[39m [RouterExplorer] Mapped {/api/jersey-templates/:id, GET} route
+2026-06-22T05:57:50.836Z [32minfo[39m [RouterExplorer] Mapped {/api/jersey-templates/:id, PATCH} route
+2026-06-22T05:57:50.836Z [32minfo[39m [RouterExplorer] Mapped {/api/jersey-templates/:id, DELETE} route
+2026-06-22T05:57:50.837Z [32minfo[39m [RoutesResolver] CustomJerseyController {/api/custom-jersey}:
+2026-06-22T05:57:50.837Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-jersey/calculate, POST} route
+2026-06-22T05:57:50.837Z [32minfo[39m [RouterExplorer] Mapped {/api/custom-jersey/order, POST} route
+2026-06-22T05:57:50.838Z [32minfo[39m [RoutesResolver] SummaryController {/api/summary}:
+2026-06-22T05:57:50.838Z [32minfo[39m [RouterExplorer] Mapped {/api/summary/stats, GET} route
+2026-06-22T05:57:50.838Z [32minfo[39m [RoutesResolver] CarouselsController {/api/carousels}:
+2026-06-22T05:57:50.839Z [32minfo[39m [RouterExplorer] Mapped {/api/carousels, GET} route
+2026-06-22T05:57:50.839Z [32minfo[39m [RouterExplorer] Mapped {/api/carousels/:id, GET} route
+2026-06-22T05:57:50.839Z [32minfo[39m [RouterExplorer] Mapped {/api/carousels, POST} route
+2026-06-22T05:57:50.839Z [32minfo[39m [RouterExplorer] Mapped {/api/carousels/:id, PATCH} route
+2026-06-22T05:57:50.840Z [32minfo[39m [RouterExplorer] Mapped {/api/carousels/:id, DELETE} route
+2026-06-22T05:57:50.840Z [32minfo[39m [RoutesResolver] RecommendedProductsController {/api/recommended-products}:
+2026-06-22T05:57:50.840Z [32minfo[39m [RouterExplorer] Mapped {/api/recommended-products, POST} route
+2026-06-22T05:57:50.841Z [32minfo[39m [RouterExplorer] Mapped {/api/recommended-products, GET} route
+2026-06-22T05:57:50.841Z [32minfo[39m [RouterExplorer] Mapped {/api/recommended-products/:id, GET} route
+2026-06-22T05:57:50.841Z [32minfo[39m [RouterExplorer] Mapped {/api/recommended-products/:id, PATCH} route
+2026-06-22T05:57:50.841Z [32minfo[39m [RouterExplorer] Mapped {/api/recommended-products/:id, DELETE} route
+2026-06-22T05:57:50.841Z [32minfo[39m [RoutesResolver] ActivityLogsController {/api/activity-logs}:
+2026-06-22T05:57:50.842Z [32minfo[39m [RouterExplorer] Mapped {/api/activity-logs, GET} route
+2026-06-22T05:57:50.842Z [32minfo[39m [RouterExplorer] Mapped {/api/activity-logs/:id, GET} route
+2026-06-22T05:57:50.867Z [32minfo[39m [NestApplication] Nest application successfully started
+🚀 Server is running on:
+   - Local:   http://192.168.1.42:3000
+   - Network: http://127.0.0.1:3000
+   - Port:    3000
+   - Environment: development
+   - Uploads: http://192.168.1.42:3000/uploads/
