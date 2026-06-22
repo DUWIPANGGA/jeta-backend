@@ -3,7 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './common/logger/winston.config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -59,9 +61,12 @@ import { CarouselsModule } from './carousels/carousels.module';
 import { RecommendedProductsModule } from './recommended-products/recommended-products.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { ActivityLogInterceptor } from './common/interceptor/activity-log.interceptor';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 @Module({
   imports: [
+    WinstonModule.forRoot(winstonConfig),
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -149,6 +154,10 @@ import { ActivityLogInterceptor } from './common/interceptor/activity-log.interc
     {
       provide: APP_INTERCEPTOR,
       useClass: ActivityLogInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
     },
   ],
 })
